@@ -1,0 +1,19 @@
+{
+  "name": "kokutele-remote-production",
+  "version": "0.0.1",
+  "description": "remote production system with RealTime Web Technology",
+  "main": "index.js",
+  "scripts": {
+    "start": "DEBUG='*INFO* *WARN* *ERROR*' NODE_ENV=development node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "kensaku komatsu (https://medium.com/kokutele)",
+  "license": "MIT",
+  "dependencies": {
+    "@sitespeed.io/throttle": "^3.1.0",
+    "awaitqueue": "^2.3.3",
+    "express": "^4.17.3",
+    "mediasoup": "^3.9.9",
+    "protoo-server": "^4.0.6"
+  }
+}
