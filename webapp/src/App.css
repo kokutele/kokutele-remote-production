@@ -4,3 +4,17 @@
   margin: 0 auto;
   max-width: 1440px;
 }
+
+.App .Header {
+  height: 50px;
+  background: green;
+}
+
+.App .Main {
+  min-height: calc( 100vh - 80px );
+}
+
+.App .Footer {
+  height: 30px;
+  background: green;
+}

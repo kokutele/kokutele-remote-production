@@ -96,6 +96,8 @@ class Room extends EventEmitter {
       peer.data.transports = new Map()
       peer.data.producers  = new Map()
       peer.data.consumers  = new Map()
+      peer.data.dataProducers = new Map()
+      peer.data.dataConsumers = new Map()
       
       peer.on('request', ( request, accept, reject ) => {
         logger.debug('protoo Peer "request" event [method:%s, peerId: %s]', 
@@ -120,7 +122,7 @@ class Room extends EventEmitter {
           }
         }
 
-        for( const transport of peer.data.transport.values()) {
+        for( const transport of peer.data.transports.values()) {
           transport.close()
         }
 
@@ -218,7 +220,9 @@ class Room extends EventEmitter {
         break
       }
       case 'createWebRtcTransport': {
-        const { forceTcp, producing, cunsuming, sctpCapabilities } = request.data
+        const { forceTcp, producing, consuming, sctpCapabilities } = request.data
+
+        logger.info( 'received createWebRtcTransport: %o', request.data )
 
         const webRtcTransportOptions = {
           ...config.mediasoup.webRtcTransportOptions,
@@ -367,7 +371,7 @@ class Room extends EventEmitter {
 
         break
       }
-      case 'closePrducer': {
+      case 'closeProducer': {
         if( !peer.data.joined ) {
           throw new Error('Peer not yet joined')
         }

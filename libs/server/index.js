@@ -7,6 +7,7 @@ const url = require('url')
 const protoo = require('protoo-server')
 const mediasoup = require('mediasoup')
 const express = require('express')
+const cors = require('cors')
 const { AwaitQueue } = require('awaitqueue')
 const Logger = require('../logger')
 const Room = require('./room')
@@ -66,10 +67,10 @@ class Server {
 
       this._mediasoupWorkers.push( worker )
 
-      setInterval( async () => {
-        const usage = await worker.getResourceUsage()
-        logger.info( 'mediasoup Worker resource usage[pid: %d] %o', worker.pid, usage )
-      }, 120_000 )
+      // setInterval( async () => {
+      //   const usage = await worker.getResourceUsage()
+      //   logger.info( 'mediasoup Worker resource usage[pid: %d] %o', worker.pid, usage )
+      // }, 120_000 )
     }
   }
 
@@ -78,6 +79,7 @@ class Server {
 
     this._expressApp = express()
     this._expressApp.use( express.json() )
+    this._expressApp.use( cors() )
 
     this._expressApp.param( 'roomId', ( req, res, next, roomId ) => {
       if( !this._rooms.has( roomId ) ) {
@@ -145,7 +147,7 @@ class Server {
       const roomId = u.query['roomId']
       const peerId = u.query['peerId']
 
-      if( !rooId || !peerId ) {
+      if( !roomId || !peerId ) {
         reject( 400, 'Connection request MUST specify roomId and/or peerId' )
         return
       }
@@ -155,7 +157,7 @@ class Server {
         roomId, peerId, info.socket.remoteAddress, info.origin
       )
 
-      queue.push( async () => {
+      this._queue.push( async () => {
         const room = await this._getOrCreateRoom( { roomId } )
         const protooWebSocketTransport = accept()
         room.handleProtooConnection({ peerId, protooWebSocketTransport })
