@@ -129,8 +129,9 @@ class Room extends EventEmitter {
         if( this._protooRoom.peers.length === 0 ) {
           logger.info(
             'last Peer in the room left, closing the room [roomId: %s]',
-            this.close()
+            this._roomId
           )
+          this.close()
         }
       })
     } catch(err) {
@@ -403,7 +404,7 @@ class Room extends EventEmitter {
           throw new Error( `producer with id "${producerId}" not found`)
         }
 
-        producer.pause()
+        await producer.pause()
 
         accept()
 
@@ -428,7 +429,7 @@ class Room extends EventEmitter {
         break
       }
 
-      case 'puaseConsumer': {
+      case 'pauseConsumer': {
         if( !peer.data.joined ) {
           throw new Error( 'Peer not yet joined' )
         }

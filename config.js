@@ -99,7 +99,7 @@ module.exports = {
     webRtcTransportOptions: {
       listenIps: [
         {
-          ip: process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
+          ip: process.env.MEDIASOUP_LISTEN_IP || '127.0.0.1',
           announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
         }
       ],
@@ -114,7 +114,7 @@ module.exports = {
     // See https://mediasoup.org/documentation/v3/mediasoup/api/#PlainTransportOptions
     plainTransportOptions: {
       listenIp: {
-        ip          : process.env.MEDIASOUP_LISTEN_IP || '0.0.0.0',
+        ip          : process.env.MEDIASOUP_LISTEN_IP || '127.0.0.1',
         announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
       },
       maxSctpMessageSize : 262_144

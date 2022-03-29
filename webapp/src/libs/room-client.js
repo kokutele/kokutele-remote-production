@@ -157,7 +157,8 @@ export default class RoomClient extends EventEmitter {
                 id,
                 kind,
                 type,
-                producerPaused
+                producerPaused,
+                consumer
               })
 
               accept()
@@ -447,7 +448,7 @@ export default class RoomClient extends EventEmitter {
             rtpParameters,
             appData
           })
-          .then( id => callback({ id }) )
+          .then( ({ id }) => callback({ id }) )
           .catch( errback )
         })
 
@@ -459,7 +460,7 @@ export default class RoomClient extends EventEmitter {
             protocol,
             appData
           })
-          .then( id => callback( { id } ) )
+          .then( ({ id }) => callback( { id } ) )
           .catch( errback )
         })
       }
@@ -533,7 +534,7 @@ export default class RoomClient extends EventEmitter {
               opusDtx   : 1
             }
           })
-          logger.debug( "audioProducer.id: %s", this._audioProducer.id.id )
+          logger.debug( "audioProducer.id: %s", this._audioProducer.id )
 
           this._audioProducer.on( 'transoprtclose', () => {
             this._audioProducer = null
@@ -543,7 +544,7 @@ export default class RoomClient extends EventEmitter {
             this._audioProducer.close()
 
             await this._protoo.request( 'closeProducer', {
-              producerId: this._audioProducer.id.id
+              producerId: this._audioProducer.id
             })
             .then( () => {
               this._audioProducer = null 
@@ -588,9 +589,9 @@ export default class RoomClient extends EventEmitter {
           this._videoProducer.on( 'trackended', async () => {
             this._videoProducer.close()
 
-            logger.debug( 'videoProducer.id:%s', this._videoProducer.id.id )
+            logger.debug( 'videoProducer.id:%s', this._videoProducer.id )
             await this._protoo.request( 'closeProducer', {
-              producerId: this._videoProducer.id.id
+              producerId: this._videoProducer.id
             })
             .catch( err => {
               logger.error( 'Error closing video producer:%o', err )
