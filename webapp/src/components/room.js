@@ -106,7 +106,7 @@ export default function Room( props ) {
         </div>
       )}
       <div className='my-video'>
-        <video ref={ _myVideo } playsInline/>
+        <video ref={ _myVideo } playsInline muted/>
       </div>
       <div className='remote-videos' ref={ _remoteVideos }></div>
       <div className='remote-audios' ref={ _remoteAudios }></div>

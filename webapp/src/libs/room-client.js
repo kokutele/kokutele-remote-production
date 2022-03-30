@@ -227,7 +227,7 @@ export default class RoomClient extends EventEmitter {
             break
           }
           default: {
-            logger.errror('unknown protoo request.method: "%s"', request.method )
+            logger.error('unknown protoo request.method: "%s"', request.method )
           }
         }
       })
@@ -335,8 +335,15 @@ export default class RoomClient extends EventEmitter {
             this.emit( 'dataConsumerClosed', { dataConsumerId, peerId } )
             break
           }
+          case 'activeSpeaker': {
+            const { peerId } = notification.data
+
+            this.emit( 'activeSpeaker', peerId )
+
+            break
+          }
           default: {
-            logger.errror('unknown protoo notification.method: "%s"', notification.method )
+            logger.error('unknown protoo notification.method: "%s"', notification.method )
           }
         }
       })
