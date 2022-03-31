@@ -786,7 +786,7 @@ class Room extends EventEmitter {
         .catch( () => {} )
     })
 
-    consumer.on( 'score', () => {
+    consumer.on( 'score', score => {
       consumerPeer.notify( 'consumerScore', { consumerId: consumer.id, score } )
         .catch( () => {} )
     })

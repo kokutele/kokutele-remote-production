@@ -18,3 +18,13 @@
   height: 30px;
   background: green;
 }
+
+.App .debug {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30vw;
+  background: rgba( 0, 0, 0, 0.75 );
+  color: #0f0;
+  font-size: 0.75em;
+}

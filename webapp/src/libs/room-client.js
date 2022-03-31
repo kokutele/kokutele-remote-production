@@ -67,6 +67,10 @@ export default class RoomClient extends EventEmitter {
     return this._peerId
   }
 
+  get consumers() {
+    return this._consumers
+  }
+
   join() {
     let promiseReturned = false
 
@@ -149,6 +153,10 @@ export default class RoomClient extends EventEmitter {
 
               consumer.on('transportclose', () => {
                 this._consumers.delete( consumer.id )
+                this.emit( "leaveConsumer", {
+                  id: consumer.id,
+                  kind: consumer.kind
+                } )
               })
 
               this.emit("newConsumer", {
@@ -158,7 +166,6 @@ export default class RoomClient extends EventEmitter {
                 kind,
                 type,
                 producerPaused,
-                consumer
               })
 
               accept()
