@@ -13,12 +13,12 @@ export default function SourceAudios( props ) {
     const currentConsumerIds = Array.from( _audioArea.current.childNodes )
       .map( elem => elem.dataset.consumerId )
 
-    const appendIds = state.audioConsumers.filter( consumerId => (
+    const appendIds = state.audioConsumerIds.filter( consumerId => (
       !currentConsumerIds.includes( consumerId )
     ))
 
     const removeIds = currentConsumerIds.filter( consumerId => (
-      !state.audioConsumers.includes( consumerId )
+      !state.audioConsumerIds.includes( consumerId )
     ))
 
     appendIds.forEach( consumerId => {
@@ -48,7 +48,7 @@ export default function SourceAudios( props ) {
         })
     })
 
-  }, [ state.audioConsumers, appData.roomClient.consumers ])
+  }, [ state.audioConsumerIds, appData.roomClient.consumers ])
   return (
     <div className="SourceAudios">
       <div className='audio-area' ref={ _audioArea } />

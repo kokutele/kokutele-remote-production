@@ -9,7 +9,7 @@ const logger = new Logger('Room')
 
 class Room extends EventEmitter {
   static async create({ mediasoupWorker, roomId }) {
-    logger.info( 'cretate() [roomId: %s]', roomId )
+    logger.info( 'create() [roomId: %s]', roomId )
 
     const protooRoom = new protoo.Room()
 
@@ -43,6 +43,8 @@ class Room extends EventEmitter {
     this._audioLevelObserver = audioLevelObserver
 
     this._networkThrottled = false
+
+    this._productionLayout = []
 
     this._handleAudioLevelObserver()
   }
@@ -115,9 +117,13 @@ class Room extends EventEmitter {
 
         logger.debug('protoo Peer "close" event [peerId:%s]', peer.id )
 
+        this._productionLayout = this._productionLayout.filter( item => item.peerId !== peer.id )
+
         if( peer.data.joined ) {
           for( const otherPeer of this._getJoinedPeers({ excludePeer: peer }) ) {
             otherPeer.notify('peerClosed', {peerId: peer.id })
+              .catch(() => {})
+            otherPeer.notify('productionLayoutUpdated', this._productionLayout )
               .catch(() => {})
           }
         }
@@ -559,6 +565,55 @@ class Room extends EventEmitter {
             break
           }
         }
+        break
+      }
+
+      case 'getProductionLayout': {
+        accept( this._productionLayout )
+        break
+      }
+
+      case 'addProductionLayout': {
+        const { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } = request.data
+        logger.info('"addProductionLayout" - request.data:%o', request.data )
+
+        let isExist = !!this._productionLayout.find( item => (
+          item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId
+        ))
+        
+        if( !isExist ) {
+          this._productionLayout = [ ...this._productionLayout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
+        }
+
+        // todo - calucurate position then update this._productionLayout
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'productionLayoutUpdated', this._productionLayout )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'leaveProductionLayout': {
+        const { peerId, audioProducerId, videoProducerId } = request.data
+        logger.info('"leaveProductionLayout" - request.data:%o', request.data )
+
+        this._productionLayout = this._productionLayout.filter( item => ( 
+          item.peerId !== peerId && item.audioProducerId !== audioProducerId && item.videoProducerId !== videoProducerId 
+        ))
+
+        // todo - calucurate position then update this._productionLayout
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'productionLayoutUpdated', this._productionLayout )
+            .catch( () => {} )
+        }
+
         break
       }
 

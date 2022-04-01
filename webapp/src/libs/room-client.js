@@ -71,6 +71,14 @@ export default class RoomClient extends EventEmitter {
     return this._consumers
   }
 
+  get audioProducer() {
+    return this._audioProducer
+  }
+
+  get videoProducer() {
+    return this._videoProducer
+  }
+
   join() {
     let promiseReturned = false
 
@@ -265,6 +273,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('peerDisplayNameChanged', { peerId, displayName, oldDisplayName })
             break
           }
+          case 'productionLayoutUpdated': {
+            this.emit('productionLayoutUpdated', notification.data )
+            break
+          }
           case 'downlinkBwe': {
             logger.debug('"downlinkBwe" event:%o', notification.data)
             break
@@ -355,6 +367,21 @@ export default class RoomClient extends EventEmitter {
         }
       })
     })
+  }
+
+  async getProductionLayout() {
+    return await this._protoo.request( 'getProductionLayout' )
+      .catch( err => { throw err })
+  }
+
+  async addProductionLayout( { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
+    await this._protoo.request( 'addProductionLayout', { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
+      .catch( err => { throw err })
+  }
+
+  async leaveProductionLayout( { peerId, audioProducerId, videoProducerId } ) {
+    await this._protoo.request( 'leaveProductionLayout', { peerId, audioProducerId, videoProducerId } )
+      .catch( err => { throw err })
   }
 
   close() {

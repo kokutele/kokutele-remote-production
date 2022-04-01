@@ -3,8 +3,9 @@ import { Alert, Button, Typography } from 'antd'
 import pokemon from 'pokemon'
 
 import ProductionArea from './production-area'
-import SourceVideos from './source-videos'
-import SourceAudios from './source-audios'
+//import SourceVideos from './source-videos'
+//import SourceAudios from './source-audios'
+import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
@@ -47,8 +48,14 @@ export default function Room( props ) {
       )}
       <ProductionArea />
 
+      <Sources />
+      
+
+
+      {/*
       <SourceVideos />
       <SourceAudios />
+      */}
       <div className='debug'>
         <pre>
           {JSON.stringify( state, null, 2 )}
