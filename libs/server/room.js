@@ -45,7 +45,7 @@ class Room extends EventEmitter {
 
     this._networkThrottled = false
 
-    this._studio = new Studio( { height: 1080, width: 1920 })
+    this._studio = new Studio( { mediasoupRouter, height: 1080, width: 1920 })
 
     this._handleAudioLevelObserver()
   }
