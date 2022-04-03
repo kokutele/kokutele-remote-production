@@ -35,9 +35,6 @@ export default function Room( props ) {
       { _errMessage !== '' && (
         <Alert type="error" closable showIcon message={ _errMessage } />
       )}
-      <div>
-        displayName: { state.displayName }, peerId: { state.peerId }, status: { state.status }
-      </div>
       { state.status === 'IDLE' && (
         <div>
           <Button type="primary" onClick={ handleStart }>start</Button>
@@ -47,6 +44,7 @@ export default function Room( props ) {
       <Sources />
       
       <div className='debug'>
+        <strong>debug window</strong>
         <pre>
           {JSON.stringify( state, null, 2 )}
         </pre>

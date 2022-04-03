@@ -8,6 +8,8 @@ https://www.schemecolor.com/christmas-songs.php
 .container {
   margin: 0 auto;
   max-width: 1440px;
+  font-family: "Gill Sans", sans-serif;
+  padding: 2px 3px;
 }
 
 .App .Header {
@@ -27,13 +29,18 @@ https://www.schemecolor.com/christmas-songs.php
 }
 
 .App .debug {
-  background: rgba( 0, 0, 0, 0.75 );
+  background: rgba( 30, 30, 30, 0.75 );
   color: #0f0;
   font-size: 0.75em;
   height: 50vh;
   overflow: auto;
+  padding: 3px 3px;
   position: fixed;
   right: 0;
   top: 0;
   width: 30vw;
+}
+
+.App .debug pre {
+  font-family: system-ui;
 }

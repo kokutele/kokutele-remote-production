@@ -2,7 +2,8 @@
   aspect-ratio: calc(16 / 9);
   background: #000;
   position:relative;
-  width: 100vw;
+  margin: 3px 0;
+  width: calc( 100vw - 6px );
 }
 
 .Studio canvas {
