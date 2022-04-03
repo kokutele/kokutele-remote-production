@@ -19,10 +19,10 @@ const VIDEO_SIMULCAST_ENCODINGS = [
   { scaleResolutionDownBy: 1, maxBitrate: 5_000_000 }
 ]
 
-const SCREEN_SHARING_SIMULCAST_ENCODINGS = [
-  { dtx: true, maxBitrate: 1_500_000 },
-  { dtx: true, maxBitrate: 6_000_000 }
-]
+// const SCREEN_SHARING_SIMULCAST_ENCODINGS = [
+//   { dtx: true, maxBitrate: 1_500_000 },
+//   { dtx: true, maxBitrate: 6_000_000 }
+// ]
 
 export default class RoomClient extends EventEmitter {
   /**
@@ -273,8 +273,8 @@ export default class RoomClient extends EventEmitter {
             this.emit('peerDisplayNameChanged', { peerId, displayName, oldDisplayName })
             break
           }
-          case 'productionLayoutUpdated': {
-            this.emit('productionLayoutUpdated', notification.data )
+          case 'studioLayoutUpdated': {
+            this.emit('studioLayoutUpdated', notification.data )
             break
           }
           case 'downlinkBwe': {
@@ -369,18 +369,23 @@ export default class RoomClient extends EventEmitter {
     })
   }
 
-  async getProductionLayout() {
-    return await this._protoo.request( 'getProductionLayout' )
+  async getStudioSize() {
+    return await this._protoo.request( 'getStudioSize' )
       .catch( err => { throw err })
   }
 
-  async addProductionLayout( { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
-    await this._protoo.request( 'addProductionLayout', { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
+  async getStudioLayout() {
+    return await this._protoo.request( 'getStudioLayout' )
       .catch( err => { throw err })
   }
 
-  async leaveProductionLayout( { peerId, audioProducerId, videoProducerId } ) {
-    await this._protoo.request( 'leaveProductionLayout', { peerId, audioProducerId, videoProducerId } )
+  async addStudioLayout( { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
+    await this._protoo.request( 'addStudioLayout', { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
+      .catch( err => { throw err })
+  }
+
+  async deleteStudioLayout( { peerId, audioProducerId, videoProducerId } ) {
+    await this._protoo.request( 'deleteStudioLayout', { peerId, audioProducerId, videoProducerId } )
       .catch( err => { throw err })
   }
 

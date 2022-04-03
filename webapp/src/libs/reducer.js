@@ -12,14 +12,11 @@ export const initialState = {
   audioProducerId: '',
   videoProducerId: '',
   peers: [],
-  productionLayout: [], // Array<{ 
-                    //   consumerId:String, 
-                    //   xpos:Number, 
-                    //   ypos:Number,
-                    //   width:Number, 
-                    //   height:Number,
-                    //   zorder:Number
-                    // }>
+  studio: {
+    width: 0,
+    height: 0,
+    layout: [] 
+  }
 }
 
 export const reducer = ( state, action ) => {
@@ -107,8 +104,14 @@ export const reducer = ( state, action ) => {
     case 'SET_MY_VIDEO_PRODUCER_ID': {
       return { ...state, videoProducerId: action.value }
     }
-    case 'SET_PRODUCTION_LAYOUT': {
-      return { ...state, productionLayout: action.value }
+    case 'SET_STUDIO_SIZE': {
+      const { width, height } = action.value
+      const studio = { ...state.studio, width, height }
+      return { ...state, studio }
+    }
+    case 'SET_STUDIO_LAYOUT': {
+      const studio = { ...state.studio, layout: action.value }
+      return { ...state, studio }
     }
     default: {
       return state
@@ -151,29 +154,40 @@ export const useAppContext = () => {
     dispatch({ type: 'SET_STATUS', value: 'READY'})
   }
 
-  const getProductionLayout = async () => {
+  const getStudioSize = async () => {
     try {
-      const layout = await appData.roomClient.getProductionLayout()
-      logger.debug('"getProductionLayout()":%o', layout )
-      dispatch({ type: 'SET_PRODUCTION_LAYOUT', value: layout })
-    } catch( err ) {
-      logger.error( 'getProductionLayout():%o', err )
+      const size = await appData.roomClient.getStudioSize()
+      logger.debug('"getStudioSize()":%o', size )
+      dispatch({ type: 'SET_STUDIO_SIZE', value: size })
+    } catch(err) {
+      logger.error( 'getStudioSize():%o', err)
     }
   }
 
-  const addProductionLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }) => {
-    await appData.roomClient.addProductionLayout({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight })
+  const getStudioLayout = async () => {
+    try {
+      const layout = await appData.roomClient.getStudioLayout()
+      logger.debug('"getStudioLayout()":%o', layout )
+      dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
+    } catch( err ) {
+      logger.error( 'getStudioLayout():%o', err )
+    }
   }
 
-  const leaveProductionLayout = async ({ peerId, audioProducerId, videoProducerId }) => {
-    await appData.roomClient.leaveProductionLayout({ peerId, audioProducerId, videoProducerId })
+  const addStudioLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }) => {
+    await appData.roomClient.addStudioLayout({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight })
+  }
+
+  const deleteStudioLayout = async ({ peerId, audioProducerId, videoProducerId }) => {
+    await appData.roomClient.deleteStudioLayout({ peerId, audioProducerId, videoProducerId })
   }
 
   return {
     appData,
-    addProductionLayout,
-    getProductionLayout,
-    leaveProductionLayout,
+    getStudioSize,
+    getStudioLayout,
+    addStudioLayout,
+    deleteStudioLayout,
     createRoomClient,
     joinRoom,
     state,
@@ -190,8 +204,8 @@ function _setRoomClientHandler( client, dispatch ) {
     dispatch({ type: 'ADD_PEER', value: peer })
   })
 
-  client.on("productionLayoutUpdated", layout => {
-    dispatch({ type: 'SET_PRODUCTION_LAYOUT', value: layout })
+  client.on("studioLayoutUpdated", layout => {
+    dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
   })
 
   client.on("peerClosed", peerId => {

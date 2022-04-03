@@ -6,8 +6,17 @@ import './source-video.css'
 
 const logger = new Logger('source-video')
 
+// https://www.schemecolor.com/after-the-searching.php
+const videoFrameColors = [
+  '#FFA809',
+  '#D54E6F',
+  '#29317C',
+  '#01C6A2',
+  '#FDDB01'
+]
+
 export default function SourceVideo( props ) {
-  const { state, appData, addProductionLayout, leaveProductionLayout } = useAppContext()
+  const { state, appData, addStudioLayout, deleteStudioLayout } = useAppContext()
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
 
@@ -19,21 +28,24 @@ export default function SourceVideo( props ) {
     roomClient, myStream
   } = appData
 
+  const _wrapperEl = useRef( null )
   const _videoEl = useRef( null )
+
+
 
   const handleClick = useCallback( () => {
     if( !audioProducerId || !videoProducerId ) {
       logger.warn( 'Meida not ready yet' )
     } else {
       if( 
-        !state.productionLayout
+        !state.studio.layout
           .find( item => ( 
             item.peerId === id && 
             item.audioProducerId === audioProducerId && 
             item.videoProducerId === videoProducerId 
           )) 
       ) {
-        addProductionLayout({ 
+        addStudioLayout({ 
           peerId: id, 
           audioProducerId, 
           videoProducerId,
@@ -41,7 +53,7 @@ export default function SourceVideo( props ) {
           videoHeight: _videoHeight
         })
       } else {
-        leaveProductionLayout( {
+        deleteStudioLayout( {
           peerId: id, 
           audioProducerId,
           videoProducerId
@@ -49,7 +61,7 @@ export default function SourceVideo( props ) {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ audioProducerId, videoProducerId, _videoWidth, _videoHeight, state.productionLayout ])
+  }, [ audioProducerId, videoProducerId, _videoWidth, _videoHeight, state.studio.layout ])
 
   useEffect( () => {
     let stream
@@ -95,10 +107,24 @@ export default function SourceVideo( props ) {
     }
   }, [ audioConsumerId, videoConsumerId, roomClient.consumers, myStream ])
 
-  logger.debug( 'props: %o', props )
+  useEffect( () => {
+    if( state.status !== 'READY' ) return
+
+    const obj = state.studio.layout.find( item => (
+      item.videoProducerId === videoProducerId && item.audioProducerId === audioProducerId 
+    ))
+
+    if( obj ) {
+      const idx = state.studio.layout.indexOf( obj )
+      _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ idx % videoFrameColors.length ]}`
+    } else {
+      _wrapperEl.current.style.border = '3px solid #fff'
+    }
+  }, [ state.status, state.studio.layout, audioProducerId, videoProducerId ])
+
   return (
     <div className="SourceVideo">
-      <div className="videoWrapper">
+      <div className="videoWrapper" ref={ _wrapperEl }>
         <video ref={ _videoEl } onClick={handleClick} />
         <div className="meta">
           {displayName}

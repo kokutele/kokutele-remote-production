@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
-import { Alert, Button, Typography } from 'antd'
+import { Alert, Button } from 'antd'
 import pokemon from 'pokemon'
 
-import ProductionArea from './production-area'
+import Studio from './studio'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -11,7 +11,6 @@ import Logger from '../libs/logger'
 
 import './room.css'
 
-const { Title } = Typography
 const logger = new Logger('Room')
 
 export default function Room( props ) {
@@ -44,7 +43,7 @@ export default function Room( props ) {
           <Button type="primary" onClick={ handleStart }>start</Button>
         </div>
       )}
-      <ProductionArea />
+      <Studio />
       <Sources />
       
       <div className='debug'>

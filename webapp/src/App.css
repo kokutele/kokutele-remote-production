@@ -1,5 +1,10 @@
 @import '~antd/dist/antd.css';
 
+/*
+color sheme
+https://www.schemecolor.com/christmas-songs.php
+*/
+
 .container {
   margin: 0 auto;
   max-width: 1440px;
@@ -7,7 +12,8 @@
 
 .App .Header {
   height: 50px;
-  background: green;
+  background: #034F1B;
+  color: #E6DCB1;
 }
 
 .App .Main {
@@ -16,15 +22,18 @@
 
 .App .Footer {
   height: 30px;
-  background: green;
+  color: #E6DCB1;
+  background: #034F1B;
 }
 
 .App .debug {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 30vw;
   background: rgba( 0, 0, 0, 0.75 );
   color: #0f0;
   font-size: 0.75em;
+  height: 50vh;
+  overflow: auto;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 30vw;
 }
