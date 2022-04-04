@@ -1,6 +1,11 @@
 #include<stdio.h>
 #include<string.h>
+#include<string>
+#include<regex>
+#include<iostream>
 #include "mixer.h"
+
+using namespace std;
 
 static gchar* add_intervideosrc( Mixer *mixer, int idx );
 static gchar* add_interaudiosrc( Mixer *mixer, int idx );
@@ -16,6 +21,9 @@ Mixer *mixer_init( gint width, gint height, gchar *url ) {
   GstElement *pipeline;
   Mixer *mixer = (Mixer *)g_malloc( sizeof( Mixer ) );
   memset( mixer, '\0', sizeof( Mixer ));
+
+  gchar *_url = ( gchar * )g_malloc( 256 );
+  strcpy( _url, url );
 
   // mixer->compositor_pads = NULL;
   // mixer->audiomixer_pads = NULL;
@@ -35,7 +43,7 @@ Mixer *mixer_init( gint width, gint height, gchar *url ) {
 
   mixer->width = width;
   mixer->height = height;
-  mixer->url = url;
+  mixer->url = _url;
   mixer->mixer_pipeline = pipeline;
 
   return mixer;
@@ -46,6 +54,39 @@ Channel *channel_new() {
   memset( channel, '\0', sizeof( Channel ));
 
   return channel;
+}
+
+int mixer_set_rtmp( Mixer *mixer ) {
+  GstElement *pipeline;
+
+  string script = 
+    "videotestsrc pattern=0 is-live=true ! video/x-raw,width=WIDTH,height=HEIGHT ! \n"
+    "  compositor name=comp\n"
+    "  sink_0::xpos=0 sink_0::ypos=0 sink_0::width=WIDTH sink_0::height=HEIGHT sink_0::zorder=0\n"
+    "  sink_1::xpos=0 sink_1::ypos=0 sink_1::width=WIDTH sink_1::height=HEIGHT sink_1::zorder=1 ! \n"
+    "  clockoverlay ! \n"
+    "  x264enc key-int-max=60 bframes=0 bitrate=4000 speed-preset=ultrafast tune=zerolatency ! \n"
+    "  flvmux name=mux ! \n"
+    "  rtmpsink location='RTMP_URL live=1' \n"
+    "audiomixer name=mix ! audioconvert ! audioresample ! audio/x-raw,rate=44100 ! voaacenc bitrate=64000 ! \n"
+    "  mux. \n"
+    "audiotestsrc volume=0 is-live=true ! mix. \n"
+    "interaudiosrc channel=mixed-audio ! queue ! mix. \n"
+    "intervideosrc channel=mixed-video ! videoconvert ! queue ! comp. \n";
+    //"  queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 min-threshold-time=200000000 ! \n"
+  
+  script = regex_replace( script, regex("WIDTH"), to_string( mixer->width ) );
+  script = regex_replace( script, regex("HEIGHT"), to_string( mixer->height ) );
+  script = regex_replace( script, regex("RTMP_URL"), mixer->url );
+  
+  cout << script << endl;
+
+  pipeline = gst_parse_launch( script.c_str(), NULL );
+  gst_element_set_state( pipeline, GST_STATE_PLAYING );
+
+  mixer->rtmp_pipeline = pipeline;
+
+  return 0;
 }
 
 int mixer_set_compositor( Mixer *mixer ) {
@@ -79,7 +120,8 @@ int mixer_set_compositor( Mixer *mixer ) {
     return -1;
   }
 
-  g_object_set( source, "pattern", 2, "is-live", TRUE, NULL );
+  // g_object_set( source, "pattern", 2, "is-live", TRUE, NULL );
+  g_object_set( source, "pattern", 0, "is-live", TRUE, NULL );
 
   caps = gst_caps_new_simple( "video/x-raw", 
     "width", G_TYPE_INT, mixer->width, 
@@ -188,6 +230,8 @@ int mixer_set_audiomixer( Mixer *mixer ) {
     g_printerr("Elements could not be linked.\n");
     return -1;
   }
+
+  g_object_set( source, "volume", 0, NULL );
 
   caps = gst_caps_new_simple( "audio/x-raw",
     "rate", G_TYPE_INT, 44100, 

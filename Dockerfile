@@ -11,7 +11,8 @@ RUN apt-get update && \
     curl \
     libunwind-dev \
     libdw-dev \
-    git && \
+    git \
+    python3-pip && \
   curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
   apt-get update && \
   apt-get install -y nodejs && \

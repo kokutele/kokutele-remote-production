@@ -45,6 +45,7 @@ Mixer *mixer_init( gint width, gint height, gchar *url );
 Channel * channel_new();
 int mixer_set_compositor( Mixer *mixer );
 int mixer_set_audiomixer( Mixer *mixer );
+int mixer_set_rtmp( Mixer *mixer );
 
 char* mixer_add_videotestsrc( Mixer *mixer, int pattern, int xpos, int ypos, int width, int height, int zorder );
 char* mixer_add_audiotestsrc( Mixer *mixer, double freq );

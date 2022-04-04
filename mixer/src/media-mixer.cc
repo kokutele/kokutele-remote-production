@@ -32,7 +32,7 @@ MediaMixer::MediaMixer( const Napi::CallbackInfo& info )
     : Napi::ObjectWrap<MediaMixer>(info) {
 
   int width, height;
-  std::string url("rtmp://localhost/live/test");
+  std::string url;
 
   if( info[0].IsNumber() && info[1].IsNumber() ) {
     width = info[0].As<Napi::Number>().Int64Value();
@@ -44,6 +44,8 @@ MediaMixer::MediaMixer( const Napi::CallbackInfo& info )
 
   if( info[2].IsString() ) {
     url = info[2].As<Napi::String>().Utf8Value();
+  } else {
+    url = "rtmp://localhost/live/test";
   }
 
   g_print("'constructor()' - width:%d, height:%d\n", width, height );
@@ -53,6 +55,7 @@ MediaMixer::MediaMixer( const Napi::CallbackInfo& info )
 }
 
 Napi::Value MediaMixer::Start( const Napi::CallbackInfo& info ) {
+  mixer_set_rtmp( this->mixer_ );
   mixer_set_compositor( this->mixer_ );
   mixer_set_audiomixer( this->mixer_ );
   mixer_start( this-> mixer_ );

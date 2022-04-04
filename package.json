@@ -6,7 +6,9 @@
   "scripts": {
     "start": "DEBUG='*INFO* *WARN* *ERROR*' NODE_ENV=development node index.js",
     "start.debug": "DEBUG=* NODE_ENV=development node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build.docker": "docker build -t kokutele-studio .",
+    "start.docker": "docker run --rm -it -p 4443:4443 -p 3000:3000 -p 40000-40100:40000-40100/udp -e MEDIASOUP_MIN_PORT=40000 -e MEDIASOUP_MAX_PORT=40100 -v $PWD:/work kokutele-studio /bin/bash"
   },
   "author": "kensaku komatsu (https://medium.com/kokutele)",
   "license": "MIT",

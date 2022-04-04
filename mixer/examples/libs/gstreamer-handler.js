@@ -13,6 +13,7 @@ const gstreamer = require('gstreamer-superficial')
  */
 const startRtpPipeline = ( obj ) => {
   const {
+    host,
     video_rtp_port,
     video_rtcp_port,
     audio_rtp_port,
@@ -24,14 +25,15 @@ const startRtpPipeline = ( obj ) => {
   const elements = [
     'rtpbin name=rtpbin',
     `videotestsrc pattern=${pattern} ! video/x-raw,width=320,height=240 ! videoconvert ! vp8enc keyframe-max-dist=30 ! rtpvp8pay ! rtpbin.send_rtp_sink_0`,
-    `  rtpbin.send_rtp_src_0 ! udpsink port=${video_rtp_port}`,
-    `  rtpbin.send_rtcp_src_0 ! udpsink port=${video_rtcp_port} sync=false async=false`,
+    `  rtpbin.send_rtp_src_0 !  udpsink host=${host} port=${video_rtp_port}`,
+    `  rtpbin.send_rtcp_src_0 ! udpsink host=${host} port=${video_rtcp_port} sync=false async=false`,
     `audiotestsrc freq=${freq} ! audioconvert ! opusenc ! rtpopuspay ! rtpbin.send_rtp_sink_1`,
-    `  rtpbin.send_rtp_src_1 ! udpsink port=${audio_rtp_port}`,
-    `  rtpbin.send_rtcp_src_1 ! udpsink port=${audio_rtcp_port} sync=false async=false`
+    `  rtpbin.send_rtp_src_1 !  udpsink host=${host} port=${audio_rtp_port}`,
+    `  rtpbin.send_rtcp_src_1 ! udpsink host=${host} port=${audio_rtcp_port} sync=false async=false`
   ].join("\n")
   
   const pipeline = new gstreamer.Pipeline( elements )
+  console.log( elements )
   pipeline.play()
 
   return pipeline
