@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+  nginx-rtmp:
+    image: tiangolo/nginx-rtmp
+    container_name: nginx-rtmp
+    hostname: nginx-rtmp
+    ports:
+      - 1935:1935
+    restart: always

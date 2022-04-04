@@ -1,4 +1,4 @@
-let protooPort = 4443
+let protooPort = process.env.NODE_ENV === 'development' ? 4443 : window.location.port
 
 export function getProtooUrl({ roomId, peerId }) {
   const hostname = window.location.hostname
