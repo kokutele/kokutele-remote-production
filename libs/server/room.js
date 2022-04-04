@@ -593,9 +593,10 @@ class Room extends EventEmitter {
         // if( !isExist ) {
         //   this._studio.layout = [ ...this._studio.layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
         // }
-        this._studio.addMedia({ peerId, videoHeight, videoWidth, audioProducerId, videoProducerId })
+        await this._studio.addMedia({ peerId, videoHeight, videoWidth, audioProducerId, videoProducerId })
 
         accept()
+        logger.info('this._studio.layout:%o', this._studio.layout )
 
         for( const peer of this._getJoinedPeers() ) {
           peer.notify( 'studioLayoutUpdated', this._studio.layout )

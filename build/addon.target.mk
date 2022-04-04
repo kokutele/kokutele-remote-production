@@ -41,13 +41,13 @@ CFLAGS_CC_Debug := \
 	-std=gnu++14
 
 INCS_Debug := \
-	-I/root/.cache/node-gyp/16.14.2/include/node \
-	-I/root/.cache/node-gyp/16.14.2/src \
-	-I/root/.cache/node-gyp/16.14.2/deps/openssl/config \
-	-I/root/.cache/node-gyp/16.14.2/deps/openssl/openssl/include \
-	-I/root/.cache/node-gyp/16.14.2/deps/uv/include \
-	-I/root/.cache/node-gyp/16.14.2/deps/zlib \
-	-I/root/.cache/node-gyp/16.14.2/deps/v8/include \
+	-I/tmp/.node-gyp/16.14.2/include/node \
+	-I/tmp/.node-gyp/16.14.2/src \
+	-I/tmp/.node-gyp/16.14.2/deps/openssl/config \
+	-I/tmp/.node-gyp/16.14.2/deps/openssl/openssl/include \
+	-I/tmp/.node-gyp/16.14.2/deps/uv/include \
+	-I/tmp/.node-gyp/16.14.2/deps/zlib \
+	-I/tmp/.node-gyp/16.14.2/deps/v8/include \
 	-I/work/node_modules/node-addon-api \
 	-I/usr/include/gstreamer-1.0 \
 	-I/usr/include/x86_64-linux-gnu \
@@ -90,13 +90,13 @@ CFLAGS_CC_Release := \
 	-std=gnu++14
 
 INCS_Release := \
-	-I/root/.cache/node-gyp/16.14.2/include/node \
-	-I/root/.cache/node-gyp/16.14.2/src \
-	-I/root/.cache/node-gyp/16.14.2/deps/openssl/config \
-	-I/root/.cache/node-gyp/16.14.2/deps/openssl/openssl/include \
-	-I/root/.cache/node-gyp/16.14.2/deps/uv/include \
-	-I/root/.cache/node-gyp/16.14.2/deps/zlib \
-	-I/root/.cache/node-gyp/16.14.2/deps/v8/include \
+	-I/tmp/.node-gyp/16.14.2/include/node \
+	-I/tmp/.node-gyp/16.14.2/src \
+	-I/tmp/.node-gyp/16.14.2/deps/openssl/config \
+	-I/tmp/.node-gyp/16.14.2/deps/openssl/openssl/include \
+	-I/tmp/.node-gyp/16.14.2/deps/uv/include \
+	-I/tmp/.node-gyp/16.14.2/deps/zlib \
+	-I/tmp/.node-gyp/16.14.2/deps/v8/include \
 	-I/work/node_modules/node-addon-api \
 	-I/usr/include/gstreamer-1.0 \
 	-I/usr/include/x86_64-linux-gnu \

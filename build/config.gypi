@@ -350,7 +350,7 @@
     "v8_trace_maps": 0,
     "v8_use_siphash": 1,
     "want_separate_host_toolset": 0,
-    "nodedir": "/root/.cache/node-gyp/16.14.2",
+    "nodedir": "/tmp/.node-gyp/16.14.2",
     "standalone_static_library": 1,
     "user_agent": "npm/8.5.0 node/v16.14.2 linux x64 workspaces/false",
     "userconfig": "/root/.npmrc",

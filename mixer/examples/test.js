@@ -1,7 +1,7 @@
 const MediaMixer = require("../")
 const { startRtpPipeline, stopPipeline } = require("./libs/gstreamer-handler")
 
-const mediaMixer = new MediaMixer( 640, 480, "rtmp://host.docker.internal/live/test" )
+const mediaMixer = new MediaMixer( 640, 480, "rtmp://localhost/live/test" )
 console.log('initialized.')
 mediaMixer.start()
 

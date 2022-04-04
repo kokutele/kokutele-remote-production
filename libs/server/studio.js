@@ -35,18 +35,15 @@ class Studio {
     if( !isExist ) {
       this._layout = [ ...this._layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
 
-      logger.info('config:%o', config )
       const audioTransport = await this._mediasoupRouter.createPlainTransport({
         listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
         rtcpMux: false
       })
-      logger.info('audioTransport:%o', audioTransport )
       await audioTransport.connect({ ip:'127.0.0.1', port: 5000, rtcpPort: 5001 })
       this._plainTransports.set( audioProducerId, audioTransport )
 
       logger.info( 'audioTransport.tuple:%o', audioTransport.tuple )
       logger.info( 'audioTransport.rtcpTuple:%o', audioTransport.rtcpTuple )
-
       const videoTransport = await this._mediasoupRouter.createPlainTransport({
         listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
         rtcpMux: false
@@ -56,17 +53,12 @@ class Studio {
 
       logger.info( 'videoTransport.tuple:%o', videoTransport.tuple )
       logger.info( 'videoTransport.rtcpTuple:%o', videoTransport.rtcpTuple )
-
       const rtpCapabilities = this._mediasoupRouter.rtpCapabilities
-
-      logger.info('rtpCapabilities:%o', rtpCapabilities )
 
       const audioConsumer = await audioTransport.consume( { producerId: audioProducerId, rtpCapabilities, paused: false } ) // todo - paused:true
       this._consumers.set( audioProducerId, audioConsumer )
       const videoConsumer = await videoTransport.consume( { producerId: videoProducerId, rtpCapabilities, paused: false } ) // todo - paused:true
       this._consumers.set( videoProducerId, videoConsumer )
-
-
 
       this._calcLayout()
     }
@@ -112,7 +104,7 @@ class Studio {
       }
     }
 
-    logger.info( '"_calcLayout()" - numCol:%d, numRow:%d', numCol, numRow )
+    logger.info( '"_calcLayout()" - numCol:%d, numRow:%d, layout:%o', numCol, numRow, this._layout )
   }
 }
 
