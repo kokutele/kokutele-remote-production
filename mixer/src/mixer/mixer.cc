@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<string.h>
+#include<time.h>
 #include<string>
 #include<regex>
 #include<iostream>
@@ -59,16 +60,26 @@ Channel *channel_new() {
 int mixer_set_rtmp( Mixer *mixer ) {
   GstElement *pipeline;
 
+  int delay = 300 * 1000 * 1000;
+
+  //  "  x264enc key-int-max=60 bframes=0 bitrate=4000 speed-preset=ultrafast tune=zerolatency ! \n"
   string script = 
-    "videotestsrc pattern=0 is-live=true ! video/x-raw,width=WIDTH,height=HEIGHT ! \n"
+    "videotestsrc pattern=2 is-live=true ! video/x-raw,width=WIDTH,height=HEIGHT ! \n"
     "  compositor name=comp\n"
     "  sink_0::xpos=0 sink_0::ypos=0 sink_0::width=WIDTH sink_0::height=HEIGHT sink_0::zorder=0\n"
     "  sink_1::xpos=0 sink_1::ypos=0 sink_1::width=WIDTH sink_1::height=HEIGHT sink_1::zorder=1 ! \n"
-    "  clockoverlay ! \n"
-    "  x264enc key-int-max=60 bframes=0 bitrate=4000 speed-preset=ultrafast tune=zerolatency ! \n"
-    "  flvmux name=mux ! \n"
-    "  rtmpsink location='RTMP_URL live=1' \n"
-    "audiomixer name=mix ! audioconvert ! audioresample ! audio/x-raw,rate=44100 ! voaacenc bitrate=64000 ! \n"
+    "  timeoverlay ! \n"
+    "  queue silent=true leaky=downstream min-threshold-time=DELAY max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! \n"
+    "  x264enc key-int-max=60 bitrate=4000 speed-preset=medium ! \n"
+    "  queue ! \n"
+    "  flvmux name=mux streamable=true ! \n"
+    "  queue ! \n"
+    "  rtmpsink location='RTMP_URL live=true' sync=false \n"
+    "audiomixer name=mix ! \n"
+    "  audioconvert ! audioresample ! audio/x-raw,rate=44100 ! \n" 
+    "  queue silent=true leaky=downstream min-threshold-time=DELAY max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! \n"
+    "  voaacenc bitrate=128000 ! \n"
+    "  queue ! \n"
     "  mux. \n"
     "audiotestsrc volume=0 is-live=true ! mix. \n"
     "interaudiosrc channel=mixed-audio ! queue ! mix. \n"
@@ -77,6 +88,7 @@ int mixer_set_rtmp( Mixer *mixer ) {
   
   script = regex_replace( script, regex("WIDTH"), to_string( mixer->width ) );
   script = regex_replace( script, regex("HEIGHT"), to_string( mixer->height ) );
+  script = regex_replace( script, regex("DELAY"), to_string( delay ) );
   script = regex_replace( script, regex("RTMP_URL"), mixer->url );
   
   cout << script << endl;
@@ -121,7 +133,7 @@ int mixer_set_compositor( Mixer *mixer ) {
   }
 
   // g_object_set( source, "pattern", 2, "is-live", TRUE, NULL );
-  g_object_set( source, "pattern", 0, "is-live", TRUE, NULL );
+  g_object_set( source, "pattern", 2, "is-live", TRUE, NULL );
 
   caps = gst_caps_new_simple( "video/x-raw", 
     "width", G_TYPE_INT, mixer->width, 
@@ -472,9 +484,9 @@ char *mixer_add_audiotestsrc( Mixer *mixer, double freq ) {
 }
 
 RtpSource *mixer_add_rtpsrc(
-  Mixer *mixer,
-  int video_rtp_port, int video_rtcp_port,
-  int audio_rtp_port, int audio_rtcp_port,
+  Mixer *mixer, const char *host,
+  int video_send_rtp_port, int video_send_rtcp_port, int video_recv_rtcp_port,
+  int audio_send_rtp_port, int audio_send_rtcp_port, int audio_recv_rtcp_port,
   int xpos, int ypos, int width, int height, int zorder
 ) {
   GstElement *pipeline;
@@ -483,10 +495,17 @@ RtpSource *mixer_add_rtpsrc(
   GstElement *udpsrc1;
   GstElement *udpsrc2; //, *rtpopusdepay, *opusdec, *interaudiosink;
   GstElement *udpsrc3;
+  GstElement *udpsink0;
+  GstElement *udpsink1;
+
   GstCaps *audiocaps, *videocaps;
   GList *list;
   Channel *audio_channel, *video_channel;
   RtpSource *rtp_source;
+  gchar *_host;
+
+  _host = ( gchar * )g_malloc( strlen( host ) + 1 );
+  strcpy( _host, host );
 
   list = g_list_find_custom( mixer->videochannels, NULL, (GCompareFunc)get_unused_channel );
   video_channel = (Channel *)list->data;
@@ -500,15 +519,19 @@ RtpSource *mixer_add_rtpsrc(
   udpsrc1 = gst_element_factory_make( "udpsrc", NULL );
   udpsrc2 = gst_element_factory_make( "udpsrc", NULL );
   udpsrc3 = gst_element_factory_make( "udpsrc", NULL); 
+  udpsink0 = gst_element_factory_make( "udpsink", NULL );
+  udpsink1 = gst_element_factory_make( "udpsink", NULL );
 
-  if( !pipeline || !rtpbin || !udpsrc0 || !udpsrc1 || !udpsrc2 || !udpsrc3 ) {
+  if( !pipeline || !rtpbin || !udpsrc0 || !udpsrc1 || !udpsrc2 || !udpsrc3 || !udpsink0 || !udpsink1 ) {
     g_printerr("Not all elements could be created.\n");
     return NULL;
   }
   rtp_source = (RtpSource *)g_malloc( sizeof( RtpSource ));
   memset( rtp_source, '\0', sizeof( RtpSource ));
+  rtp_source->id = (guint)time(NULL);
   rtp_source->pipeline = pipeline;
   rtp_source->rtpbin = rtpbin;
+  rtp_source->host = _host;
   rtp_source->video_channel = video_channel;
   rtp_source->audio_channel = audio_channel;
   rtp_source->xpos = xpos;
@@ -518,7 +541,7 @@ RtpSource *mixer_add_rtpsrc(
   rtp_source->zorder = zorder;
 
   mixer->rtp_sources = g_list_append( mixer->rtp_sources, rtp_source );
-  gst_bin_add_many( GST_BIN( pipeline ), udpsrc0, rtpbin, udpsrc1, udpsrc2, udpsrc3, NULL );
+  gst_bin_add_many( GST_BIN( pipeline ), udpsrc0, rtpbin, udpsrc1, udpsrc2, udpsrc3, udpsink0, udpsink1, NULL );
 
   videocaps = gst_caps_new_simple( "application/x-rtp",
     "media", G_TYPE_STRING, "video",
@@ -534,10 +557,12 @@ RtpSource *mixer_add_rtpsrc(
     NULL
   );
 
-  g_object_set( udpsrc0, "port", video_rtp_port, "caps", videocaps, NULL );
-  g_object_set( udpsrc1, "port", video_rtcp_port, NULL );
-  g_object_set( udpsrc2, "port", audio_rtp_port, "caps", audiocaps, NULL );
-  g_object_set( udpsrc3, "port", audio_rtcp_port, NULL );
+  g_object_set( udpsrc0, "port", video_send_rtp_port, "caps", videocaps, NULL );
+  g_object_set( udpsrc1, "port", video_send_rtcp_port, NULL );
+  g_object_set( udpsink0, "host", _host, "port", video_recv_rtcp_port, "sync", false, "async", false, NULL );
+  g_object_set( udpsrc2, "port", audio_send_rtp_port, "caps", audiocaps, NULL );
+  g_object_set( udpsrc3, "port", audio_send_rtcp_port, NULL );
+  g_object_set( udpsink1, "host", _host, "port", audio_recv_rtcp_port, "sync", false, "async", false, NULL );
 
   GstPad *udpsrc0_src_pad = gst_element_get_static_pad( udpsrc0, "src" );
   GstPad *rtpbin_video_recv_rtp_sink_pad = gst_element_request_pad_simple( rtpbin, "recv_rtp_sink_%u");
@@ -555,6 +580,14 @@ RtpSource *mixer_add_rtpsrc(
   }
   rtp_source->rtpbin_pads = g_list_append( rtp_source->rtpbin_pads, (gpointer) rtpbin_video_recv_rtcp_sink_pad );
 
+  GstPad *rtpbin_video_send_rtcp_src_pad = gst_element_request_pad_simple( rtpbin, "send_rtcp_src_%u" );
+  GstPad *udpsink0_sink_pad = gst_element_get_static_pad( udpsink0, "sink" );
+  if( gst_pad_link( rtpbin_video_send_rtcp_src_pad, udpsink0_sink_pad ) != GST_PAD_LINK_OK ) {
+    g_printerr("Could not link pads for send video rtcp - rtpbin_video_send_rtcp_src_pad & udpsink0_sink_pad.\n" );
+    return NULL;
+  }
+  rtp_source->rtpbin_pads = g_list_append( rtp_source->rtpbin_pads, (gpointer) rtpbin_video_send_rtcp_src_pad );
+
   GstPad *udpsrc2_src_pad = gst_element_get_static_pad( udpsrc2, "src");
   GstPad *rtpbin_audio_recv_rtp_sink_pad = gst_element_request_pad_simple( rtpbin, "recv_rtp_sink_%u" );
   if( gst_pad_link( udpsrc2_src_pad, rtpbin_audio_recv_rtp_sink_pad ) != GST_PAD_LINK_OK ) {
@@ -571,10 +604,20 @@ RtpSource *mixer_add_rtpsrc(
   }
   rtp_source->rtpbin_pads = g_list_append( rtp_source->rtpbin_pads, (gpointer) rtpbin_audio_recv_rtcp_sink_pad );
 
+  GstPad *rtpbin_audio_send_rtcp_src_pad = gst_element_request_pad_simple( rtpbin, "send_rtcp_src_%u" );
+  GstPad *udpsink1_sink_pad = gst_element_get_static_pad( udpsink1, "sink" );
+  if( gst_pad_link( rtpbin_audio_send_rtcp_src_pad, udpsink1_sink_pad ) != GST_PAD_LINK_OK ) {
+    g_printerr("Could not link pads for send video rtcp - rtpbin_audio_send_rtcp_src_pad & udpsink1_sink_pad.\n" );
+    return NULL;
+  }
+  rtp_source->rtpbin_pads = g_list_append( rtp_source->rtpbin_pads, (gpointer) rtpbin_audio_send_rtcp_src_pad );
+
   gst_object_unref( udpsrc0_src_pad );
   gst_object_unref( udpsrc1_src_pad );
   gst_object_unref( udpsrc2_src_pad );
   gst_object_unref( udpsrc3_src_pad );
+  gst_object_unref( udpsink0_sink_pad );
+  gst_object_unref( udpsink1_sink_pad );
 
   g_signal_connect( rtpbin, "pad-added", G_CALLBACK( pad_added_handler ), rtp_source );
 
@@ -723,7 +766,10 @@ int mixer_release_audiosrc( Mixer *mixer, char *name ) {
   return 0;
 }
 
-int mixer_release_rtpsrc( Mixer *mixer, char *video_channel_name, char *audio_channel_name ) {
+int mixer_release_rtpsrc( Mixer *mixer, guint id ) {
+  // - todo get rtp_src from Mixer by id
+  // release_rtpsrc( RtpSource rtp_src, NULL );
+  
   return 0;
 }
 
@@ -759,6 +805,28 @@ static void release_pad( GstPad *pad, GstElement *element ) {
 static void release_rtp_source( RtpSource *rtp_source, void *data ) {
   if( rtp_source->rtpbin_pads ) {
     g_list_foreach( rtp_source->rtpbin_pads, (GFunc)release_pad, rtp_source->rtpbin );
+  }
+
+  if( rtp_source->video_channel && rtp_source->video_channel->bus && GST_IS_BUS( rtp_source->video_channel->bus ) ) {
+    gst_object_unref( rtp_source->video_channel->bus );
+    rtp_source->video_channel->bus = NULL;
+  }
+ 
+  if( rtp_source->video_channel && rtp_source->video_channel->pipeline && GST_IS_PIPELINE( rtp_source->video_channel->pipeline ) ) {
+    gst_element_set_state( rtp_source->video_channel->pipeline, GST_STATE_NULL );
+    gst_object_unref( rtp_source->video_channel->pipeline );
+    rtp_source->video_channel->pipeline = NULL;
+  }
+
+  if( rtp_source->audio_channel && rtp_source->audio_channel->bus && GST_IS_BUS( rtp_source->audio_channel->bus ) ) {
+    gst_object_unref( rtp_source->audio_channel->bus );
+    rtp_source->audio_channel->bus = NULL;
+  }
+
+  if( rtp_source->audio_channel && rtp_source->audio_channel->pipeline && GST_IS_PIPELINE( rtp_source->audio_channel->pipeline ) ) {
+    gst_element_set_state( rtp_source->audio_channel->pipeline, GST_STATE_NULL );
+    gst_object_unref( rtp_source->audio_channel->pipeline );
+    rtp_source->audio_channel->pipeline = NULL;
   }
 }
 

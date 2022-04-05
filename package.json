@@ -8,7 +8,7 @@
     "start.debug": "DEBUG=* NODE_ENV=development node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build.docker": "docker build -t kokutele-studio .",
-    "start.docker": "docker run --rm -it --net=host -v $PWD:/work kokutele-studio /bin/bash"
+    "start.docker": "docker run --rm --name kokutele-studio -it --net=host -v $PWD:/work kokutele-studio /bin/bash"
   },
   "author": "kensaku komatsu (https://medium.com/kokutele)",
   "license": "MIT",

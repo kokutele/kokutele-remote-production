@@ -12,6 +12,8 @@ RUN apt-get update && \
     libunwind-dev \
     libdw-dev \
     git \
+    less \
+    netcat \
     python3-pip && \
   curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
   apt-get update && \

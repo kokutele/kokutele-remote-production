@@ -120,31 +120,37 @@ Napi::Value MediaMixer::AddRtpSrc( const Napi::CallbackInfo &info ) {
     return env.Null();
   }
 
-  if( !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsNumber() ||
-      !info[4].IsNumber() || !info[5].IsNumber() || !info[6].IsNumber() || !info[7].IsNumber() || !info[8].IsNumber() ){
+  if( !info[0].IsString() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsNumber() ||
+      !info[4].IsNumber() || !info[5].IsNumber() || !info[6].IsNumber() || !info[7].IsNumber() || 
+      !info[8].IsNumber() || !info[9].IsNumber() || !info[10].IsNumber() || !info[11].IsNumber() ){
     Napi::TypeError::New( env, "Wrong type of arguments." )
       .ThrowAsJavaScriptException();
     return env.Null();
   } 
 
-  int video_rtp_port = info[0].As<Napi::Number>().Int64Value();
-  int video_rtcp_port = info[1].As<Napi::Number>().Int64Value();
-  int audio_rtp_port = info[2].As<Napi::Number>().Int64Value();
-  int audio_rtcp_port = info[3].As<Napi::Number>().Int64Value();
-  int xpos = info[4].As<Napi::Number>().Int64Value();
-  int ypos = info[5].As<Napi::Number>().Int64Value();
-  int width = info[6].As<Napi::Number>().Int64Value();
-  int height = info[7].As<Napi::Number>().Int64Value();
-  int zorder = info[8].As<Napi::Number>().Int64Value();
+  std::string host         = info[0].As<Napi::String>().Utf8Value();
+  int video_send_rtp_port  = info[1].As<Napi::Number>().Int64Value();
+  int video_send_rtcp_port = info[2].As<Napi::Number>().Int64Value();
+  int video_recv_rtcp_port = info[3].As<Napi::Number>().Int64Value();
+  int audio_send_rtp_port  = info[4].As<Napi::Number>().Int64Value();
+  int audio_send_rtcp_port = info[5].As<Napi::Number>().Int64Value();
+  int audio_recv_rtcp_port = info[6].As<Napi::Number>().Int64Value();
+  int xpos                 = info[7].As<Napi::Number>().Int64Value();
+  int ypos                 = info[8].As<Napi::Number>().Int64Value();
+  int width                = info[9].As<Napi::Number>().Int64Value();
+  int height               = info[10].As<Napi::Number>().Int64Value();
+  int zorder               = info[11].As<Napi::Number>().Int64Value();
 
   RtpSource *rtp_source = mixer_add_rtpsrc( 
-    this->mixer_, 
-    video_rtp_port, video_rtcp_port, audio_rtp_port, audio_rtcp_port,
+    this->mixer_, host.c_str(),
+    video_send_rtp_port, video_send_rtcp_port, video_recv_rtcp_port,
+    audio_send_rtp_port, audio_send_rtcp_port, audio_recv_rtcp_port,
     xpos, ypos, width, height, zorder
   );
 
   if( rtp_source ) {
     Napi::Object obj = Napi::Object::New( env );
+    obj.Set( Napi::String::New( env, "id"),            Napi::Number::New( env, rtp_source->id ));
     obj.Set( Napi::String::New( env, "video_channel"), Napi::String::New( env, rtp_source->video_channel->name ));
     obj.Set( Napi::String::New( env, "audio_channel"), Napi::String::New( env, rtp_source->audio_channel->name ));
 

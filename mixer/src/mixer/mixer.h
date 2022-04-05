@@ -23,16 +23,17 @@ typedef struct Mixer {
   GList *videochannels;
   GList *audiochannels;
   GList *audiomixer_pads;
-  GList *interaudio_names;
   GList *srcaudio_pipelines;
   GList *rtp_sources;
 } Mixer;
 
 typedef struct RtpSource {
+  guint id;
   GstElement *pipeline;
   GstElement *rtpbin;
   Channel *video_channel;
   Channel *audio_channel;
+  gchar *host;
   GList *rtpbin_pads;
   gint xpos;
   gint ypos;
@@ -51,8 +52,9 @@ char* mixer_add_videotestsrc( Mixer *mixer, int pattern, int xpos, int ypos, int
 char* mixer_add_audiotestsrc( Mixer *mixer, double freq );
 RtpSource *mixer_add_rtpsrc( 
   Mixer *mixer,
-  int video_rtp_port, int video_rtcp_port,
-  int audio_rtp_port, int audio_rtcp_port,
+  const char *host,
+  int video_send_rtp_port, int video_send_rtcp_port, int video_recv_rtcp_port,
+  int audio_send_rtp_port, int audio_send_rtcp_port, int audio_recv_rtcp_port,
   int xpos, int ypos, int width, int height, int zorder
 );
 int mixer_change_position( Mixer *mixer, char *name, int xpos, int ypos, int width, int height );

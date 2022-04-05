@@ -16,25 +16,28 @@ let timer;
 
 const start = async () => {
   await sleep( 1000 )
+  
   const pipeline = startRtpPipeline({
     host: '127.0.0.1',
-    video_rtp_port: 5000,
-    video_rtcp_port: 5001,
-    audio_rtp_port: 5002,
-    audio_rtcp_port: 5003,
-    pattern: 18,
-    freq: 1000
+    video_send_rtp_port : 5000,
+    video_send_rtcp_port: 5001,
+    video_recv_rtcp_port: 5002,
+    audio_send_rtp_port : 5003,
+    audio_send_rtcp_port: 5004,
+    audio_recv_rtcp_port: 5005,
+    pattern: 0,
+    freq: 500
   })
 
   {
-    const names = mediaMixer.addRtpSrc( 5000, 5001, 5002, 5003, 300, 200, 320, 240, 2 );
+    const names = mediaMixer.addRtpSrc( '127.0.0.1', 5000, 5001, 5002, 5003, 5004, 5005, 300, 200, 320, 240, 2 );
     if( names ) {
       console.log( `addRtpSrc - ${names.video_channel}, ${names.audio_channel}` )
     } else {
       console.warn( 'addRtpSrc failed.')
     }
     await sleep( 500 )
-    for( let c = 0; c < 1000; c += 1 ) {
+    for( let c = 0; c < 500; c += 1 ) {
       const xpos = Math.floor( 200 + Math.sin( Math.PI * c * 0.05 ) * 30 );
       mediaMixer.changePosition( names.video_channel, xpos, 200, 320, 240 );
       await sleep( 30 );
@@ -48,7 +51,7 @@ const start = async () => {
     const name = mediaMixer.addTestVideoSrc( 18, 1, 1, 320, 240, 3 )
     console.log( `addTestVideoSrc - ${name}`)
 
-    for( let c = 0; c < 1000; c += 1 ) {
+    for( let c = 0; c < 500; c += 1 ) {
       const ypos = Math.floor( 100 + Math.sin( Math.PI * c * 0.05 ) * 30 )
       mediaMixer.changePosition( name, 100, ypos, 320, 240 )
       await sleep( 30 )
