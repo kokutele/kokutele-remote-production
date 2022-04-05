@@ -30,28 +30,33 @@ const start = async () => {
   })
 
   {
-    const names = mediaMixer.addRtpSrc( '127.0.0.1', 5000, 5001, 5002, 5003, 5004, 5005, 300, 200, 320, 240, 2 );
-    if( names ) {
-      console.log( `addRtpSrc - ${names.video_channel}, ${names.audio_channel}` )
+    const rtpSrc = mediaMixer.addRtpSrc( '127.0.0.1', 5000, 5001, 5002, 5003, 5004, 5005, 300, 200, 320, 240, 2 );
+    if( rtpSrc ) {
+      console.log( 'rtpSrc:%o', rtpSrc )
+      console.log( `addRtpSrc - ${rtpSrc.id} ${rtpSrc.video_channel_name}, ${rtpSrc.audio_channel_name}` )
     } else {
       console.warn( 'addRtpSrc failed.')
     }
     await sleep( 500 )
-    for( let c = 0; c < 500; c += 1 ) {
+    for( let c = 0; c < 250; c += 1 ) {
       const xpos = Math.floor( 200 + Math.sin( Math.PI * c * 0.05 ) * 30 );
-      mediaMixer.changePosition( names.video_channel, xpos, 200, 320, 240 );
+      mediaMixer.changePosition( rtpSrc.video_channel_name, xpos, 200, 320, 240 );
       await sleep( 30 );
     }
-  }
 
-  await sleep( 1000 )
+    await sleep( 1000 )
+    mediaMixer.releaseRtpSrc( rtpSrc.id )
+  }
+  const rtpSrc2 = mediaMixer.addRtpSrc( '127.0.0.1', 5000, 5001, 5002, 5003, 5004, 5005, 320, 240, 320, 240, 2 );
+
+
 
   {
     const pattern = 18 // ball
     const name = mediaMixer.addTestVideoSrc( 18, 1, 1, 320, 240, 3 )
     console.log( `addTestVideoSrc - ${name}`)
 
-    for( let c = 0; c < 500; c += 1 ) {
+    for( let c = 0; c < 250; c += 1 ) {
       const ypos = Math.floor( 100 + Math.sin( Math.PI * c * 0.05 ) * 30 )
       mediaMixer.changePosition( name, 100, ypos, 320, 240 )
       await sleep( 30 )
@@ -66,7 +71,7 @@ const start = async () => {
     const name = mediaMixer.addTestAudioSrc( freq )
     console.log( `addTestAudioSrc - ${name}`)
 
-    await sleep( 3000 )
+    await sleep( 5000 )
     mediaMixer.releaseAudioSrc( name )
   }
 

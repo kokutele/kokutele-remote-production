@@ -727,11 +727,14 @@ int mixer_release_videosrc( Mixer *mixer, char *name ) {
     g_object_set( channel->mixer_pad, "zorder", 0, NULL );
 
     // release bus
-    gst_object_unref( channel->bus );
-    channel->bus = NULL;
+    if( channel-> bus && GST_IS_BUS( channel->bus ) ) {
+      gst_object_unref( channel->bus );
+      channel->bus = NULL;
+    }
 
     // release pipeline
-    if( GST_IS_PIPELINE( channel->pipeline )) {
+    if( channel->pipeline && GST_IS_PIPELINE( channel->pipeline )) {
+      g_print("`mixer_release_videosrc` release pipeline:%s.\n", name );
       gst_element_set_state( channel->pipeline, GST_STATE_NULL );
       gst_object_unref( channel->pipeline );
     }
@@ -752,11 +755,14 @@ int mixer_release_audiosrc( Mixer *mixer, char *name ) {
     g_object_set( channel->mixer_pad, "mute", TRUE, NULL );
 
     // release bus
-    gst_object_unref( channel->bus );
-    channel->bus = NULL;
+    if( channel->bus && GST_IS_BUS( channel->bus ) ) {
+      gst_object_unref( channel->bus );
+      channel->bus = NULL;
+    }
 
     // release pippeline
-    if( GST_IS_PIPELINE( channel->pipeline )) {
+    if( channel->pipeline && GST_IS_PIPELINE( channel->pipeline )) {
+      g_print("`mixer_release_audiosrc` release pipeline:%s.\n", name );
       gst_element_set_state( channel->pipeline, GST_STATE_NULL );
       gst_object_unref( channel->pipeline );
     }
@@ -766,9 +772,36 @@ int mixer_release_audiosrc( Mixer *mixer, char *name ) {
   return 0;
 }
 
+static int find_rtp_src_by_id( RtpSource *rtp_source, guint *id ) {
+  if( rtp_source->id == *id ) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
 int mixer_release_rtpsrc( Mixer *mixer, guint id ) {
-  // - todo get rtp_src from Mixer by id
-  // release_rtpsrc( RtpSource rtp_src, NULL );
+  GList *list;
+  RtpSource *rtp_source;
+
+  g_print("`mixer_release_rtpsrc()` - id:%u\n", id );
+  list = g_list_find_custom( mixer->rtp_sources, &id, (GCompareFunc)find_rtp_src_by_id );
+
+  if( list ) {
+    rtp_source = ( RtpSource *)list->data;
+
+    g_print("`mixer_release_rtpsrc()` found - id:%u, video_channel_name:%s, audio_channel_name:%s.\n", 
+      rtp_source->id, rtp_source->video_channel->name, rtp_source->audio_channel->name 
+    );
+    mixer_release_videosrc( mixer, rtp_source->video_channel->name );
+    mixer_release_audiosrc( mixer, rtp_source->audio_channel->name );
+
+    mixer->rtp_sources = g_list_remove( mixer->rtp_sources, rtp_source );
+
+    release_rtp_source( rtp_source, NULL );
+
+    g_print("`mixer_release_rtpsrc()` rtp_src removed. length of rtp_sources:%d.\n", g_list_length( mixer->rtp_sources ));
+  }
   
   return 0;
 }
@@ -798,8 +831,10 @@ void mixer_resume( Mixer *mixer ) {
 }
 
 static void release_pad( GstPad *pad, GstElement *element ) {
-  gst_element_release_request_pad( element, pad );
-  gst_object_unref( pad );
+  if( GST_IS_ELEMENT( element ) && GST_IS_PAD( pad ) ) {
+    gst_element_release_request_pad( element, pad );
+    gst_object_unref( pad );
+  }
 }
 
 static void release_rtp_source( RtpSource *rtp_source, void *data ) {
@@ -828,6 +863,8 @@ static void release_rtp_source( RtpSource *rtp_source, void *data ) {
     gst_object_unref( rtp_source->audio_channel->pipeline );
     rtp_source->audio_channel->pipeline = NULL;
   }
+
+  g_free( rtp_source );
 }
 
 static void release_channel( Channel *channel, GstElement *element ) {

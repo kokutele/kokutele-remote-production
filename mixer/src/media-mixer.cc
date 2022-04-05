@@ -12,9 +12,10 @@ Napi::Object MediaMixer::Init( Napi::Env env, Napi::Object exports ) {
         InstanceMethod( "addTestVideoSrc", &MediaMixer::AddTestVideoSrc ),
         InstanceMethod( "addTestAudioSrc", &MediaMixer::AddTestAudioSrc ),
         InstanceMethod( "addRtpSrc",       &MediaMixer::AddRtpSrc ),
-        InstanceMethod( "changePosition", &MediaMixer::ChangePosition ),
+        InstanceMethod( "changePosition",  &MediaMixer::ChangePosition ),
         InstanceMethod( "releaseVideoSrc", &MediaMixer::ReleaseVideoSrc ),
         InstanceMethod( "releaseAudioSrc", &MediaMixer::ReleaseAudioSrc ),
+        InstanceMethod( "releaseRtpSrc",   &MediaMixer::ReleaseRtpSrc ),
         InstanceMethod( "terminate", &MediaMixer::Terminate ),
       }
     );
@@ -151,8 +152,8 @@ Napi::Value MediaMixer::AddRtpSrc( const Napi::CallbackInfo &info ) {
   if( rtp_source ) {
     Napi::Object obj = Napi::Object::New( env );
     obj.Set( Napi::String::New( env, "id"),            Napi::Number::New( env, rtp_source->id ));
-    obj.Set( Napi::String::New( env, "video_channel"), Napi::String::New( env, rtp_source->video_channel->name ));
-    obj.Set( Napi::String::New( env, "audio_channel"), Napi::String::New( env, rtp_source->audio_channel->name ));
+    obj.Set( Napi::String::New( env, "video_channel_name"), Napi::String::New( env, rtp_source->video_channel->name ));
+    obj.Set( Napi::String::New( env, "audio_channel_name"), Napi::String::New( env, rtp_source->audio_channel->name ));
 
     return obj;
   } else {
@@ -222,6 +223,28 @@ Napi::Value MediaMixer::ReleaseAudioSrc( const Napi::CallbackInfo& info ) {
   std::string name = info[0].As<Napi::String>().Utf8Value();
 
   mixer_release_audiosrc( this->mixer_, (char *)name.c_str() );
+
+  return Napi::Number::New( env, 0 );
+}
+
+Napi::Value MediaMixer::ReleaseRtpSrc( const Napi::CallbackInfo& info ) {
+  Napi::Env env = info.Env();
+
+  if( info.Length() < 1 ) {
+    Napi::TypeError::New( env, "Wrong number of arguments." )
+      .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  if( !info[0].IsNumber() ) {
+    Napi::TypeError::New( env, "Wrong arguments." )
+      .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  guint id = info[0].As<Napi::Number>().Int64Value();
+
+  mixer_release_rtpsrc( this->mixer_, id );
 
   return Napi::Number::New( env, 0 );
 }

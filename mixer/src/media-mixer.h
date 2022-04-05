@@ -17,6 +17,7 @@ class MediaMixer : public Napi::ObjectWrap<MediaMixer> {
     Napi::Value ChangePosition( const Napi::CallbackInfo& info );
     Napi::Value ReleaseVideoSrc( const Napi::CallbackInfo& info );
     Napi::Value ReleaseAudioSrc( const Napi::CallbackInfo& info );
+    Napi::Value ReleaseRtpSrc( const Napi::CallbackInfo& info );
     Napi::Value Terminate( const Napi::CallbackInfo& info );
 
     Mixer *mixer_;

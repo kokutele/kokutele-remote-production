@@ -60,7 +60,7 @@ RtpSource *mixer_add_rtpsrc(
 int mixer_change_position( Mixer *mixer, char *name, int xpos, int ypos, int width, int height );
 int mixer_release_videosrc( Mixer *mixer, char *name );
 int mixer_release_audiosrc( Mixer *mixer, char *name );
-int mixer_release_rtpsrc( Mixer*mixer, char *video_channel_name, char *audio_channel_name );
+int mixer_release_rtpsrc( Mixer*mixer, guint id );
 
 int  mixer_start( Mixer *mixer );
 void mixer_pause( Mixer *mixer );
