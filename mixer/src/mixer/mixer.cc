@@ -507,6 +507,11 @@ RtpSource *mixer_add_rtpsrc(
   _host = ( gchar * )g_malloc( strlen( host ) + 1 );
   strcpy( _host, host );
 
+  g_print( "`mixer_add_rtpsrc` - host:%s.\n", _host );
+  g_print( "  video - send_rtp_port:%d, send_rtcp_port:%d, recv_rtcp_port:%d.\n", video_send_rtp_port, video_send_rtcp_port, video_recv_rtcp_port  );
+  g_print( "  audio - send_rtp_port:%d, send_rtcp_port:%d, recv_rtcp_port:%d.\n", audio_send_rtp_port, audio_send_rtcp_port, audio_recv_rtcp_port  );
+  g_print( "  xpos:%d, ypos:%d, width:%d, height:%d, zorder:%d.\n", xpos, ypos, width, height, zorder );
+
   list = g_list_find_custom( mixer->videochannels, NULL, (GCompareFunc)get_unused_channel );
   video_channel = (Channel *)list->data;
 
@@ -557,12 +562,12 @@ RtpSource *mixer_add_rtpsrc(
     NULL
   );
 
-  g_object_set( udpsrc0, "port", video_send_rtp_port, "caps", videocaps, NULL );
-  g_object_set( udpsrc1, "port", video_send_rtcp_port, NULL );
-  g_object_set( udpsink0, "host", _host, "port", video_recv_rtcp_port, "sync", false, "async", false, NULL );
-  g_object_set( udpsrc2, "port", audio_send_rtp_port, "caps", audiocaps, NULL );
-  g_object_set( udpsrc3, "port", audio_send_rtcp_port, NULL );
-  g_object_set( udpsink1, "host", _host, "port", audio_recv_rtcp_port, "sync", false, "async", false, NULL );
+  g_object_set( udpsrc0, "port", video_send_rtp_port, "reuse", FALSE, "caps", videocaps, NULL );
+  g_object_set( udpsrc1, "port", video_send_rtcp_port, "reuse", FALSE, NULL );
+  g_object_set( udpsink0, "host", _host, "port", video_recv_rtcp_port, "sync", FALSE, "async", FALSE, NULL );
+  g_object_set( udpsrc2, "port", audio_send_rtp_port, "reuse", FALSE, "caps", audiocaps, NULL );
+  g_object_set( udpsrc3, "port", audio_send_rtcp_port, "reuse", FALSE, NULL );
+  g_object_set( udpsink1, "host", _host, "port", audio_recv_rtcp_port, "sync", FALSE, "async", FALSE, NULL );
 
   GstPad *udpsrc0_src_pad = gst_element_get_static_pad( udpsrc0, "src" );
   GstPad *rtpbin_video_recv_rtp_sink_pad = gst_element_request_pad_simple( rtpbin, "recv_rtp_sink_%u");

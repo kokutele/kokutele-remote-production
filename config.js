@@ -119,5 +119,12 @@ module.exports = {
       },
       maxSctpMessageSize : 262_144
     }
+  },
+  studio: {
+    width: process.env.STUDIO_WIDTH ? Math.trunc( process.env.STUDIO_WIDTH ) : 1280,
+    height: process.env.STUDIO_HEIGHT ? Math.trunc( process.env.STUDIO_HEIGHT ) : 720,
+    useMixer: false, // When this flag is true, you need to change `{ gypfile: true }` in package.json
+    rtmpUrl: process.env.STUDIO_RTMP_URL || 'rtmp://localhost/live/test'
   }
+
 };

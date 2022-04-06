@@ -1,3 +1,5 @@
+const MediaMixer = require('../../mixer')
+
 const  Logger = require('../logger')
 const config = require('../../config')
 
@@ -6,8 +8,13 @@ const logger = new Logger('studio')
 class Studio {
   constructor( props ) {
     this._mediasoupRouter = props.mediasoupRouter
-    this._height = props.height || 1080
-    this._width  = props.width  || 1920
+    this._height = props.height
+    this._width  = props.width 
+    this._rtmpUrl = props.rtmpUrl
+    this._useMixer = props.useMixer
+
+    this._mixer = this._useMixer ? new MediaMixer( this._width, this._height, this._rtmpUrl ) : null
+    logger.info('mixer instanceated. width:%d, height:%d, rtmpUrl: %s', this._width, this._height, this._rtmpUrl )
 
     this._plainTransports = new Map()
     this._consumers = new Map()
@@ -27,6 +34,15 @@ class Studio {
     return this._layout
   }
 
+  start() {
+    if( this._mixer ) {
+      this._mixer.start()
+      // for debugging purpose.
+      const name = this._mixer.addTestVideoSrc( 18, 1, 1, 320, 240, 3 )
+      const name2 = this._mixer.addTestVideoSrc( 0, 320, 240, 320, 240, 3 )
+    }
+  }
+
   async addMedia({ peerId, videoHeight, videoWidth, audioProducerId, videoProducerId }) {
     let isExist = !!this._layout.find( item => (
       item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId
@@ -35,30 +51,51 @@ class Studio {
     if( !isExist ) {
       this._layout = [ ...this._layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
 
-      const audioTransport = await this._mediasoupRouter.createPlainTransport({
-        listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
-        rtcpMux: false
-      })
-      await audioTransport.connect({ ip:'127.0.0.1', port: 5000, rtcpPort: 5001 })
-      this._plainTransports.set( audioProducerId, audioTransport )
+      if( this._useMixer ) {
+        const videoTransport = await this._mediasoupRouter.createPlainTransport({
+          listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
+          comedia: false,
+          rtcpMux: false
+        })
+        await videoTransport.connect({ ip:'127.0.0.1', port: 5000, rtcpPort: 5001 })
+        this._plainTransports.set( videoProducerId, videoTransport )
 
-      logger.info( 'audioTransport.tuple:%o', audioTransport.tuple )
-      logger.info( 'audioTransport.rtcpTuple:%o', audioTransport.rtcpTuple )
-      const videoTransport = await this._mediasoupRouter.createPlainTransport({
-        listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
-        rtcpMux: false
-      })
-      await videoTransport.connect({ ip:'127.0.0.1', port: 5002, rtcpPort: 5003 })
-      this._plainTransports.set( videoProducerId, videoTransport )
+        logger.info( 'videoTransport.tuple:%o', videoTransport.tuple )
+        logger.info( 'videoTransport.rtcpTuple:%o', videoTransport.rtcpTuple )
+ 
 
-      logger.info( 'videoTransport.tuple:%o', videoTransport.tuple )
-      logger.info( 'videoTransport.rtcpTuple:%o', videoTransport.rtcpTuple )
-      const rtpCapabilities = this._mediasoupRouter.rtpCapabilities
+        const audioTransport = await this._mediasoupRouter.createPlainTransport({
+          listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
+          comedia: false,
+          rtcpMux: false
+        })
+        await audioTransport.connect({ ip:'127.0.0.1', port: 5002, rtcpPort: 5003 })
+        this._plainTransports.set( audioProducerId, audioTransport )
 
-      const audioConsumer = await audioTransport.consume( { producerId: audioProducerId, rtpCapabilities, paused: false } ) // todo - paused:true
-      this._consumers.set( audioProducerId, audioConsumer )
-      const videoConsumer = await videoTransport.consume( { producerId: videoProducerId, rtpCapabilities, paused: false } ) // todo - paused:true
-      this._consumers.set( videoProducerId, videoConsumer )
+        logger.info( 'audioTransport.tuple:%o', audioTransport.tuple )
+        logger.info( 'audioTransport.rtcpTuple:%o', audioTransport.rtcpTuple )
+
+
+        const rtpCapabilities = this._mediasoupRouter.rtpCapabilities
+
+        const videoConsumer = await videoTransport.consume( { producerId: videoProducerId, rtpCapabilities, paused: true } ) // todo - paused:true
+        this._consumers.set( videoProducerId, videoConsumer )
+        const audioConsumer = await audioTransport.consume( { producerId: audioProducerId, rtpCapabilities, paused: true } ) // todo - paused:true
+        this._consumers.set( audioProducerId, audioConsumer )
+
+        const rtpSrc = this._mixer.addRtpSrc( 
+          '127.0.0.1', 
+          5000, 5001, videoTransport.rtcpTuple.localPort, 
+          5002, 5003, audioTransport.rtcpTuple.localPort, 
+          0, 0, videoWidth, videoHeight, 2 
+        );
+
+        // sleep for 1 sec.
+        await new Promise( r => setTimeout( r, 1000 ))
+
+        await videoConsumer.resume()
+        await audioConsumer.resume()
+      }
 
       this._calcLayout()
     }

@@ -24,9 +24,13 @@ class Room extends EventEmitter {
       interval  : 800
     })
 
-    return new this( {
+    const room = new this( {
       roomId, protooRoom, mediasoupRouter, audioLevelObserver
     })
+
+    room.startStudio()
+
+    return room
   }
 
   constructor( { roomId, protooRoom, mediasoupRouter, audioLevelObserver }) {
@@ -45,9 +49,15 @@ class Room extends EventEmitter {
 
     this._networkThrottled = false
 
-    this._studio = new Studio( { mediasoupRouter, height: 1080, width: 1920 })
+    this._studio = new Studio( { mediasoupRouter, ...config.studio  })
 
     this._handleAudioLevelObserver()
+  }
+
+  startStudio() {
+    if( this._studio ) {
+      this._studio.start()
+    }
   }
 
   close() {

@@ -41,16 +41,15 @@ CFLAGS_CC_Debug := \
 	-std=gnu++14
 
 INCS_Debug := \
-	-I/tmp/.node-gyp/16.14.2/include/node \
-	-I/tmp/.node-gyp/16.14.2/src \
-	-I/tmp/.node-gyp/16.14.2/deps/openssl/config \
-	-I/tmp/.node-gyp/16.14.2/deps/openssl/openssl/include \
-	-I/tmp/.node-gyp/16.14.2/deps/uv/include \
-	-I/tmp/.node-gyp/16.14.2/deps/zlib \
-	-I/tmp/.node-gyp/16.14.2/deps/v8/include \
-	-I/work/node_modules/node-addon-api \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/include/node \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/src \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/openssl/config \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/openssl/openssl/include \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/uv/include \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/zlib \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/v8/include \
+	-I/home/komasshu/kokutele/kokutele-remote-production/node_modules/node-addon-api \
 	-I/usr/include/gstreamer-1.0 \
-	-I/usr/include/x86_64-linux-gnu \
 	-I/usr/include/glib-2.0 \
 	-I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 
@@ -90,16 +89,15 @@ CFLAGS_CC_Release := \
 	-std=gnu++14
 
 INCS_Release := \
-	-I/tmp/.node-gyp/16.14.2/include/node \
-	-I/tmp/.node-gyp/16.14.2/src \
-	-I/tmp/.node-gyp/16.14.2/deps/openssl/config \
-	-I/tmp/.node-gyp/16.14.2/deps/openssl/openssl/include \
-	-I/tmp/.node-gyp/16.14.2/deps/uv/include \
-	-I/tmp/.node-gyp/16.14.2/deps/zlib \
-	-I/tmp/.node-gyp/16.14.2/deps/v8/include \
-	-I/work/node_modules/node-addon-api \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/include/node \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/src \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/openssl/config \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/openssl/openssl/include \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/uv/include \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/zlib \
+	-I/home/komasshu/.cache/node-gyp/16.14.0/deps/v8/include \
+	-I/home/komasshu/kokutele/kokutele-remote-production/node_modules/node-addon-api \
 	-I/usr/include/gstreamer-1.0 \
-	-I/usr/include/x86_64-linux-gnu \
 	-I/usr/include/glib-2.0 \
 	-I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 

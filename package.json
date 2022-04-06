@@ -22,7 +22,7 @@
     "node-addon-api": "^4.3.0",
     "protoo-server": "^4.0.6"
   },
-  "gypfile": true,
+  "gypfile": false,
   "devDependencies": {
     "gstreamer-superficial": "^1.7.4"
   }
