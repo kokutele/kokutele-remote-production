@@ -142,14 +142,20 @@ export const useAppContext = () => {
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
     logger.debug( 'joinRoom - audioProducer:%o', appData.roomClient.audioProducer )
     logger.debug( 'joinRoom - videoProducer:%o', appData.roomClient.videoProducer )
-    dispatch( { 
-      type: 'SET_MY_AUDIO_PRODUCER_ID', 
-      value: appData.roomClient.audioProducer.id}
-    )
-    dispatch( { 
-      type: 'SET_MY_VIDEO_PRODUCER_ID', 
-      value: appData.roomClient.videoProducer.id}
-    )
+
+    if( appData.roomClient.audioProducer) {
+      dispatch( { 
+        type: 'SET_MY_AUDIO_PRODUCER_ID', 
+        value: appData.roomClient.audioProducer.id}
+      )
+    }
+
+    if( appData.roomClient.videoProducer ) {
+      dispatch( { 
+        type: 'SET_MY_VIDEO_PRODUCER_ID', 
+        value: appData.roomClient.videoProducer.id}
+      )
+    }
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
   }

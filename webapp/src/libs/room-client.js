@@ -566,8 +566,8 @@ export default class RoomClient extends EventEmitter {
       ////////////////////////////////////////////////////////////
       // Create producer for audio
       ////////////////////////////////////////////////////////////
-      if( !this._mediasoupDevice.canProduce('audio') ) {
-        logger.error('cannot produce audio:%o', this._mediasoupDevice )
+      if( !this._stream || !this._mediasoupDevice.canProduce('audio') ) {
+        logger.warn('cannot produce audio:%o', this._mediasoupDevice )
       } else {
         let track
         try {
@@ -608,8 +608,8 @@ export default class RoomClient extends EventEmitter {
       ////////////////////////////////////////////////////////////
       // Create producer for audio
       ////////////////////////////////////////////////////////////
-      if( !this._mediasoupDevice.canProduce('video') ) {
-        logger.error( 'cannot produce video:%o', this._mediasoupDevice )
+      if( !this._stream || !this._mediasoupDevice.canProduce('video') ) {
+        logger.warn( 'cannot produce video:%o', this._mediasoupDevice )
       } else {
         let track
 

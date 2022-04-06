@@ -40,15 +40,21 @@ export default function Room( props ) {
           <Button type="primary" onClick={ handleStart }>start</Button>
         </div>
       )}
-      <Studio />
-      <Sources />
+      <div className='studio-container'>
+        <Studio style={{ maxHeight: "70vh"}} />
+      </div>
+      <div className='container'>
+        <Sources />
+      </div>
       
+      { process.env.NODE_ENV === 'development' && (
       <div className='debug'>
         <strong>debug window</strong>
         <pre>
           {JSON.stringify( state, null, 2 )}
         </pre>
       </div>
+      )}
     </div>
   )
 }

@@ -7,10 +7,17 @@ https://www.schemecolor.com/christmas-songs.php
 
 .container {
   margin: 0 auto;
-  max-width: 1440px;
+  max-width: 1280px;
   font-family: "Gill Sans", sans-serif;
   padding: 2px 3px;
 }
+
+.studio-container {
+  margin: 0 auto;
+  font-family: "Gill Sans", sans-serif;
+}
+
+
 
 .App .Header {
   height: 50px;
@@ -28,7 +35,7 @@ https://www.schemecolor.com/christmas-songs.php
   background: #034F1B;
 }
 
-.App .debug {
+.debug {
   background: rgba( 30, 30, 30, 0.75 );
   color: #0f0;
   font-size: 0.75em;

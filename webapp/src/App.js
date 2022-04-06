@@ -5,11 +5,18 @@ import { reducer, initialState } from './libs/reducer'
 import Header from './layouts/header';
 import Main   from './layouts/main';
 import Footer from './layouts/footer';
+import StudioViewer from './layouts/studio-viewer';
+
+import Logger from './libs/logger';
+
 import './App.css';
+
+const logger = new Logger('App')
 
 const appData = {
   myStream: null,
-  roomClient: {} 
+  roomClient: {},
+  studioViewer: new window.URLSearchParams( window.location.search ).get( 'studioViewer' ) === 'true'
 }
 
 export const AppContext = createContext()
@@ -19,11 +26,15 @@ function App() {
   const [ state, dispatch ] = useReducer( reducer, initialState )
   return (
     <AppContext.Provider value={{ appData, state, dispatch }}>
+      { !appData.studioViewer ? (
       <div className="App">
         <Header />
         <Main />
         <Footer />
       </div>
+      ):(
+        <StudioViewer />
+      )}
     </AppContext.Provider>
   );
 }

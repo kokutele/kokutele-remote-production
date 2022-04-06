@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import './studio.css'
@@ -7,11 +7,14 @@ const logger = new Logger('studio')
 
 export default function Studio( props ) {
   const { getStudioLayout, getStudioSize, state, appData } = useAppContext()
+  const { playAudio } = props
   const _canvasEl = useRef()
   const _ctx = useRef()
   const _videoEls = useRef( new Map() )
+  const _audioEls = useRef( new Map() )
 
   useEffect( () => {
+    logger.debug( state.status )
     if( state.status === 'READY' ) {
       _ctx.current = _canvasEl.current.getContext('2d')
       getStudioSize()
@@ -29,6 +32,12 @@ export default function Studio( props ) {
     for( const videoProducerId of _videoEls.current.keys() ) {
       if( !state.studio.layout.find( item => item.videoProducerId === videoProducerId ) ) {
         _videoEls.current.delete( videoProducerId )
+      }
+    }
+
+    for( const audioProducerId of _audioEls.current.keys() ) {
+      if( !state.studio.layout.find( item => item.audioProducerId === audioProducerId ) ) {
+        _audioEls.current.delete( audioProducerId )
       }
     }
 
@@ -51,7 +60,7 @@ export default function Studio( props ) {
 
         const videoEl = document.createElement( 'video' )
         videoEl.srcObject = stream
-        videoEl.muted = true
+        videoEl.muted = !playAudio
 
         videoEl.onloadedmetadata = async () => {
           await videoEl.play()
@@ -59,8 +68,36 @@ export default function Studio( props ) {
 
         _videoEls.current.set( item.videoProducerId, videoEl )
       }
+    
+      if( playAudio ) {
+        if( !_audioEls.current.has( item.audioProducerId ) ) {
+          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
+
+          let stream
+          if( item.audioProducerId !== state.audioProducerId ) {
+            if( !consumer ) {
+              logger.warn('no consumer found for %s', item.audioProducerId )
+              return
+            } else {
+              const track = consumer.track
+              stream = new MediaStream( [ track ] )
+            }
+          }
+
+          const audioEl = document.createElement( 'audio' )
+          audioEl.srcObject = stream
+          audioEl.muted = false
+
+          audioEl.onloadedmetadata = async () => {
+            logger.debug('audio played')
+            await audioEl.play()
+          }
+
+          _audioEls.current.set( item.audioProducerId, audioEl )
+        }
+      }
     })
-  }, [ state.studio.layout, state.videoProducerId, appData ])
+  }, [ playAudio, state.studio.layout, state.videoProducerId, state.peers, appData ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 
@@ -83,22 +120,24 @@ export default function Studio( props ) {
     render()
 
     return function cleanup(){
-      if( reqId ) {
-        cancelAnimationFrame( reqId )
-      }
+      if( reqId ) cancelAnimationFrame( reqId )
+      reqId = null
     }
   }, [ state.status, state.studio.layout, state.studio.height, state.studio.width ])
 
   return (
     <div className="Studio">
-      <canvas ref={ _canvasEl }></canvas>
+      <div className="wrapper" style={ props.style }>
+        <canvas ref={ _canvasEl }></canvas>
+        hoge
       {/*
       <div className='debug-studio'>
         <pre>
           {JSON.stringify( state.studio, null, 2 )}
         </pre>
       </div>
-    */}
+      */}
+      </div>
     </div>
   )
 }

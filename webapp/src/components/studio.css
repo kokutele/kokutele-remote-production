@@ -1,18 +1,21 @@
 .Studio {
+  overflow: hidden;
+}
+
+.Studio .wrapper {
   aspect-ratio: calc(16 / 9);
   background: #000;
   position:relative;
-  margin: 3px 0;
-  width: calc( 100vw - 6px );
+  margin: 0 auto;
 }
 
-.Studio canvas {
+.Studio .wrapper canvas {
   height: 100%;
   position: absolute;
-  width: 100%;
+  aspect-ratio: calc( 16 / 9 );
 }
 
-.Studio .debug-studio {
+.Studio .wrapper .debug-studio {
   background: rgba( 0, 0, 0, 0.5 );
   bottom: 0;
   color: cyan;

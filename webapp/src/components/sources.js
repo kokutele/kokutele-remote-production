@@ -23,7 +23,7 @@ export default function Sources() {
 
   return(
     <div className="Sources">
-      { sources.map( ( source, idx ) => (
+      { sources.filter( item => item.displayName !== 'studio-viewer' ).map( ( source, idx ) => (
         <SourceVideo key={idx} { ...source }/>
       ))}
     </div>
