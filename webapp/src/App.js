@@ -7,11 +7,7 @@ import Main   from './layouts/main';
 import Footer from './layouts/footer';
 import StudioViewer from './layouts/studio-viewer';
 
-import Logger from './libs/logger';
-
 import './App.css';
-
-const logger = new Logger('App')
 
 const appData = {
   myStream: null,

@@ -1,8 +1,7 @@
-const MediaMixer = require('../../mixer')
-
 const  Logger = require('../logger')
 const config = require('../../config')
 
+const MediaMixer = {} // for future use, maybe.  `= require('../../mixer')`
 const logger = new Logger('studio')
 
 class Studio {

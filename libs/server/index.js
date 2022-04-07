@@ -15,7 +15,7 @@ const Room = require('./room')
 const config = require('../../config')
 
 const logger = new Logger()
-const useTls = process.env.NODE_ENV !== 'development'
+const useTls = false
 
 
 class Server {
@@ -75,11 +75,13 @@ class Server {
   }
 
   _createExpressApp() {
-    logger.info( 'creats Expres app...' )
-
     this._expressApp = express()
     this._expressApp.use( express.json() )
     this._expressApp.use( cors() )
+
+    const publicDir = __dirname + '/../../webapp/build'
+    logger.info( 'publicDir:%s', publicDir )
+    this._expressApp.use( express.static( publicDir ))
 
     this._expressApp.param( 'roomId', ( req, res, next, roomId ) => {
       if( !this._rooms.has( roomId ) ) {
@@ -110,8 +112,6 @@ class Server {
   }
 
   _runApiServer = async () => {
-    logger.info( 'runs an API server...' )
-
     if( useTls ) {
       const tls = {
         cert: fs.readFileSync( config.api.tls.cert ),
@@ -133,8 +133,6 @@ class Server {
   }
 
   _runProtooWebSocketServer() {
-    logger.info( 'running protoo WebSocketServer...' )
-
     this._protooWebSocketServer = new protoo.WebSocketServer( this._apiServer, {
       maxReceivedFrameSize    : 960_000,
       maxReceivedMessageSize  : 960_000,
@@ -166,6 +164,7 @@ class Server {
         reject( error )
       })
     })
+    logger.info("setup of protooWebSocketServer finished.")
   }
 
   _getMediasoupWorker() {

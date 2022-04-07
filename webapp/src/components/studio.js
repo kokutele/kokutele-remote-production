@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import './studio.css'
@@ -97,7 +97,7 @@ export default function Studio( props ) {
         }
       }
     })
-  }, [ playAudio, state.studio.layout, state.videoProducerId, state.peers, appData ])
+  }, [ playAudio, state.studio.layout, state.videoProducerId, state.audioProducerId, state.peers, appData ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 

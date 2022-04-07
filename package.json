@@ -5,10 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "DEBUG='*INFO* *WARN* *ERROR*' NODE_ENV=development node index.js",
+    "start.production": "DEBUG='*INFO* *WARN* *ERROR*' NODE_ENV=production node index.js",
     "start.debug": "DEBUG=* NODE_ENV=development node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start.nginx-rtmp": "docker run --rm -p 1935:1935 tiangolo/nginx-rtmp",
+    "build": "cd webapp;npm run build",
     "build.docker": "docker build -t kokutele-studio .",
-    "start.docker": "docker run --rm --name kokutele-studio -it --net=host -v $PWD:/work kokutele-studio /bin/bash"
+    "start.docker": "docker run --rm --name kokutele-studio --net=host kokutele-studio"
   },
   "author": "kensaku komatsu (https://medium.com/kokutele)",
   "license": "MIT",
@@ -22,8 +25,5 @@
     "node-addon-api": "^4.3.0",
     "protoo-server": "^4.0.6"
   },
-  "gypfile": false,
-  "devDependencies": {
-    "gstreamer-superficial": "^1.7.4"
-  }
+  "gypfile": false
 }
