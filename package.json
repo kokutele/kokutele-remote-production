@@ -1,7 +1,7 @@
 {
-  "name": "kokutele-remote-production",
+  "name": "kokutele-studio",
   "version": "0.0.1",
-  "description": "remote production system with RealTime Web Technology",
+  "description": "open source virtual studio ( remote production ) app with RealTime Web Technology",
   "main": "index.js",
   "scripts": {
     "start": "DEBUG='*INFO* *WARN* *ERROR*' NODE_ENV=development node index.js",
