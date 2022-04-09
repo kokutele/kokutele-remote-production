@@ -31,8 +31,7 @@ export default function SourceVideo( props ) {
   const _wrapperEl = useRef( null )
   const _videoEl = useRef( null )
 
-
-
+  // when video is clicked, toggle adding or deleting from studio layout.
   const handleClick = useCallback( () => {
     if( !audioProducerId || !videoProducerId ) {
       logger.warn( 'Meida not ready yet' )
@@ -63,57 +62,54 @@ export default function SourceVideo( props ) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ audioProducerId, videoProducerId, _videoWidth, _videoHeight, state.studio.layout ])
 
+  // when audioConsumerId and videoConsumerId got, we will render video for it.
+  //
+  // todo - for iOS, need to consider about autoPlay policy.
   useEffect( () => {
     let stream
 
-    if( _videoEl.current && myStream ) {
-      if( _videoEl.current.srcObject ) {
-        stream = _videoEl.current.srcObject
+    if( _videoEl.current && myStream && audioConsumerId && videoConsumerId ) {
+      stream = new MediaStream()
+      _videoEl.current.srcObject = stream
+
+      if( audioConsumerId === 'my-audio' ) {
+        const audioTrack = myStream.getAudioTracks()[0]
+        _videoEl.current.muted = true
+        stream.addTrack( audioTrack )
       } else {
-        stream = new MediaStream()
-        _videoEl.current.srcObject = stream
+        const audioTrack = roomClient.consumers.get( audioConsumerId ).track
+        stream.addTrack( audioTrack )
       }
 
-      if( !!audioConsumerId ) {
-        if( audioConsumerId === 'my-audio' ) {
-          const audioTrack = myStream.getAudioTracks()[0]
-          _videoEl.current.muted = true
-          stream.addTrack( audioTrack )
-        } else {
-          const audioTrack = roomClient.consumers.get( audioConsumerId ).track
-          stream.addTrack( audioTrack )
-        }
-      }
-
-      if( !!videoConsumerId ) {
-        const videoTrack = videoConsumerId === 'my-video' ?
-          myStream.getVideoTracks()[0] :
-          roomClient.consumers.get( videoConsumerId ).track
-        stream.addTrack( videoTrack )
-      }
+      const videoTrack = videoConsumerId === 'my-video' ?
+        myStream.getVideoTracks()[0] :
+        roomClient.consumers.get( videoConsumerId ).track
+      stream.addTrack( videoTrack )
 
       _videoEl.current.onloadedmetadata = async () => {
-        if( videoConsumerId ) {
-          const videoWidth = _videoEl.current.videoWidth
-          const videoHeight = _videoEl.current.videoHeight
+        const videoWidth = _videoEl.current.videoWidth
+        const videoHeight = _videoEl.current.videoHeight
 
-          setVideoWidth( videoWidth )
-          setVideoHeight( videoHeight )
+        setVideoWidth( videoWidth )
+        setVideoHeight( videoHeight )
 
-          logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
-        }
+        logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
+
         await _videoEl.current.play()
       }
     }
   }, [ audioConsumerId, videoConsumerId, roomClient.consumers, myStream ])
 
+  // draw boder for video which is including in studio layout.
   useEffect( () => {
     if( state.status !== 'READY' ) return
 
+    // check if video and audio is included in studio layout
     const obj = state.studio.layout.find( item => (
       item.videoProducerId === videoProducerId && item.audioProducerId === audioProducerId 
     ))
 
+    // when they are included, we will draw border with color, otherwise with white.
     if( obj ) {
       const idx = state.studio.layout.indexOf( obj )
       _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ idx % videoFrameColors.length ]}`

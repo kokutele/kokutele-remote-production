@@ -12,6 +12,7 @@ import Logger from '../libs/logger'
 import './room.css'
 
 const logger = new Logger('Room')
+const showDebug = process.env.NODE_ENV === 'development'
 
 export default function Room( props ) {
   const { appData, state, createRoomClient, joinRoom } = useAppContext()
@@ -20,7 +21,7 @@ export default function Room( props ) {
   const handleStart = useCallback( async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      createRoomClient({ stream ,displayName: pokemon.random() })
+      createRoomClient({ stream ,displayName: pokemon.random(), roomId: 'test-studio' })
 
       logger.debug("client created:%o", appData.roomClient )
 
@@ -47,7 +48,7 @@ export default function Room( props ) {
         <Sources />
       </div>
       
-      { process.env.NODE_ENV === 'development' && (
+      { showDebug && (
       <div className='debug'>
         <strong>debug window</strong>
         <pre>

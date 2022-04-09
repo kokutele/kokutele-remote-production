@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react"
+import { Col, Row } from 'antd'
 import SourceVideo from "./source-video"
 import { useAppContext } from "../libs/reducer"
 import Logger from "../libs/logger"
@@ -8,24 +10,31 @@ const logger = new Logger('sources')
 
 export default function Sources() {
   const { state } = useAppContext()
-  logger.debug( "state:%o", state )
+  const [ _sources, setSources ] = useState([])
 
-  const sources = [ { 
-    id: state.peerId,
-    displayName: state.displayName,
-    audioProducerId: state.audioProducerId,
-    videoProducerId: state.videoProducerId,
-    audioConsumerId: 'my-audio',
-    videoConsumerId: 'my-video',
-  }, ...state.peers ]
+  useEffect(() => {
+    const sources = [ { 
+      id: state.peerId,
+      displayName: state.displayName,
+      audioProducerId: state.audioProducerId,
+      videoProducerId: state.videoProducerId,
+      audioConsumerId: 'my-audio',
+      videoConsumerId: 'my-video',
+    }, ...state.peers ]
 
-  logger.debug( 'sources:%o', sources )
+    logger.debug( 'sources:%o', sources )
+    setSources( sources )
+  }, [ state.peerId, state.displayName, state.audioProducerId, state.videoProducerId, state.peers])
 
   return(
     <div className="Sources">
-      { sources.filter( item => item.displayName !== 'studio-viewer' ).map( ( source, idx ) => (
-        <SourceVideo key={idx} { ...source }/>
+      <Row gutter={16}>
+      { _sources.filter( item => item.displayName !== 'studio-viewer' ).map( ( source, idx ) => (
+        <Col xs={8} md={6} lg={4}>
+          <SourceVideo key={idx} { ...source }/>
+        </Col>
       ))}
+      </Row>
     </div>
   )
 }

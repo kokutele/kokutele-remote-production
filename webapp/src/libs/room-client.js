@@ -7,7 +7,7 @@ import Logger from './logger'
 
 import EventEmitter from 'events'
 
-const logger = new Logger('RoomClient')
+const logger = new Logger('room-client')
 
 const PC_PROPRIETARY_CONSTRAINTS = {
   optional: [ { googDscp: true } ]
@@ -32,8 +32,7 @@ export default class RoomClient extends EventEmitter {
    * @param {MediaStream} props.stream 
    * @returns {RoomClient}
    */
-  static create( { stream, displayName } ) {
-    const roomId = 'remote-production'
+  static create( { stream, displayName, roomId } ) {
     const peerId = randomString()
     const useSimulcast = false
 
@@ -88,7 +87,7 @@ export default class RoomClient extends EventEmitter {
       this._protoo = new protooClient.Peer( protooTransport )
 
       this._protoo.on('open', async () => {
-        logger.debug( 'established connection to "kokutele-remote-production" server' )
+        logger.debug( 'established connection to "kokutele-studio" server' )
         this._closed = false
 
         await this._joinRoom()
@@ -100,7 +99,7 @@ export default class RoomClient extends EventEmitter {
       })
 
       this._protoo.on('failed', () => {
-        const mesg = 'failed to establish connection to "kokutele-remote-production" server'
+        const mesg = 'failed to establish connection to "kokutele-studio" server'
 
         logger.warn( mesg )
 
@@ -111,7 +110,7 @@ export default class RoomClient extends EventEmitter {
       })
 
       this._protoo.on('disconnected', () => {
-        logger.warn( 'disconnected to "kokutele-remote-production" server' )
+        logger.warn( 'disconnected to "kokutele-studio" server' )
 
         if( this._sendTransport ) {
           this._sendTransport.close()
@@ -444,14 +443,19 @@ export default class RoomClient extends EventEmitter {
     logger.debug('_joinRoom()')
 
     try {
+      // create mediasoupDevice which includes browser info
       this._mediasoupDevice = new mediasoupClient.Device()
+      logger.debug('"_joinRoom()" this._mediasoupDevice: %o', this._mediasoupDevice )
 
+      // retrieve codec list to negotiate
       const routerRtpCapabilities = await this._protoo.request('getRouterRtpCapabilities')
+      logger.debug('"_joinRoom()" routerRtpCapabilities: %o', routerRtpCapabilities )
 
+      // load rtpCapbilities( codec list ) into mediasoupDevice
       await this._mediasoupDevice.load( { routerRtpCapabilities })
 
       ////////////////////////////////////////////////////////////
-      // create mediasoup Transport for sending
+      // create mediasoup Transport for producer
       ////////////////////////////////////////////////////////////
       {
         const transportInfo = await this._protoo.request( 'createWebRtcTransport', {
@@ -464,6 +468,13 @@ export default class RoomClient extends EventEmitter {
         const { 
           id, iceParameters, iceCandidates, dtlsParameters, sctpParameters 
         } = transportInfo
+
+        logger.debug('create transport for producer' )
+        logger.debug('  iceParameters : %o', iceParameters )
+        logger.debug('  iceCandidates : %o', iceCandidates )
+        logger.debug('  dtlsParameters: %o', dtlsParameters )
+        logger.debug('  sctpParameters: %o', sctpParameters )
+        
 
         this._sendTransport = this._mediasoupDevice.createSendTransport({
           id,
@@ -478,12 +489,17 @@ export default class RoomClient extends EventEmitter {
           }
         })
 
+        logger.debug('sendTransport created.')
+
         this._sendTransport.on( 'connect', ( { dtlsParameters }, callback, errback ) => {
           this._protoo.request( 'connectWebRtcTransport', {
               transportId: this._sendTransport.id,
               dtlsParameters
             })
-            .then( callback )
+            .then( obj => {
+              logger.debug('sendTransport - connectted:%o', obj)
+              callback( obj )
+            })
             .catch( errback )
         })
 
@@ -494,7 +510,10 @@ export default class RoomClient extends EventEmitter {
             rtpParameters,
             appData
           })
-          .then( ({ id }) => callback({ id }) )
+          .then( ({ id }) => {
+            logger.debug( 'sendTransport - produce:%s', id )
+            callback({ id }) 
+          })
           .catch( errback )
         })
 
@@ -512,7 +531,7 @@ export default class RoomClient extends EventEmitter {
       }
 
       ////////////////////////////////////////////////////////////
-      // create mediasoup Transport for receiving
+      // create mediasoup Transport for consumer
       ////////////////////////////////////////////////////////////
       {
         const transportInfo = await this._protoo.request( 'createWebRtcTransport', {
@@ -551,7 +570,7 @@ export default class RoomClient extends EventEmitter {
       ////////////////////////////////////////////////////////////
       // Join into the room.
       ////////////////////////////////////////////////////////////
-      logger.debug("join into the room:%o", this._mediasoupDevice)
+      logger.debug("attempt to join into the room:%o", this._mediasoupDevice)
       {
         const { peers } = await this._protoo.request( 'join', {
           displayName: this._displayName,
@@ -562,6 +581,7 @@ export default class RoomClient extends EventEmitter {
 
         this.emit( 'joined', peers )
       }
+      logger.debug("joined.")
 
       ////////////////////////////////////////////////////////////
       // Create producer for audio

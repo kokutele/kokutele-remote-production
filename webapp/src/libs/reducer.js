@@ -74,30 +74,6 @@ export const reducer = ( state, action ) => {
         peers: state.peers.filter( peer => peer.id !== action.value )
       }
     }
-    // case 'ADD_AUDIO_CONSUMER_ID': {
-    //   return { 
-    //     ...state, 
-    //     audioConsumerIds: [ ...state.audioConsumerIds, action.value ]
-    //   }
-    // }
-    // case 'DELETE_AUDIO_CONSUMER_ID': {
-    //   return { 
-    //     ...state, 
-    //     audioConsumerIds: state.audioConsumerIds.filter( id => id !== action.value )
-    //   }
-    // }
-    // case 'ADD_VIDEO_CONSUMER_ID': {
-    //   return {
-    //     ...state,
-    //     videoConsumerIds: [ ...state.videoConsumerIds, action.value ]
-    //   }
-    // }
-    // case 'DELETE_VIDEO_CONSUMER_ID': {
-    //   return  {
-    //     ...state,
-    //     videoConsumerIds: state.videoConsumerIds.filter( id => id !== action.value )
-    //   }
-    // }
     case 'SET_MY_AUDIO_PRODUCER_ID': {
       return { ...state, audioProducerId: action.value }
     }
@@ -122,16 +98,19 @@ export const reducer = ( state, action ) => {
 export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
-  const createRoomClient = ( { stream, displayName } ) => {
-    const client = RoomClient.create( { stream, displayName })
-    appData.myStream = stream
+  const createRoomClient = ( { stream, displayName, roomId } ) => {
+    const client = RoomClient.create( { stream, displayName, roomId })
 
+    logger.debug( '"createRoomClient":%o', client )
+
+    dispatch({ type: 'SET_ROOMID', value: roomId })
     dispatch({ type: 'SET_PEERID', value: client.peerId })
     dispatch({ type: 'SET_DISPLAY_NAME', value: displayName })
     dispatch({ type: 'SET_STATUS', value: 'INITIALIZING'})
 
     _setRoomClientHandler( client, dispatch )
 
+    appData.myStream = stream
     appData.roomClient = client
   }
 
@@ -241,13 +220,11 @@ function _setRoomClientHandler( client, dispatch ) {
     logger.debug( 'newConsumer:%o', consumer )
     switch( consumer.kind ) {
       case 'audio': {
-        dispatch({ type: 'ADD_AUDIO_CONSUMER_ID', value: consumer.id })
         dispatch({ type: 'SET_AUDIO_CONSUMER_ID', value: { peerId: consumer.peerId, consumerId: consumer.id } })
         dispatch({ type: 'SET_AUDIO_PRODUCER_ID', value: { peerId: consumer.peerId, producerId: consumer.producerId } })
         break
       }
       case 'video': {
-        dispatch({ type: 'ADD_VIDEO_CONSUMER_ID', value: consumer.id })
         dispatch({ type: 'SET_VIDEO_CONSUMER_ID', value: { peerId: consumer.peerId, consumerId: consumer.id } })
         dispatch({ type: 'SET_VIDEO_PRODUCER_ID', value: { peerId: consumer.peerId, producerId: consumer.producerId } })
         break
