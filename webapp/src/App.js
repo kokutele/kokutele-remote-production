@@ -1,5 +1,5 @@
 import { createContext, useReducer } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 import { reducer, initialState } from './libs/reducer'
 

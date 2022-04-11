@@ -5,7 +5,7 @@ import './index.css';
 import App from './App';
 import Home from './layouts/home';
 import Entrance from './layouts/entrance';
-import Main from './layouts/main'
+import Dashboard from './layouts/dashboard'
 import StudioViewer from './layouts/studio-viewer';
 import reportWebVitals from './reportWebVitals';
 
@@ -16,7 +16,7 @@ ReactDOM.render(
         <Route element={<App/>}>
           <Route path="/" element={<Home />}/>
           <Route path="virtual-studio" element={<Entrance />} />
-          <Route path="virtual-studio/:name" element={<Main />} />
+          <Route path="virtual-studio/:name" element={<Dashboard />} />
           <Route path="viewer/:name" element={ <StudioViewer/> } />
         </Route>
       </Routes>

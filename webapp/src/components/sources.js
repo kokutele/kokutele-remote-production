@@ -30,7 +30,7 @@ export default function Sources() {
     <div className="Sources">
       <Row gutter={16}>
       { _sources.filter( item => item.displayName !== 'studio-viewer' ).map( ( source, idx ) => (
-        <Col xs={8} md={6} lg={4}>
+        <Col key={idx} xs={8} md={6} lg={4}>
           <SourceVideo key={idx} { ...source }/>
         </Col>
       ))}

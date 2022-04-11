@@ -1,6 +1,5 @@
-import { useCallback, useState } from 'react'
-import { Alert, Button } from 'antd'
-import pokemon from 'pokemon'
+import { useEffect, useState } from 'react'
+import { Alert } from 'antd'
 
 import Studio from './studio'
 import Sources from './sources'
@@ -17,29 +16,23 @@ const showDebug = process.env.NODE_ENV === 'development'
 export default function Room( props ) {
   const { appData, state, createRoomClient, joinRoom } = useAppContext()
   const [ _errMessage, setErrMessage ] = useState('')
+  const { displayName, stream, roomId } = props
   
-  const handleStart = useCallback( async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      createRoomClient({ stream ,displayName: pokemon.random(), roomId: 'test-studio' })
+  useEffect( () => {
+    createRoomClient({ stream ,displayName, roomId })
 
-      logger.debug("client created:%o", appData.roomClient )
+    logger.debug("client created:%o", appData.roomClient )
 
-      await joinRoom()
-    } catch( err ) {
-      setErrMessage( err.message )
-    }
-  }, [ appData.roomClient, createRoomClient, joinRoom ])
+    joinRoom()
+      .then( () => {} )
+      .catch( err => setErrMessage( err.message ))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ displayName, roomId ])
 
   return (
     <div className='Room'>
       { _errMessage !== '' && (
         <Alert type="error" closable showIcon message={ _errMessage } />
-      )}
-      { state.status === 'IDLE' && (
-        <div>
-          <Button type="primary" onClick={ handleStart }>start</Button>
-        </div>
       )}
       <div className='studio-container'>
         <Studio style={{ maxHeight: "70vh"}} />

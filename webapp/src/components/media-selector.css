@@ -1,0 +1,10 @@
+.MediaSelector .video-wrapper {
+  width: 100%;
+  aspect-ratio: calc( 16 / 9);
+  text-align: center;
+  background: #333;
+}
+
+.MediaSelector .video-wrapper video {
+  height: 100%;
+}

@@ -4,6 +4,7 @@ const fs = require('fs')
 const https = require('https')
 const http = require('http')
 const url = require('url')
+const Hashids = require( 'hashids')
 const protoo = require('protoo-server')
 const mediasoup = require('mediasoup')
 const express = require('express')
@@ -17,6 +18,7 @@ const config = require('../../config')
 const logger = new Logger()
 const useTls = false
 
+const hashids = new Hashids()
 
 class Server {
   _queue = new AwaitQueue()
@@ -92,6 +94,12 @@ class Server {
         req.room = rooms.get( roomId )
         next()
       }
+    })
+
+    this._expressApp.get('/api/studio', ( req, res ) => {
+      const name = hashids.encode(Date.now())
+      logger.info('name:%s', name)
+      res.json({ name })
     })
 
     this._expressApp.get('/rooms/:roomId', ( req, res ) => {
