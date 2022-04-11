@@ -3,6 +3,7 @@ process.env.DEBUG = process.env.DEBUG || '*INFO* *WARN* *ERROR*'
 const fs = require('fs')
 const https = require('https')
 const http = require('http')
+const path = require('path')
 const url = require('url')
 const Hashids = require( 'hashids')
 const protoo = require('protoo-server')
@@ -81,9 +82,14 @@ class Server {
     this._expressApp.use( express.json() )
     this._expressApp.use( cors() )
 
-    const publicDir = __dirname + '/../../webapp/build'
-    logger.info( 'publicDir:%s', publicDir )
-    this._expressApp.use( express.static( publicDir ))
+    this._expressApp.use( express.static( path.join( __dirname, "..", "..", "webapp", "build") ))
+    this._expressApp.use((req, res, next) => {
+      if( req.url.includes("/virtual-studio") ) {
+        res.sendFile( path.join( __dirname, "..", "..", "webapp", "build", "index.html" ) )
+      } else {
+        next()
+      }
+    })
 
     this._expressApp.param( 'roomId', ( req, res, next, roomId ) => {
       if( !this._rooms.has( roomId ) ) {
