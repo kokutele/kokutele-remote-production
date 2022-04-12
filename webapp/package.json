@@ -7,6 +7,7 @@
     "@testing-library/react": "^12.1.4",
     "@testing-library/user-event": "^13.5.0",
     "antd": "^4.19.4",
+    "audio-stream-meter": "^1.0.5",
     "bowser": "^2.11.0",
     "mediasoup-client": "^3.6.51",
     "pokemon": "^2.3.2",
