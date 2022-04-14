@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Alert } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import './studio.css'
@@ -129,14 +130,16 @@ export default function Studio( props ) {
     <div className="Studio">
       <div className="wrapper" style={ props.style }>
         <canvas ref={ _canvasEl }></canvas>
-        hoge
-      {/*
-      <div className='debug-studio'>
-        <pre>
-          {JSON.stringify( state.studio, null, 2 )}
-        </pre>
-      </div>
-      */}
+        { state.studio.layout.length === 0 && (
+          <div className='alert'>
+            <Alert 
+              description="Click media shown below to add here for live streaming."
+              message="Virtual Studio" 
+              type="info"   
+              showIcon 
+            />
+          </div>
+        )}
       </div>
     </div>
   )

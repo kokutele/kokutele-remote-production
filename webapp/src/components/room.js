@@ -26,6 +26,7 @@ export default function Room( props ) {
     joinRoom()
       .then( () => {} )
       .catch( err => setErrMessage( err.message ))
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])
 

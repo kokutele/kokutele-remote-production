@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Col, Row } from 'antd'
 import SourceVideo from "./source-video"
+import AddSource from "./add-source"
 import { useAppContext } from "../libs/reducer"
 import Logger from "../libs/logger"
 
@@ -34,6 +35,9 @@ export default function Sources() {
           <SourceVideo key={idx} { ...source }/>
         </Col>
       ))}
+        <Col xs={8} md={6} lg={4}>
+          <AddSource />
+        </Col>
       </Row>
     </div>
   )

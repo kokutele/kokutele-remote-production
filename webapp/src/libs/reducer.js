@@ -99,6 +99,7 @@ export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
   const createRoomClient = ( { stream, displayName, roomId } ) => {
+    appData.localStreams.set( `localvideo-${Date.now()}`, stream )
     const client = RoomClient.create( { stream, displayName, roomId })
 
     logger.debug( '"createRoomClient":%o', client )

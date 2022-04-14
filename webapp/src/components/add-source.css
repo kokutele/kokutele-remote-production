@@ -1,0 +1,23 @@
+.AddSource .wrapper {
+  align-items: center;
+  aspect-ratio: calc( 16 / 9 );
+  background: #fff;
+  border: 1px dashed #333;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.videoWrapper {
+  width: 100%;
+  aspect-ratio: calc( 16 / 9 );
+  background-color: #666;
+  text-align: center;
+  overflow: hidden;
+}
+
+.videoWrapper video {
+  height: 100%;
+}

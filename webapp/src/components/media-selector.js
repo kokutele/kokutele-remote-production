@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button, Card, Col, Input, Progress, Row, Select } from 'antd'
-import AudioStreamMeter from 'audio-stream-meter'
+import { Button, Card, Col, Input, Row, Select } from 'antd'
+// import AudioStreamMeter from 'audio-stream-meter'
 import pokemon from 'pokemon'
 
 
@@ -11,36 +11,36 @@ import './media-selector.css'
 const { Option } = Select
 const logger = new Logger('media-selector')
 
-const AudioContext = window.AudioContext || window.webkitAudioContext
+// const AudioContext = window.AudioContext || window.webkitAudioContext
 
 export default function MediaSelector(props) {
   const { setStream } = props
 
   const [ _videoDevices, setVideoDevices ] = useState( [] )
   const [ _audioDevices, setAudioDevices ] = useState( [] )
-  const [ _volume, setVolume ] = useState( 0 )
+  // const [ _volume, setVolume ] = useState( 0 )
   const [ _displayName, setDisplayName ] = useState( pokemon.random() )
 
   const _videoEl = useRef()
   const _stream = useRef()
-  const _meter = useRef( null )
+  // const _meter = useRef( null )
 
-  const updateAudioMeter = useCallback( () => {
-    if( !_stream.current ) return
+  // const updateAudioMeter = useCallback( () => {
+    // if( !_stream.current ) return
 
-    if( _meter.current ) {
-      _meter.current.close.bind( _meter.current )
-    }
+    // if( _meter.current ) {
+    //   _meter.current.close.bind( _meter.current )
+    // }
 
-    const audioContext = new AudioContext()
+    // const audioContext = new AudioContext()
 
-    const audioStream = audioContext.createMediaStreamSource( _stream.current )
-    _meter.current = AudioStreamMeter.audioStreamProcessor( audioContext, () => {
-      setVolume( Math.trunc( _meter.current.volume * 100 ))
-    })
+    // const audioStream = audioContext.createMediaStreamSource( _stream.current )
+    // _meter.current = AudioStreamMeter.audioStreamProcessor( audioContext, () => {
+    //   setVolume( Math.trunc( _meter.current.volume * 100 ))
+    // })
 
-    audioStream.connect( _meter.current )
-  }, [])
+    // audioStream.connect( _meter.current )
+  // }, [])
 
 
 
@@ -59,20 +59,23 @@ export default function MediaSelector(props) {
         setAudioDevices( list.filter( item => item.kind === 'audioinput' ))
       }
       _stream.current = stream
-      updateAudioMeter()
+
+      setStream( _stream.current, '', false )
+      // updateAudioMeter()
     })()
 
-    return function cleanup() {
-      if( _meter.current ) {
-        logger.debug( 'cleanup - close audio meter')
-        _meter.current.close.bind( _meter.current )
-      }
-    }
-  }, [ updateAudioMeter ])
+    // return function cleanup() {
+    //   if( _meter.current ) {
+    //     logger.debug( 'cleanup - close audio meter')
+    //     _meter.current.close.bind( _meter.current )
+    //   }
+    // }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleClick = useCallback( () => {
     logger.debug('handleClick - displayName:%s', _displayName )
-    setStream( _stream.current, _displayName )
+    setStream( _stream.current, _displayName, true )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ _displayName ])
 
@@ -86,8 +89,8 @@ export default function MediaSelector(props) {
 
     _stream.current.addTrack( track )
 
-    updateAudioMeter()
-  }, [ updateAudioMeter ] )
+    // updateAudioMeter()
+  }, [] )
 
   const handleAudioChange = useCallback( async deviceId => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: { deviceId } })
@@ -99,8 +102,8 @@ export default function MediaSelector(props) {
 
     _stream.current.addTrack( track )
 
-    updateAudioMeter()
-  }, [ updateAudioMeter ] )
+    // updateAudioMeter()
+  }, [] )
 
 
   return (
@@ -129,7 +132,9 @@ export default function MediaSelector(props) {
                         <Option key={idx} value={item.deviceId}>{item.label}</Option>
                       ))}
                     </Select><br/>
+                    {/*
                     <Progress percent={ _volume } showInfo={false} strokeColor={ _volume < 80 ? 'green' : 'red' } />
+                    */}
                     displayName:<br/>
                     <Input value={ _displayName } onChange={ e => setDisplayName( e.target.value ) } />
                   </Col>
