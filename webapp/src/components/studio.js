@@ -7,7 +7,13 @@ import './studio.css'
 const logger = new Logger('studio')
 
 export default function Studio( props ) {
-  const { getStudioLayout, getStudioSize, state, appData } = useAppContext()
+  const { 
+    getStudioLayout, 
+    getStudioSize, 
+    state, 
+    appData 
+  } = useAppContext()
+
   const { playAudio } = props
   const _canvasEl = useRef()
   const _ctx = useRef()

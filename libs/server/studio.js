@@ -4,6 +4,13 @@ const config = require('../../config')
 const MediaMixer = {} // for future use, maybe.  `= require('../../mixer')`
 const logger = new Logger('studio')
 
+const layoutPatterns = [
+  { id: 0, label: "main only" },
+  { id: 1, label: "tile" },
+  { id: 2, label: "large and small" },
+  { id: 3, label: "p-in-p" },
+]
+
 class Studio {
   constructor( props ) {
     this._mediasoupRouter = props.mediasoupRouter
@@ -11,6 +18,7 @@ class Studio {
     this._width  = props.width 
     this._rtmpUrl = props.rtmpUrl
     this._useMixer = props.useMixer
+    this._patternId = layoutPatterns[0].id
 
     this._mixer = this._useMixer ? new MediaMixer( this._width, this._height, this._rtmpUrl ) : null
     logger.info('mixer instanceated. width:%d, height:%d, rtmpUrl: %s', this._width, this._height, this._rtmpUrl )
@@ -31,6 +39,18 @@ class Studio {
 
   get layout() {
     return this._layout
+  }
+
+  get patternId() {
+    return this._patternId
+  }
+
+  set patternId( id ) {
+    this._patternId = id
+  }
+
+  get patterns() {
+    return layoutPatterns
   }
 
   start() {
@@ -66,10 +86,39 @@ class Studio {
     this._calcLayout()
   }
 
+  calcLayout() {
+    this._calcLayout()
+  }
+
   _calcLayout() {
     // todo - test code
     if( this._layout.length === 0 ) return 
 
+    if( this._patternId === 0 ) {
+      this._calcMainOnlyLayout()
+    } else if( this._patternId === 1 ) {
+      this._calcTileLayout()
+    } else if( this._patternId === 2 ) {
+      this._calcLargeAndSmallLayout()
+    } else {
+      this._calcPinPLayout()
+    }
+
+    logger.info( '"_calcLayout()" - layout:%o', this._layout )
+  }
+
+  _calcMainOnlyLayout() {
+    for( let i = 0; i < this._layout.length; i++ ) {
+      const height = i === 0 ? this._height : 0
+      const width  = i === 0 ? Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : 0
+      const posX = i === 0 ? Math.floor( ( this._width - width ) / 2 ) : 0
+      const posY = 0
+
+      this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
+  }
+
+  _calcTileLayout() {
     const numCol = Math.ceil( Math.sqrt( this._layout.length ) ) 
     const numRow = ( this._layout.length > ( numCol * ( numCol - 1 ) ) ) ? numCol : numCol - 1
 
@@ -93,8 +142,28 @@ class Studio {
         }
       }
     }
+  }
 
-    logger.info( '"_calcLayout()" - numCol:%d, numRow:%d, layout:%o', numCol, numRow, this._layout )
+  _calcLargeAndSmallLayout() {
+    for( let i = 0; i < this._layout.length; i++ ) {
+      const height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
+      const width  = Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight )
+      const posX = i === 0 ? Math.floor( ( ( this._width * 4 / 5 ) - width ) / 2 ) : Math.floor( (( this._width * 1 / 5 ) - width ) / 2 + ( this._width * 4 / 5 ) )
+      const posY = i === 0 ? Math.floor( ( this._height - height ) / 2 ) : ( i - 1 ) * height
+
+      this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
+  }
+
+  _calcPinPLayout() {
+    for( let i = 0; i < this._layout.length; i++ ) {
+      const height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 )
+      const width  = i === 0 ? Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight * 0.9 )
+      const posX = i === 0 ? Math.floor( ( this._width - width ) / 2 ) : Math.floor( (this._width / 5 - width ) / 2 ) + Math.floor( this._width / 5 ) * ( i - 1 )
+      const posY = i === 0 ? 0 : this._height - height - Math.floor( this._height / 25 )
+
+      this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
   }
 }
 

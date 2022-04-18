@@ -587,6 +587,33 @@ class Room extends EventEmitter {
         break
       }
 
+      case 'getStudioPatterns': {
+        accept( this._studio.patterns )
+        break
+      }
+
+      case 'getStudioPatternId': {
+        accept({ patternId: this._studio.patternId })
+        break
+      }
+
+      case 'setStudioPatternId': {
+        const { patternId } = request.data
+        logger.info( 'setStudioPatternId:%d', patternId )
+        this._studio.patternId = patternId
+        this._studio.calcLayout()
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioLayoutUpdated', this._studio.layout )
+            .catch( () => {} )
+          peer.notify( 'studioPatternIdUpdated', { patternId: this._studio.patternId } )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
       case 'getStudioLayout': {
         accept( this._studio.layout )
         break

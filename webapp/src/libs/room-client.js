@@ -276,6 +276,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('studioLayoutUpdated', notification.data )
             break
           }
+          case 'studioPatternIdUpdated': {
+            this.emit('studioPatternIdUpdated', notification.data )
+            break
+          }
           case 'downlinkBwe': {
             logger.debug('"downlinkBwe" event:%o', notification.data)
             break
@@ -484,6 +488,21 @@ export default class RoomClient extends EventEmitter {
       videoProducerId: videoProducer ? videoProducer.id : null,
       mediaId
     }
+  }
+
+  async getStudioPatterns() {
+    return await this._protoo.request( 'getStudioPatterns' )
+      .catch( err => { throw err })
+  }
+
+  async getStudioPatternId() {
+    return await this._protoo.request( 'getStudioPatternId' )
+      .catch( err => { throw err })
+  }
+
+  async setStudioPatternId({ patternId }) {
+    return await this._protoo.request( 'setStudioPatternId', { patternId } )
+      .catch( err => { throw err })
   }
 
   async getStudioSize() {

@@ -16,7 +16,9 @@ export const initialState = {
   studio: {
     width: 0,
     height: 0,
-    layout: [] 
+    layout: [],
+    patterns: [],
+    patternId: 0, 
   }
 }
 
@@ -61,6 +63,14 @@ export const reducer = ( state, action ) => {
     case 'DELETE_VIDEO_CONSUMER': {
       const consumerId = action.value
       return { ...state, videoConsumers: state.videoConsumers.filter( item => item.consumerId !== consumerId ) }
+    }
+    case 'SET_STUDIO_PATTERNS': {
+      const patterns = action.value
+      return { ...state, studio: { ...state.studio, patterns }}
+    }
+    case 'SET_STUDIO_PATTERN_ID': {
+      const patternId = action.value
+      return { ...state, studio: { ...state.studio, patternId }}
     }
     case 'SET_STUDIO_SIZE': {
       const { width, height } = action.value
@@ -139,7 +149,34 @@ export const useAppContext = () => {
       logger.debug('"getStudioSize()":%o', size )
       dispatch({ type: 'SET_STUDIO_SIZE', value: size })
     } catch(err) {
-      logger.error( 'getStudioSize():%o', err)
+      logger.error( 'getStudioSize():%o', err )
+    }
+  }
+
+  const getStudioPatterns = async () => {
+    try {
+      const studioPatterns = await appData.roomClient.getStudioPatterns()
+      dispatch({ type: 'SET_STUDIO_PATTERNS', value: studioPatterns })
+    } catch(err) {
+      logger.error( 'getStudioPatterns():%o', err )
+    }
+  }
+
+  const getStudioPatternId = async () => {
+    try {
+      const { patternId } = await appData.roomClient.getStudioPatternId()
+      logger.debug( 'getStudioPatternId:%d', patternId )
+      dispatch({ type: 'SET_STUDIO_PATTERN_ID', value: patternId })
+    } catch(err) {
+      logger.error( 'getStudioPatternId():%o', err )
+    }
+  }
+
+  const setStudioPatternId = async patternId => {
+    try {
+      await appData.roomClient.setStudioPatternId( { patternId } )
+    } catch(err) {
+      logger.error( 'setStudioPatternId():%o', err )
     }
   }
 
@@ -163,6 +200,9 @@ export const useAppContext = () => {
 
   return {
     appData,
+    getStudioPatterns,
+    getStudioPatternId,
+    setStudioPatternId,
     getStudioSize,
     getStudioLayout,
     addStudioLayout,
@@ -183,6 +223,10 @@ function _setRoomClientHandler( client, dispatch ) {
   client.on("newPeer", peer => {
     dispatch({ type: 'ADD_PEER', value: peer })
   })
+
+  client.on("studioPatternIdUpdated", ({ patternId }) => {
+    dispatch({ type: 'SET_STUDIO_PATTERN_ID', value: patternId })
+  } )
 
   client.on("studioLayoutUpdated", layout => {
     dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })

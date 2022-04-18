@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Alert } from 'antd'
 
 import Studio from './studio'
+import StudioPatterns from './studio-patterns'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -41,6 +42,7 @@ export default function Room( props ) {
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
       <div className='container'>
+        <StudioPatterns />
         <Sources />
       </div>
       
