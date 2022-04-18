@@ -157,9 +157,13 @@ class Studio {
 
   _calcPinPLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
-      const height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 )
-      const width  = i === 0 ? Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight * 0.9 )
-      const posX = i === 0 ? Math.floor( ( this._width - width ) / 2 ) : Math.floor( (this._width / 5 - width ) / 2 ) + Math.floor( this._width / 5 ) * ( i - 1 )
+      const height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
+      const width  = i === 0 ? 
+        Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight ) : 
+        Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight )
+      const posX = i === 0 ? 
+        Math.floor( ( this._width - width ) / 2 ) : 
+        Math.floor( (this._width / 5 - width ) / 2 ) + Math.floor( this._width / 5 ) * ( i - 1 )
       const posY = i === 0 ? 0 : this._height - height - Math.floor( this._height / 25 )
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert } from 'antd'
+import { Alert, Divider } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
@@ -41,8 +41,11 @@ export default function Room( props ) {
       <div className='studio-container'>
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
-      <div className='container'>
+      <div className='container' style={{ textAlign: "center" }}>
         <StudioPatterns />
+      </div>
+      <Divider />
+      <div className='container'>
         <Sources />
       </div>
       
