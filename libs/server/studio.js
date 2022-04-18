@@ -42,67 +42,21 @@ class Studio {
     }
   }
 
-  async addMedia({ peerId, videoHeight, videoWidth, audioProducerId, videoProducerId }) {
+  async addMedia({ peerId, videoHeight, videoWidth, mediaId, audioProducerId, videoProducerId }) {
     let isExist = !!this._layout.find( item => (
-      item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId
+      item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId && item.mediaId === mediaId
     ))
         
     if( !isExist ) {
-      this._layout = [ ...this._layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
-
-      if( this._useMixer ) {
-        const videoTransport = await this._mediasoupRouter.createPlainTransport({
-          listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
-          comedia: false,
-          rtcpMux: false
-        })
-        await videoTransport.connect({ ip:'127.0.0.1', port: 5000, rtcpPort: 5001 })
-        this._plainTransports.set( videoProducerId, videoTransport )
-
-        logger.info( 'videoTransport.tuple:%o', videoTransport.tuple )
-        logger.info( 'videoTransport.rtcpTuple:%o', videoTransport.rtcpTuple )
- 
-
-        const audioTransport = await this._mediasoupRouter.createPlainTransport({
-          listenIp: config.mediasoup.plainTransportOptions.listenIp.ip,
-          comedia: false,
-          rtcpMux: false
-        })
-        await audioTransport.connect({ ip:'127.0.0.1', port: 5002, rtcpPort: 5003 })
-        this._plainTransports.set( audioProducerId, audioTransport )
-
-        logger.info( 'audioTransport.tuple:%o', audioTransport.tuple )
-        logger.info( 'audioTransport.rtcpTuple:%o', audioTransport.rtcpTuple )
-
-
-        const rtpCapabilities = this._mediasoupRouter.rtpCapabilities
-
-        const videoConsumer = await videoTransport.consume( { producerId: videoProducerId, rtpCapabilities, paused: true } ) // todo - paused:true
-        this._consumers.set( videoProducerId, videoConsumer )
-        const audioConsumer = await audioTransport.consume( { producerId: audioProducerId, rtpCapabilities, paused: true } ) // todo - paused:true
-        this._consumers.set( audioProducerId, audioConsumer )
-
-        const rtpSrc = this._mixer.addRtpSrc( 
-          '127.0.0.1', 
-          5000, 5001, videoTransport.rtcpTuple.localPort, 
-          5002, 5003, audioTransport.rtcpTuple.localPort, 
-          0, 0, videoWidth, videoHeight, 2 
-        );
-
-        // sleep for 1 sec.
-        await new Promise( r => setTimeout( r, 1000 ))
-
-        await videoConsumer.resume()
-        await audioConsumer.resume()
-      }
+      this._layout = [ ...this._layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight, mediaId }]
 
       this._calcLayout()
     }
   }
 
-  deleteMedia({ peerId, audioProducerId, videoProducerId }) {
+  deleteMedia({ peerId, mediaId, audioProducerId, videoProducerId }) {
     this._layout = this._layout.filter( item => ( 
-      item.peerId !== peerId && item.audioProducerId !== audioProducerId && item.videoProducerId !== videoProducerId 
+      !( item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId && item.mediaId === mediaId )
     ))
     this._calcLayout()
   }

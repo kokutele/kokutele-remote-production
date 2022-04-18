@@ -14,17 +14,19 @@ const logger = new Logger('Room')
 const showDebug = process.env.NODE_ENV === 'development'
 
 export default function Room( props ) {
-  const { appData, state, createRoomClient, joinRoom } = useAppContext()
+  const { appData, state, createRoomClient, joinRoom, createProducer } = useAppContext()
   const [ _errMessage, setErrMessage ] = useState('')
   const { displayName, stream, roomId } = props
   
   useEffect( () => {
-    createRoomClient({ stream ,displayName, roomId })
+    const peerId = createRoomClient({ displayName, roomId })
 
     logger.debug("client created:%o", appData.roomClient )
 
     joinRoom()
-      .then( () => {} )
+      .then( () => {
+        createProducer({ peerId, displayName, stream })
+      } )
       .catch( err => setErrMessage( err.message ))
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

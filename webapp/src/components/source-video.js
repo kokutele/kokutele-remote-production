@@ -21,11 +21,11 @@ export default function SourceVideo( props ) {
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
 
   const {
-    id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId,
+    id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId
   } = props
 
   const {
-    roomClient, myStream
+    roomClient, localStreams
   } = appData
 
   const _wrapperEl = useRef( null )
@@ -48,6 +48,7 @@ export default function SourceVideo( props ) {
           peerId: id, 
           audioProducerId, 
           videoProducerId,
+          mediaId,
           videoWidth: _videoWidth,
           videoHeight: _videoHeight
         })
@@ -55,50 +56,53 @@ export default function SourceVideo( props ) {
         deleteStudioLayout( {
           peerId: id, 
           audioProducerId,
-          videoProducerId
+          videoProducerId,
+          mediaId
         })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ audioProducerId, videoProducerId, _videoWidth, _videoHeight, state.studio.layout ])
+  }, [ audioProducerId, videoProducerId, mediaId, _videoWidth, _videoHeight, state.studio.layout ])
 
   // when audioConsumerId and videoConsumerId got, we will render video for it.
   //
   // todo - for iOS, need to consider about autoPlay policy.
   useEffect( () => {
-    let stream
+    let audioTrack, videoTrack
 
-    if( _videoEl.current && myStream && audioConsumerId && videoConsumerId ) {
-      stream = new MediaStream()
-      _videoEl.current.srcObject = stream
+    if( _videoEl.current ) {
+      const stream = new MediaStream()
 
-      if( audioConsumerId === 'my-audio' ) {
-        const audioTrack = myStream.getAudioTracks()[0]
+      if( localStreamId ) {
+        audioTrack = localStreams.get( localStreamId ).getAudioTracks()[0]
+        videoTrack = localStreams.get( localStreamId ).getVideoTracks()[0]
+        logger.debug( 'audioTrack:%o, videoTrack:%o', audioTrack, videoTrack )
         _videoEl.current.muted = true
-        stream.addTrack( audioTrack )
       } else {
-        const audioTrack = roomClient.consumers.get( audioConsumerId ).track
-        stream.addTrack( audioTrack )
+        audioTrack = audioConsumerId ? roomClient.consumers.get( audioConsumerId ).track : null
+        videoTrack = videoConsumerId ? roomClient.consumers.get( videoConsumerId ).track : null
       }
 
-      const videoTrack = videoConsumerId === 'my-video' ?
-        myStream.getVideoTracks()[0] :
-        roomClient.consumers.get( videoConsumerId ).track
-      stream.addTrack( videoTrack )
+      if( audioTrack && videoTrack ) {
+        stream.addTrack( audioTrack )
+        stream.addTrack( videoTrack )
 
-      _videoEl.current.onloadedmetadata = async () => {
-        const videoWidth = _videoEl.current.videoWidth
-        const videoHeight = _videoEl.current.videoHeight
+        _videoEl.current.srcObject = stream
+        _videoEl.current.onloadedmetadata = async () => {
+          const videoWidth = _videoEl.current.videoWidth
+          const videoHeight = _videoEl.current.videoHeight
 
-        setVideoWidth( videoWidth )
-        setVideoHeight( videoHeight )
+          setVideoWidth( videoWidth )
+          setVideoHeight( videoHeight )
 
-        logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
+          logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
 
-        await _videoEl.current.play()
+          await _videoEl.current.play()
+        }
       }
     }
-  }, [ audioConsumerId, videoConsumerId, roomClient.consumers, myStream ])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ audioConsumerId, videoConsumerId, localStreamId ])
 
   // draw boder for video which is including in studio layout.
   useEffect( () => {

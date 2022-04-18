@@ -9,7 +9,6 @@ import Footer from './layouts/footer';
 import './App.css';
 
 const appData = {
-  myStream: null,
   localVideos : new Map(),  // for add-source.js
   localStreams: new Map(),
   roomClient: {},

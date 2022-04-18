@@ -1,6 +1,7 @@
 import protooClient from 'protoo-client'
 import * as mediasoupClient from 'mediasoup-client'
 import randomString from 'random-string'
+import { v4 as uuidv4 } from 'uuid'
 import deviceInfo from './device-info'
 import { getProtooUrl } from './url-factory'
 import Logger from './logger'
@@ -29,20 +30,19 @@ export default class RoomClient extends EventEmitter {
    * 
    * @param {Object} props
    * @param {String} props.displayName
-   * @param {MediaStream} props.stream 
+   * @param {String} props.roomId
    * @returns {RoomClient}
    */
-  static create( { stream, displayName, roomId } ) {
+  static create( { displayName, roomId } ) {
     const peerId = randomString()
     const useSimulcast = false
 
-    return new RoomClient( { stream, peerId, roomId, displayName, useSimulcast })
+    return new RoomClient( { peerId, roomId, displayName, useSimulcast })
   }
 
   constructor( props ) {
     super()
 
-    this._stream = props.stream
     this._peerId = props.peerId
     this._roomId = props.roomId
     this._displayName = props.displayName
@@ -52,12 +52,11 @@ export default class RoomClient extends EventEmitter {
     this._device = deviceInfo()
     this._closed = false
     this._protoo = null
-    this._consumers     = new Map()
-    this._dataConsumers = new Map()
     this._sendTransport = null
     this._recvTransport = null
-    this._audioProducer = null
-    this._videoProducer = null
+    this._consumers     = new Map()
+    this._producers     = new Map()
+    this._dataConsumers = new Map()  // needed?
 
     logger.debug( "protooUrl:%s", this._protooUrl )
   }
@@ -173,6 +172,7 @@ export default class RoomClient extends EventEmitter {
                 kind,
                 type,
                 producerPaused,
+                appData,
               })
 
               accept()
@@ -368,6 +368,124 @@ export default class RoomClient extends EventEmitter {
     })
   }
 
+  /**
+   * create producer
+   * 
+   * @param {MediaStream} stream 
+   * @return {Promise<Object>} - { audioProducerId:String, videoProducerId:String }
+   */
+  async createProducer( stream ) {
+    if( !( stream instanceof MediaStream ) ) {
+      throw new TypeError( 'createProducer - MediaStream object MUST set.' )
+    }
+
+    const mediaId = uuidv4()
+    let audioProducer, videoProducer
+    ////////////////////////////////////////////////////////////
+    // Create producer for audio
+    ////////////////////////////////////////////////////////////
+    if( !this._mediasoupDevice.canProduce('audio') ) {
+      logger.warn('cannot produce audio:%o', this._mediasoupDevice )
+    } else {
+      let track
+      try {
+        track = stream.getAudioTracks()[0]
+
+        audioProducer = await this._sendTransport.produce( {
+          track,
+          codecOptions: {
+            opusStereo: 1,
+            opusDtx   : 1
+          },
+          appData: {
+            mediaId
+          }
+        })
+        logger.debug( "audioProducer.id: %s", audioProducer.id )
+
+        audioProducer.on( 'transoprtclose', () => {
+          this._producers.delete( audioProducer.id )
+        })
+
+        audioProducer.on( 'trackended', async () => {
+          audioProducer.close()
+
+          await this._protoo.request( 'closeProducer', {
+            producerId: audioProducer.id
+          })
+          .then( () => {
+            this._producers.delete( audioProducer.id ) 
+          })
+          .catch( err => {
+            logger.error( 'Error while closing producer for audio' )
+          })
+        })
+
+        this._producers.set( audioProducer.id, audioProducer )
+      } catch( err ) {
+        logger.error('error while producing audio: %o', err )
+        if( track ) track.stop()
+      }
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Create producer for video
+    ////////////////////////////////////////////////////////////
+    if( !this._mediasoupDevice.canProduce('video') ) {
+      logger.warn( 'cannot produce video:%o', this._mediasoupDevice )
+    } else {
+      let track
+
+      try {
+        track = stream.getVideoTracks()[0]
+
+        const encodings = this._useSimulcast ? VIDEO_SIMULCAST_ENCODINGS : undefined
+        const codecOptions = {
+          videoGoogleStartBitrate: 1_000
+        }
+
+        videoProducer = await this._sendTransport.produce({
+          track,
+          encodings,
+          codecOptions,
+          appData: {
+            mediaId
+          }
+        })
+        logger.debug( 'videoProducerId:%s', videoProducer.id )
+
+        videoProducer.on( 'transportclose', () => {
+          this._producers.delete( videoProducer.id )
+        })
+
+        videoProducer.on( 'trackended', async () => {
+          videoProducer.close()
+
+          await this._protoo.request( 'closeProducer', {
+            producerId: videoProducer.id
+          })
+          .then( () => {
+            this._producers.delete( videoProducer.id )
+          })
+          .catch( err => {
+            logger.error( 'Error closing video producer:%o', err )
+          })
+        })
+
+        this._producers.set( videoProducer.id, videoProducer )
+      } catch(err) {
+        logger.error( 'error while prducing video:%o', err )
+        if( track ) track.stop()
+      }
+    }
+
+    return {
+      audioProducerId: audioProducer ? audioProducer.id : null,
+      videoProducerId: videoProducer ? videoProducer.id : null,
+      mediaId
+    }
+  }
+
   async getStudioSize() {
     return await this._protoo.request( 'getStudioSize' )
       .catch( err => { throw err })
@@ -378,13 +496,13 @@ export default class RoomClient extends EventEmitter {
       .catch( err => { throw err })
   }
 
-  async addStudioLayout( { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
-    await this._protoo.request( 'addStudioLayout', { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
+  async addStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
+    await this._protoo.request( 'addStudioLayout', { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
       .catch( err => { throw err })
   }
 
-  async deleteStudioLayout( { peerId, audioProducerId, videoProducerId } ) {
-    await this._protoo.request( 'deleteStudioLayout', { peerId, audioProducerId, videoProducerId } )
+  async deleteStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId } ) {
+    await this._protoo.request( 'deleteStudioLayout', { peerId, mediaId, audioProducerId, videoProducerId } )
       .catch( err => { throw err })
   }
 
@@ -582,100 +700,10 @@ export default class RoomClient extends EventEmitter {
         this.emit( 'joined', peers )
       }
       logger.debug("joined.")
-
-      ////////////////////////////////////////////////////////////
-      // Create producer for audio
-      ////////////////////////////////////////////////////////////
-      if( !this._stream || !this._mediasoupDevice.canProduce('audio') ) {
-        logger.warn('cannot produce audio:%o', this._mediasoupDevice )
-      } else {
-        let track
-        try {
-          track = this._stream.getAudioTracks()[0]
-
-          this._audioProducer = await this._sendTransport.produce( {
-            track,
-            codecOptions: {
-              opusStereo: 1,
-              opusDtx   : 1
-            }
-          })
-          logger.debug( "audioProducer.id: %s", this._audioProducer.id )
-
-          this._audioProducer.on( 'transoprtclose', () => {
-            this._audioProducer = null
-          })
-
-          this._audioProducer.on( 'trackended', async () => {
-            this._audioProducer.close()
-
-            await this._protoo.request( 'closeProducer', {
-              producerId: this._audioProducer.id
-            })
-            .then( () => {
-              this._audioProducer = null 
-            })
-            .catch( err => {
-              logger.error( 'Error while closing producer for audio' )
-            })
-          })
-        } catch( err ) {
-          logger.error('error while producing audio: %o', err )
-          if( track ) track.stop()
-        }
-      }
-
-      ////////////////////////////////////////////////////////////
-      // Create producer for audio
-      ////////////////////////////////////////////////////////////
-      if( !this._stream || !this._mediasoupDevice.canProduce('video') ) {
-        logger.warn( 'cannot produce video:%o', this._mediasoupDevice )
-      } else {
-        let track
-
-        try {
-          track = this._stream.getVideoTracks()[0]
-
-          const encodings = this._useSimulcast ? VIDEO_SIMULCAST_ENCODINGS : undefined
-          const codecOptions = {
-            videoGoogleStartBitrate: 1_000
-          }
-
-          this._videoProducer = await this._sendTransport.produce({
-            track,
-            encodings,
-            codecOptions
-          })
-          logger.debug( 'videoProducer:%o', this._videoProducer )
-
-          this._videoProducer.on( 'transportclose', () => {
-            this._videoProducer = null
-          })
-
-          this._videoProducer.on( 'trackended', async () => {
-            this._videoProducer.close()
-
-            logger.debug( 'videoProducer.id:%s', this._videoProducer.id )
-            await this._protoo.request( 'closeProducer', {
-              producerId: this._videoProducer.id
-            })
-            .catch( err => {
-              logger.error( 'Error closing video producer:%o', err )
-            })
-
-            this._videoProducer = null
-          })
-        } catch(err) {
-          logger.error( 'error while prducing video:%o', err )
-          if( track ) track.stop()
-        }
-      }
- 
-
-
     } catch(err) {
       logger.error( '_joinRoom() error. %o', err )
       this.close()
     }
   }
+
 }

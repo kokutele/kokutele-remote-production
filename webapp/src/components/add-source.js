@@ -13,11 +13,12 @@ import './add-source.css'
 const logger = new Logger('add-source')
 
 const SelectVideoFile = props => {
-  const { appData } = useAppContext()
+  const { appData, state, createProducer } = useAppContext()
   const { visible, setModalVisibility } = props
   const _inputEl = useRef( null )
   const _videoEl = useRef( '' )
   const _videoWrapper = useRef( null )
+  const _url = useRef( null )
 
   useEffect( () => {
     if( visible ) {
@@ -28,11 +29,11 @@ const SelectVideoFile = props => {
       inputEl.addEventListener( 'change', e => {
         const file = e.target.files[0]
 
-        const url = URL.createObjectURL( file )
-        logger.debug( 'change event fired. file:%s', url )
+        _url.current = URL.createObjectURL( file )
+        logger.debug( 'change event fired. file:%s', _url.current )
 
         const videoEl = document.createElement( 'video' )
-        videoEl.src = url
+        videoEl.src = _url.current
         videoEl.loop = true
         videoEl.addEventListener('loadedmetadata', async e => {
           await videoEl.play()
@@ -58,6 +59,7 @@ const SelectVideoFile = props => {
         _videoEl.current.remove()
         _videoEl.current = null
       }
+      _url.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ visible ])
@@ -67,15 +69,28 @@ const SelectVideoFile = props => {
       title="Add video file" 
       visible={ visible } 
       zIndex={2000}
-      onOk={ async () => {
-        if( _videoEl.current ) {
-          const id = `localvideo-${Date.now()}`
-          const videoEl = _videoEl.current.cloneNode()
-          appData.localVideos.set( id, videoEl )
-          const stream = videoEl.captureStream()
-          appData.localStreams.set( id, stream )
+      onOk={ () => {
+        if( _url.current ) {
+          const videoEl = document.createElement('video')
+          videoEl.src = _url.current
+          videoEl.loop = true
+          logger.debug('appData.localVideos:%o', appData.localVideos )
+          appData.localVideos.set( `videoEl-${Date.now()}`, videoEl )
+          logger.debug('appData.localVideos:%o', appData.localVideos )
+          logger.debug('videoEl:%o', videoEl )
+
+          videoEl.onloadedmetadata = async () => {
+            logger.debug( 'onloadedmetadata' )
+            await videoEl.play()
+            const stream = videoEl.captureStream()
+            await createProducer({
+              peerId: state.peerId,
+              displayName: 'todo - FILENAME',
+              stream
+            })
+            setModalVisibility( false )
+          }
         }
-        setModalVisibility( false )
       }} 
       onCancel={ () => {
         setModalVisibility( false ) 

@@ -14,18 +14,36 @@ export default function Sources() {
   const [ _sources, setSources ] = useState([])
 
   useEffect(() => {
-    const sources = [ { 
-      id: state.peerId,
-      displayName: state.displayName,
-      audioProducerId: state.audioProducerId,
-      videoProducerId: state.videoProducerId,
-      audioConsumerId: 'my-audio',
-      videoConsumerId: 'my-video',
-    }, ...state.peers ]
+    const remoteMedias = state.audioConsumers.map( audioConsumer => {
+      const audioConsumerId = audioConsumer.consumerId
+      const audioProducerId = audioConsumer.producerId
+      const peerId = audioConsumer.peerId
+      const mediaId = audioConsumer.mediaId
+
+      const videoConsumer = state.videoConsumers.find( item => item.mediaId === mediaId )
+      const videoConsumerId = videoConsumer ? videoConsumer.consumerId : null
+      const videoProducerId = videoConsumer ? videoConsumer.producerId : null
+
+      const peer = state.peers.find( item => item.id === peerId )
+
+      return peer ? {
+        id: peerId,
+        displayName: peer.displayName,
+        audioProducerId,
+        videoProducerId,
+        mediaId,
+        audioConsumerId,
+        videoConsumerId
+      }: null
+    } ).filter( item => item !== null )
+    const sources = [ 
+      ...state.localMedias,
+      ...remoteMedias
+    ]
 
     logger.debug( 'sources:%o', sources )
     setSources( sources )
-  }, [ state.peerId, state.displayName, state.audioProducerId, state.videoProducerId, state.peers])
+  }, [ state.localMedias, state.peers, state.audioConsumers, state.videoConsumers ])
 
   return(
     <div className="Sources">

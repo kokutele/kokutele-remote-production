@@ -9,9 +9,10 @@ export const initialState = {
   status: 'IDLE',
   peerId: '',
   displayName: '',
-  audioProducerId: '',
-  videoProducerId: '',
+  localMedias: [], // Array<{ id, displayName, audioProducerId, videoProducerId, localStreamId }>
   peers: [],
+  audioConsumers: [],
+  videoConsumers: [],
   studio: {
     width: 0,
     height: 0,
@@ -36,37 +37,8 @@ export const reducer = ( state, action ) => {
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
     }
-    case 'SET_AUDIO_CONSUMER_ID': {
-      const { peerId, consumerId } = action.value
-      const peers = state.peers.concat() // clone Array
-
-      return { ...state, peers: peers.map( peer => (
-        peer.id === peerId ? { ...peer, audioConsumerId: consumerId } : peer ) 
-      )}
-    }
-    case 'SET_AUDIO_PRODUCER_ID': {
-      const { peerId, producerId } = action.value
-      const peers = state.peers.concat() // clone Array
-
-      return { ...state, peers: peers.map( peer => (
-        peer.id === peerId ? { ...peer, audioProducerId: producerId } : peer ) 
-      )}
-    }
-    case 'SET_VIDEO_CONSUMER_ID': {
-      const { peerId, consumerId } = action.value
-      const peers = state.peers.concat() // clone Array
-
-      return { ...state, peers: peers.map( peer => (
-        peer.id === peerId ? { ...peer, videoConsumerId: consumerId } : peer ) 
-      )}
-    }
-    case 'SET_VIDEO_PRODUCER_ID': {
-      const { peerId, producerId } = action.value
-      const peers = state.peers.concat() // clone Array
-
-      return { ...state, peers: peers.map( peer => (
-        peer.id === peerId ? { ...peer, videoProducerId: producerId } : peer ) 
-      )}
+    case 'ADD_LOCAL_MEDIA': {
+      return { ...state, localMedias: [ ...state.localMedias, action.value ] }
     }
     case 'DELETE_PEER': {
       return { 
@@ -74,11 +46,21 @@ export const reducer = ( state, action ) => {
         peers: state.peers.filter( peer => peer.id !== action.value )
       }
     }
-    case 'SET_MY_AUDIO_PRODUCER_ID': {
-      return { ...state, audioProducerId: action.value }
+    case 'ADD_AUDIO_CONSUMER': {
+      const { consumerId, producerId, peerId, mediaId } = action.value
+      return { ...state, audioConsumers: [ ...state.audioConsumers, { consumerId, producerId, peerId, mediaId }]}
     }
-    case 'SET_MY_VIDEO_PRODUCER_ID': {
-      return { ...state, videoProducerId: action.value }
+    case 'ADD_VIDEO_CONSUMER': {
+      const { consumerId, producerId, peerId, mediaId } = action.value
+      return { ...state, videoConsumers: [ ...state.videoConsumers, { consumerId, producerId, peerId, mediaId }]}
+    }
+    case 'DELETE_AUDIO_CONSUMER': {
+      const consumerId = action.value
+      return { ...state, audioConsumers: state.audioConsumers.filter( item => item.consumerId !== consumerId ) }
+    }
+    case 'DELETE_VIDEO_CONSUMER': {
+      const consumerId = action.value
+      return { ...state, videoConsumers: state.videoConsumers.filter( item => item.consumerId !== consumerId ) }
     }
     case 'SET_STUDIO_SIZE': {
       const { width, height } = action.value
@@ -98,9 +80,8 @@ export const reducer = ( state, action ) => {
 export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
-  const createRoomClient = ( { stream, displayName, roomId } ) => {
-    appData.localStreams.set( `localvideo-${Date.now()}`, stream )
-    const client = RoomClient.create( { stream, displayName, roomId })
+  const createRoomClient = ( { displayName, roomId } ) => {
+    const client = RoomClient.create( { displayName, roomId })
 
     logger.debug( '"createRoomClient":%o', client )
 
@@ -111,8 +92,9 @@ export const useAppContext = () => {
 
     _setRoomClientHandler( client, dispatch )
 
-    appData.myStream = stream
     appData.roomClient = client
+
+    return client.peerId
   }
 
   const joinRoom = async () => {
@@ -120,22 +102,33 @@ export const useAppContext = () => {
       .catch( err => { throw err })
 
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
-    logger.debug( 'joinRoom - audioProducer:%o', appData.roomClient.audioProducer )
-    logger.debug( 'joinRoom - videoProducer:%o', appData.roomClient.videoProducer )
+  }
 
-    if( appData.roomClient.audioProducer) {
-      dispatch( { 
-        type: 'SET_MY_AUDIO_PRODUCER_ID', 
-        value: appData.roomClient.audioProducer.id}
-      )
-    }
+  const createProducer = async ({ peerId, displayName, stream }) => {
+    const { 
+      audioProducerId, 
+      videoProducerId,
+      mediaId
+    } = await appData.roomClient.createProducer( stream )
+      .catch( err => { throw err } )
 
-    if( appData.roomClient.videoProducer ) {
-      dispatch( { 
-        type: 'SET_MY_VIDEO_PRODUCER_ID', 
-        value: appData.roomClient.videoProducer.id}
-      )
-    }
+    logger.debug( 'createProducer - audioProducerId:%s, videoProducerId: %s', audioProducerId, videoProducerId )
+
+    const localStreamId = `localvideo-${Date.now()}`
+    appData.localStreams.set( localStreamId, stream )
+    logger.debug( 'localStreams added:%o', appData.localStreams )
+    logger.debug( 'state:%o', state )
+    dispatch({ 
+      type: 'ADD_LOCAL_MEDIA', 
+      value: {
+        id: peerId,
+        displayName,
+        audioProducerId,
+        videoProducerId,
+        mediaId,
+        localStreamId
+      }
+    })
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
   }
@@ -160,12 +153,12 @@ export const useAppContext = () => {
     }
   }
 
-  const addStudioLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }) => {
-    await appData.roomClient.addStudioLayout({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight })
+  const addStudioLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight, mediaId }) => {
+    await appData.roomClient.addStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight })
   }
 
-  const deleteStudioLayout = async ({ peerId, audioProducerId, videoProducerId }) => {
-    await appData.roomClient.deleteStudioLayout({ peerId, audioProducerId, videoProducerId })
+  const deleteStudioLayout = async ({ peerId, audioProducerId, videoProducerId, mediaId }) => {
+    await appData.roomClient.deleteStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId })
   }
 
   return {
@@ -175,6 +168,7 @@ export const useAppContext = () => {
     addStudioLayout,
     deleteStudioLayout,
     createRoomClient,
+    createProducer,
     joinRoom,
     state,
     dispatch
@@ -203,11 +197,11 @@ function _setRoomClientHandler( client, dispatch ) {
       .forEach( consumer => {
         switch( consumer.kind ) {
           case 'audio': {
-            dispatch( { type: 'DELETE_AUDIO_CONSUMER_ID', value: consumer.id } )
+            dispatch( { type: 'DELETE_AUDIO_CONSUMER', value: consumer.id } )
             break
           }
           case 'video': {
-            dispatch( { type: 'DELETE_VIDEO_CONSUMER_ID', value: consumer.id } )
+            dispatch( { type: 'DELETE_VIDEO_CONSUMER', value: consumer.id } )
             break
           }
           default: {
@@ -219,15 +213,15 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("newConsumer", consumer => {
     logger.debug( 'newConsumer:%o', consumer )
+    const { mediaId } = consumer.appData
+    logger.debug( "mediaId:%o", consumer.appData.mediaId )
     switch( consumer.kind ) {
       case 'audio': {
-        dispatch({ type: 'SET_AUDIO_CONSUMER_ID', value: { peerId: consumer.peerId, consumerId: consumer.id } })
-        dispatch({ type: 'SET_AUDIO_PRODUCER_ID', value: { peerId: consumer.peerId, producerId: consumer.producerId } })
+        dispatch({ type: 'ADD_AUDIO_CONSUMER', value: { consumerId: consumer.id, peerId: consumer.peerId, producerId: consumer.producerId, mediaId } })
         break
       }
       case 'video': {
-        dispatch({ type: 'SET_VIDEO_CONSUMER_ID', value: { peerId: consumer.peerId, consumerId: consumer.id } })
-        dispatch({ type: 'SET_VIDEO_PRODUCER_ID', value: { peerId: consumer.peerId, producerId: consumer.producerId } })
+        dispatch({ type: 'ADD_VIDEO_CONSUMER', value: { consumerId: consumer.id, peerId: consumer.peerId, producerId: consumer.producerId, mediaId } })
         break
       }
       default: {
@@ -243,11 +237,11 @@ function _setRoomClientHandler( client, dispatch ) {
     logger.debug( '"leaveConsumer" emitted:%o', consumer )
     switch( consumer.kind ) {
       case 'audio': {
-        dispatch({ type: 'DELETE_AUDIO_CONSUMER_ID', value: consumer.id })
+        dispatch({ type: 'DELETE_AUDIO_CONSUMER', value: consumer.id })
         break
       }
       case 'video': {
-        dispatch({ type: 'DELETE_VIDEO_CONSUMER_ID', value: consumer.id })
+        dispatch({ type: 'DELETE_VIDEO_CONSUMER', value: consumer.id })
         break
       }
       default: {

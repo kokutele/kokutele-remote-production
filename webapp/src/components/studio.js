@@ -44,11 +44,12 @@ export default function Studio( props ) {
 
     state.studio.layout.forEach( item => {
       if( !_videoEls.current.has( item.videoProducerId ) ) {
+        const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
         const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
 
         let stream
-        if( item.videoProducerId === state.videoProducerId ) {
-          stream = appData.myStream
+        if( localMedia ) {
+          stream = appData.localStreams.get( localMedia.localStreamId )
         } else {
           if( !consumer ) {
             logger.warn('no consumer found for %s', item.videoProducerId )
@@ -74,16 +75,13 @@ export default function Studio( props ) {
         if( !_audioEls.current.has( item.audioProducerId ) ) {
           const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
 
-          let stream
-          if( item.audioProducerId !== state.audioProducerId ) {
-            if( !consumer ) {
-              logger.warn('no consumer found for %s', item.audioProducerId )
-              return
-            } else {
-              const track = consumer.track
-              stream = new MediaStream( [ track ] )
-            }
+          if( !consumer ) {
+            logger.warn('no consumer found for %s', item.audioProducerId )
+            return
           }
+
+          const track = consumer.track
+          const stream = new MediaStream( [ track ] )
 
           const audioEl = document.createElement( 'audio' )
           audioEl.srcObject = stream
@@ -98,7 +96,7 @@ export default function Studio( props ) {
         }
       }
     })
-  }, [ playAudio, state.studio.layout, state.videoProducerId, state.audioProducerId, state.peers, appData ])
+  }, [ playAudio, state.studio.layout, state.localMedias, state.peers, appData ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 

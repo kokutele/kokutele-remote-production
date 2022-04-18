@@ -593,17 +593,10 @@ class Room extends EventEmitter {
       }
 
       case 'addStudioLayout': {
-        const { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight } = request.data
+        const { peerId, audioProducerId, videoProducerId, mediaId, videoWidth, videoHeight } = request.data
         logger.info('"addStudioLayout" - request.data:%o', request.data )
 
-        // let isExist = !!this._studio.layout.find( item => (
-        //   item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId
-        // ))
-        
-        // if( !isExist ) {
-        //   this._studio.layout = [ ...this._studio.layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight }]
-        // }
-        await this._studio.addMedia({ peerId, videoHeight, videoWidth, audioProducerId, videoProducerId })
+        await this._studio.addMedia({ peerId, videoHeight, videoWidth, mediaId, audioProducerId, videoProducerId })
 
         accept()
         logger.info('this._studio.layout:%o', this._studio.layout )
@@ -617,16 +610,10 @@ class Room extends EventEmitter {
       }
 
       case 'deleteStudioLayout': {
-        const { peerId, audioProducerId, videoProducerId } = request.data
+        const { peerId, audioProducerId, videoProducerId, mediaId } = request.data
         logger.info('"deleteStudioLayout" - request.data:%o', request.data )
 
-        this._studio.deleteMedia({ peerId, audioProducerId, videoProducerId })
-
-        // this._studio.layout = this._studio.layout.filter( item => ( 
-        //   item.peerId !== peerId && item.audioProducerId !== audioProducerId && item.videoProducerId !== videoProducerId 
-        // ))
-
-        // todo - calucurate position then update this._studio.layout
+        this._studio.deleteMedia({ peerId, audioProducerId, videoProducerId, mediaId })
 
         accept()
 
