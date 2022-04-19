@@ -1,1 +1,18 @@
 /* room.css */
+
+.debug {
+  background: rgba( 30, 30, 30, 0.75 );
+  color: #0f0;
+  font-size: 0.75em;
+  max-height: calc( 100vh - 50px );
+  overflow: auto;
+  padding: 3px 3px;
+  position: fixed;
+  right: 0;
+  top: 50px;
+  width: 30vw;
+}
+
+.App .debug pre {
+  font-family: system-ui;
+}

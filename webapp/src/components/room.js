@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Divider } from 'antd'
+import { Alert, Button, Col, Collapse, Divider, Row } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
@@ -8,8 +8,9 @@ import Sources from './sources'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 
-
 import './room.css'
+
+const { Panel } = Collapse
 
 const logger = new Logger('Room')
 const showDebug = process.env.NODE_ENV === 'development'
@@ -45,7 +46,14 @@ export default function Room( props ) {
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
       <div className='container' style={{ textAlign: "center" }}>
-        <StudioPatterns />
+        <Row gutter={16}>
+          <Col offset={3} span={18} style={{ textAlign: "center" }}>
+            <StudioPatterns />
+          </Col>
+          <Col span={3} style={{ textAlign: "right" }}>
+            <Button type="link"><a href={`/viewer/${roomId}`} target="_blank">Viewer</a></Button>
+          </Col>
+        </Row>
       </div>
       <Divider />
       <div className='container'>
@@ -54,11 +62,14 @@ export default function Room( props ) {
       
       { showDebug && (
       <div className='debug'>
-        <strong>debug window</strong>
-        <pre>
-          {JSON.stringify( state, null, 2 )}
-        </pre>
-      </div>
+        <Collapse bordered={true} style={{ background: "rgba( 255, 255, 255, 0.5 )", fontSize: "0.75em" }}>
+          <Panel header="debug window">
+              <pre style={{ background: "rgba( 255, 255, 255, 0.5 )"}}>
+                {JSON.stringify(state, null, 2)}
+              </pre>
+          </Panel>
+        </Collapse>
+     </div>
       )}
     </div>
   )

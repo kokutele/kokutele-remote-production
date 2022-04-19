@@ -117,6 +117,12 @@ export const useAppContext = () => {
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
   }
 
+  // for StudioViewer
+  const setStatusReady = () => {
+    dispatch({ type: 'SET_STATUS', value: 'READY' })
+
+  }
+
   const close = async () => {
     appData.roomClient.close()
     appData.roomClient = null
@@ -234,6 +240,7 @@ export const useAppContext = () => {
     createRoomClient,
     createProducer,
     joinRoom,
+    setStatusReady,
     close,
     state,
     dispatch

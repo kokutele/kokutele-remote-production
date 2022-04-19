@@ -37,20 +37,38 @@ export default function Studio( props ) {
 
   useEffect( () => {
     for( const videoProducerId of _videoEls.current.keys() ) {
-      if( !state.studio.layout.find( item => item.videoProducerId === videoProducerId ) ) {
-        _videoEls.current.delete( videoProducerId )
+      if( !state.studio.layout
+        .filter( item => ( item.width !== 0 && item.height !== 0 ))
+        .find( item => item.videoProducerId === videoProducerId ) 
+      ) {
+        const videoElem = _videoEls.current.get( videoProducerId )
+        videoElem.pause()
+        videoElem.remove()
+        _videoEls.current.delete(videoProducerId)
       }
     }
 
     for( const audioProducerId of _audioEls.current.keys() ) {
-      if( !state.studio.layout.find( item => item.audioProducerId === audioProducerId ) ) {
-        _audioEls.current.delete( audioProducerId )
+      if( !state.studio.layout
+        .filter( item => ( item.width !== 0 && item.height !== 0 ))
+        .find( item => item.audioProducerId === audioProducerId ) 
+      ) {
+        const audioElem = _audioEls.current.get( audioProducerId )
+        audioElem.pause()
+        audioElem.remove()
+        _audioEls.current.delete(audioProducerId)
       }
     }
 
-    state.studio.layout.forEach( item => {
+    state.studio.layout
+      .filter( item => ( item.width !== 0 && item.height !== 0 ))
+      .forEach( item => {
       if( !_videoEls.current.has( item.videoProducerId ) ) {
         const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
+        logger.debug( 'consumers:%o', appData.roomClient.consumers )
+        setTimeout( () => {
+          logger.debug( 'consumers:%o', appData.roomClient.consumers )
+        }, 1000 )
         const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
 
         let stream
@@ -102,7 +120,7 @@ export default function Studio( props ) {
         }
       }
     })
-  }, [ playAudio, state.studio.layout, state.localMedias, state.peers, appData ])
+  }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, appData ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 

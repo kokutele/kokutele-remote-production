@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { useParams } from "react-router-dom"
 
 import Studio from "../components/studio"
 
@@ -8,16 +9,18 @@ import { useAppContext } from "../libs/reducer"
 const logger = new Logger('studio-viewer')
 
 export default function StudioViewer( props ) {
-  const { state, appData, createRoomClient, joinRoom } = useAppContext()
+  const { name } = useParams()
+  const { state, appData, createRoomClient, joinRoom, setStatusReady } = useAppContext()
   
   useEffect( () => {
     ( async () => {
       try {
-        createRoomClient({ stream: null ,displayName: 'studio-viewer' })
+        createRoomClient({ roomId: name ,displayName: 'studio-viewer' })
 
         logger.debug("client created:%o", appData.roomClient )
 
         await joinRoom()
+        setStatusReady()
       } catch( err ) {
         logger.error( err.message )
       }
@@ -28,7 +31,7 @@ export default function StudioViewer( props ) {
 
   return (
     <div className="StudioViewer">
-      <Studio style={{ height: "100vh" }} playAudio={true} />
+      <Studio style={{ height: "100vh", width: "100vw", background: "#000", position: 'absolute', top: 0 }} playAudio={true} />
       { process.env.NODE_ENV === 'development' && (
       <div className='debug'>
         <strong>debug window</strong>

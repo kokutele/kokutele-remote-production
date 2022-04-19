@@ -35,19 +35,3 @@ https://www.schemecolor.com/christmas-songs.php
   background: #034F1B;
 }
 
-.debug {
-  background: rgba( 30, 30, 30, 0.75 );
-  color: #0f0;
-  font-size: 0.75em;
-  height: 50vh;
-  overflow: auto;
-  padding: 3px 3px;
-  position: fixed;
-  right: 0;
-  top: 0;
-  width: 30vw;
-}
-
-.App .debug pre {
-  font-family: system-ui;
-}
