@@ -33,7 +33,7 @@ export default function SourceVideo( props ) {
 
   // when video is clicked, toggle adding or deleting from studio layout.
   const handleClick = useCallback( () => {
-    if( !audioProducerId || !videoProducerId ) {
+    if( !videoProducerId ) {
       logger.warn( 'Meida not ready yet' )
     } else {
       if( 
@@ -83,9 +83,9 @@ export default function SourceVideo( props ) {
         videoTrack = videoConsumerId ? roomClient.consumers.get( videoConsumerId ).track : null
       }
 
-      if( audioTrack && videoTrack ) {
-        stream.addTrack( audioTrack )
-        stream.addTrack( videoTrack )
+      if( videoTrack ) {
+        if( audioTrack ) stream.addTrack( audioTrack )
+        if( videoTrack ) stream.addTrack( videoTrack )
 
         _videoEl.current.srcObject = stream
         _videoEl.current.onloadedmetadata = async () => {

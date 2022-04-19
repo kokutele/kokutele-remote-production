@@ -14,15 +14,15 @@ export default function Sources() {
   const [ _sources, setSources ] = useState([])
 
   useEffect(() => {
-    const remoteMedias = state.audioConsumers.map( audioConsumer => {
-      const audioConsumerId = audioConsumer.consumerId
-      const audioProducerId = audioConsumer.producerId
-      const peerId = audioConsumer.peerId
-      const mediaId = audioConsumer.mediaId
+    const remoteMedias = state.videoConsumers.map( videoConsumer => {
+      const videoConsumerId = videoConsumer.consumerId
+      const videoProducerId = videoConsumer.producerId
+      const peerId  = videoConsumer.peerId
+      const mediaId = videoConsumer.mediaId
 
-      const videoConsumer = state.videoConsumers.find( item => item.mediaId === mediaId )
-      const videoConsumerId = videoConsumer ? videoConsumer.consumerId : null
-      const videoProducerId = videoConsumer ? videoConsumer.producerId : null
+      const audioConsumer = state.audioConsumers.find( item => item.mediaId === mediaId )
+      const audioConsumerId = audioConsumer ? audioConsumer.consumerId : null
+      const audioProducerId = audioConsumer ? audioConsumer.producerId : null
 
       const peer = state.peers.find( item => item.id === peerId )
 

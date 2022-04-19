@@ -395,37 +395,39 @@ export default class RoomClient extends EventEmitter {
       try {
         track = stream.getAudioTracks()[0]
 
-        audioProducer = await this._sendTransport.produce( {
-          track,
-          codecOptions: {
-            opusStereo: 1,
-            opusDtx   : 1
-          },
-          appData: {
-            mediaId
-          }
-        })
-        logger.debug( "audioProducer.id: %s", audioProducer.id )
-
-        audioProducer.on( 'transoprtclose', () => {
-          this._producers.delete( audioProducer.id )
-        })
-
-        audioProducer.on( 'trackended', async () => {
-          audioProducer.close()
-
-          await this._protoo.request( 'closeProducer', {
-            producerId: audioProducer.id
+        if( track ) {
+          audioProducer = await this._sendTransport.produce( {
+            track,
+            codecOptions: {
+              opusStereo: 1,
+              opusDtx   : 1
+            },
+            appData: {
+              mediaId
+            }
           })
-          .then( () => {
-            this._producers.delete( audioProducer.id ) 
-          })
-          .catch( err => {
-            logger.error( 'Error while closing producer for audio' )
-          })
-        })
+          logger.debug( "audioProducer.id: %s", audioProducer.id )
 
-        this._producers.set( audioProducer.id, audioProducer )
+          audioProducer.on( 'transoprtclose', () => {
+            this._producers.delete( audioProducer.id )
+          })
+
+          audioProducer.on( 'trackended', async () => {
+            audioProducer.close()
+
+            await this._protoo.request( 'closeProducer', {
+              producerId: audioProducer.id
+            })
+            .then( () => {
+              this._producers.delete( audioProducer.id ) 
+            })
+            .catch( err => {
+              logger.error( 'Error while closing producer for audio' )
+            })
+          })
+
+          this._producers.set( audioProducer.id, audioProducer )
+        }
       } catch( err ) {
         logger.error('error while producing audio: %o', err )
         if( track ) track.stop()
