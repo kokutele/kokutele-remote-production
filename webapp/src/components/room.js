@@ -51,7 +51,7 @@ export default function Room( props ) {
             <StudioPatterns />
           </Col>
           <Col span={3} style={{ textAlign: "right" }}>
-            <Button type="link"><a href={`/viewer/${roomId}`} target="_blank">Viewer</a></Button>
+            <Button type="link"><a href={`/viewer/${roomId}`} rel="noreferrer" target="_blank">Viewer</a></Button>
           </Col>
         </Row>
       </div>
