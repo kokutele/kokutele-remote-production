@@ -30,8 +30,8 @@ export default function Room( props ) {
       } )
       .catch( err => setErrMessage( err.message ))
 
-    return function cleanup() {
-      close()
+    return async function cleanup() {
+      await close()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])

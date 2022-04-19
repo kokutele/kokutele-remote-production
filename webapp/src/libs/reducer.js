@@ -117,7 +117,7 @@ export const useAppContext = () => {
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
   }
 
-  const close = () => {
+  const close = async () => {
     appData.roomClient.close()
     appData.roomClient = null
 
@@ -130,6 +130,7 @@ export const useAppContext = () => {
     appData.localStreams.clear()
 
     for( const elem of appData.localVideos.values() ) {
+      await elem.pause()
       elem.remove()
     }
     appData.localVideos.clear()

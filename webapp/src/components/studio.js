@@ -68,7 +68,7 @@ export default function Studio( props ) {
 
         const videoEl = document.createElement( 'video' )
         videoEl.srcObject = stream
-        videoEl.muted = !playAudio
+        videoEl.muted = true
 
         videoEl.onloadedmetadata = async () => {
           await videoEl.play()
