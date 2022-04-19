@@ -15,7 +15,7 @@ const logger = new Logger('Room')
 const showDebug = process.env.NODE_ENV === 'development'
 
 export default function Room( props ) {
-  const { appData, state, createRoomClient, joinRoom, createProducer } = useAppContext()
+  const { appData, state, createRoomClient, joinRoom, createProducer, close } = useAppContext()
   const [ _errMessage, setErrMessage ] = useState('')
   const { displayName, stream, roomId } = props
   
@@ -30,6 +30,9 @@ export default function Room( props ) {
       } )
       .catch( err => setErrMessage( err.message ))
 
+    return function cleanup() {
+      close()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])
 

@@ -24,6 +24,9 @@ export const initialState = {
 
 export const reducer = ( state, action ) => {
   switch( action.type ) {
+    case 'INIT': {
+      return initialState
+    }
     case 'SET_STATUS': {
       return { ...state, status: action.value }
     }
@@ -112,6 +115,26 @@ export const useAppContext = () => {
       .catch( err => { throw err })
 
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
+  }
+
+  const close = () => {
+    appData.roomClient.close()
+    appData.roomClient = null
+
+    for( const stream of appData.localStreams.values() ) {
+      const tracks = stream.getTracks()
+      for( const track of tracks ) {
+        track.stop()
+      }
+    }
+    appData.localStreams.clear()
+
+    for( const elem of appData.localVideos.values() ) {
+      elem.remove()
+    }
+    appData.localVideos.clear()
+
+    dispatch({ type: 'INIT' })
   }
 
   const createProducer = async ({ peerId, displayName, stream }) => {
@@ -210,6 +233,7 @@ export const useAppContext = () => {
     createRoomClient,
     createProducer,
     joinRoom,
+    close,
     state,
     dispatch
   }
