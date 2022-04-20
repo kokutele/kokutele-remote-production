@@ -527,6 +527,11 @@ export default class RoomClient extends EventEmitter {
       .catch( err => { throw err })
   }
 
+  async toMainInStudioLayout( layoutIdx ) {
+    await this._protoo.request( 'toMainInStudioLayout', { layoutIdx } )
+      .catch( err => { throw err })
+  }
+
   close() {
     this._protoo.close()
     this._closed = true

@@ -228,6 +228,10 @@ export const useAppContext = () => {
     await appData.roomClient.deleteStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId })
   }
 
+  const toMainInStudioLayout = async layoutIdx => {
+    await appData.roomClient.toMainInStudioLayout( layoutIdx )
+  }
+
   return {
     appData,
     getStudioPatterns,
@@ -237,6 +241,7 @@ export const useAppContext = () => {
     getStudioLayout,
     addStudioLayout,
     deleteStudioLayout,
+    toMainInStudioLayout,
     createRoomClient,
     createProducer,
     joinRoom,

@@ -652,6 +652,19 @@ class Room extends EventEmitter {
         break
       }
 
+      case 'toMainInStudioLayout': {
+        const { layoutIdx } = request.data
+        this._studio.toMain( layoutIdx )
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioLayoutUpdated', this._studio.layout )
+            .catch( () => {} )
+        }
+        break
+      }
+
       case 'changeDisplayName': {
         if( !peer.data.joined ) {
           throw new Error( 'Peer not yet joined' )

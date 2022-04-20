@@ -81,6 +81,11 @@ class Studio {
     this._calcLayout()
   }
 
+  toMain( layoutIdx ) {
+    this._layout = [ this._layout[layoutIdx], ...this._layout.filter( ( item, idx ) => idx !== layoutIdx ) ]
+    this._calcLayout()
+  }
+
   deletePeer( peerId ) {
     this._layout = this._layout.filter( item => item.peerId !== peerId )
     this._calcLayout()

@@ -16,9 +16,10 @@ const videoFrameColors = [
 ]
 
 export default function SourceVideo( props ) {
-  const { state, appData, addStudioLayout, deleteStudioLayout } = useAppContext()
+  const { state, appData, addStudioLayout, deleteStudioLayout, toMainInStudioLayout } = useAppContext()
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
+  const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
 
   const {
     id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId
@@ -59,6 +60,7 @@ export default function SourceVideo( props ) {
           videoProducerId,
           mediaId
         })
+        setLayoutIdx( -1 )
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,6 +118,7 @@ export default function SourceVideo( props ) {
     // when they are included, we will draw border with color, otherwise with white.
     if( obj ) {
       const idx = state.studio.layout.indexOf( obj )
+      setLayoutIdx( idx )
       _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ idx % videoFrameColors.length ]}`
     } else {
       _wrapperEl.current.style.border = '3px solid #fff'
@@ -126,6 +129,17 @@ export default function SourceVideo( props ) {
     <div className="SourceVideo">
       <div className="videoWrapper" ref={ _wrapperEl }>
         <video ref={ _videoEl } onClick={handleClick} />
+        { _layoutIdx > -1 && (
+        <div 
+          className="layout-num" 
+          style={{background: `${videoFrameColors[ _layoutIdx % videoFrameColors.length ]}`}}
+          onClick={() => {
+            if( _layoutIdx !== 0 ) {
+              toMainInStudioLayout( _layoutIdx )
+            }
+          }}
+        >{_layoutIdx === 0 ? "Main" : `Sub-${_layoutIdx}`}</div>
+        )}
         <div className="meta">
           {displayName}
         </div>
