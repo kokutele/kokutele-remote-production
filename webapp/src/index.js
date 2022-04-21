@@ -7,6 +7,7 @@ import Home from './layouts/home';
 import Entrance from './layouts/entrance';
 import Dashboard from './layouts/dashboard'
 import StudioViewer from './layouts/studio-viewer';
+import Guest from './layouts/guest';
 import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
@@ -18,6 +19,7 @@ ReactDOM.render(
           <Route path="virtual-studio" element={<Entrance />} />
           <Route path="virtual-studio/:name" element={<Dashboard />} />
           <Route path="viewer/:name" element={ <StudioViewer/> } />
+          <Route path="guest/:guestId" element={ <Guest/> } />
         </Route>
       </Routes>
     </BrowserRouter>

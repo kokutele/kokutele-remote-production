@@ -10,11 +10,15 @@ module.exports = {
     // NOTE: Don't change listenPort (client app assumes 4443).
     listenPort: process.env.PROTOO_LISTEN_PORT || 4443,
     // NOTE: Set your own valid certificate files.
+    // does not make any effect, since this server does not provide https connection.
+    // we're assuming to provide https url, need to use 3rd party proxy server, such as
+    // nginx
     tls:
     {
       cert : process.env.HTTPS_CERT_FULLCHAIN || `${__dirname}/certs/fullchain.pem`,
       key  : process.env.HTTPS_CERT_PRIVKEY || `${__dirname}/certs/privkey.pem`
-    }
+    },
+    secretPhrase: process.env.SECRET_PHRASE || 'SECRET',
   },
   // mediasoup settings.
   mediasoup: {
@@ -123,8 +127,7 @@ module.exports = {
   studio: {
     width: process.env.STUDIO_WIDTH ? Math.trunc( process.env.STUDIO_WIDTH ) : 1920,
     height: process.env.STUDIO_HEIGHT ? Math.trunc( process.env.STUDIO_HEIGHT ) : 1080,
-    useMixer: false, // When this flag is true, you need to change `{ gypfile: true }` in package.json
-    rtmpUrl: process.env.STUDIO_RTMP_URL || 'rtmp://localhost/live/test'
+    useMixer: false, // does not make any effect. for future use, maybe.
+    rtmpUrl: process.env.STUDIO_RTMP_URL || 'rtmp://localhost/live/test' // does not make any effect. for future use, maybe.
   }
-
 };

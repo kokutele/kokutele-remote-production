@@ -14,6 +14,8 @@ const { AwaitQueue } = require('awaitqueue')
 const Logger = require('../logger')
 const Room = require('./room')
 
+const { getGuestId, getRoomId } = require('../util')
+
 const config = require('../../config')
 
 const logger = new Logger()
@@ -84,7 +86,7 @@ class Server {
 
     this._expressApp.use( express.static( path.join( __dirname, "..", "..", "webapp", "build") ))
     this._expressApp.use((req, res, next) => {
-      if( req.url.includes("/virtual-studio") || req.url.includes("/viewer") ) {
+      if( req.url.includes("/virtual-studio") || req.url.includes("/viewer") || req.url.includes("/guest") ) {
         res.sendFile( path.join( __dirname, "..", "..", "webapp", "build", "index.html" ) )
       } else {
         next()
@@ -97,7 +99,8 @@ class Server {
         error.status = 404
         throw error
       } else {
-        req.room = rooms.get( roomId )
+        req.roomId = roomId
+        req.room = this._rooms.get( roomId )
         next()
       }
     })
@@ -108,10 +111,22 @@ class Server {
       res.json({ name })
     })
 
+    this._expressApp.get('/api/guestId/:roomId', ( req, res ) => {
+      const guestId = getGuestId( req.roomId )
+      res.status(200).send( encodeURIComponent( guestId ) )
+    })
+
+    this._expressApp.get('/api/roomId/:guestId', ( req, res ) => {
+      const guestId = decodeURIComponent( req.params.guestId )
+      const roomId = getRoomId( guestId )
+      res.status(200).send( roomId )
+    })
+
     this._expressApp.get('/rooms/:roomId', ( req, res ) => {
       const data = req.room.getRouterRtpCapabilities()
       res.status( 200 ).json( data )
     })
+
 
     this._expressApp.use( ( error, req, res, next ) => {
       if( error ) {

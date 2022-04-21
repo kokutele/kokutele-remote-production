@@ -6,6 +6,7 @@ import StudioPatterns from './studio-patterns'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
+import { apiEndpoint } from '../libs/url-factory'
 import Logger from '../libs/logger'
 
 import './room.css'
@@ -17,6 +18,7 @@ const showDebug = process.env.NODE_ENV === 'development'
 
 export default function Room( props ) {
   const { appData, state, createRoomClient, joinRoom, createProducer, close } = useAppContext()
+  const [ _guestId, setGuestId ] = useState('')
   const [ _errMessage, setErrMessage ] = useState('')
   const { displayName, stream, roomId } = props
   
@@ -29,6 +31,11 @@ export default function Room( props ) {
       .then( () => {
         createProducer({ peerId, displayName, stream })
       } )
+      .catch( err => setErrMessage( err.message ))
+
+    fetch( `${apiEndpoint}/guestId/${roomId}` )
+      .then( res => res.text() )
+      .then( guestId => setGuestId( guestId ))
       .catch( err => setErrMessage( err.message ))
 
     return async function cleanup() {
@@ -51,7 +58,8 @@ export default function Room( props ) {
             <StudioPatterns />
           </Col>
           <Col span={3} style={{ textAlign: "right" }}>
-            <Button type="link"><a href={`/viewer/${roomId}`} rel="noreferrer" target="_blank">Viewer</a></Button>
+            <Button type="link"><a href={`/viewer/${roomId}`} rel="noreferrer" target="_blank">Viewer</a></Button><br />
+            <Button type="link"><a href={`/guest/${_guestId}`} rel="noreferrer" target="_blank">Guest link</a></Button>
           </Col>
         </Row>
       </div>
