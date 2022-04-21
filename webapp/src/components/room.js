@@ -33,16 +33,20 @@ export default function Room( props ) {
       } )
       .catch( err => setErrMessage( err.message ))
 
-    fetch( `${apiEndpoint}/guestId/${roomId}` )
-      .then( res => res.text() )
-      .then( guestId => setGuestId( guestId ))
-      .catch( err => setErrMessage( err.message ))
-
     return async function cleanup() {
       await close()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])
+
+  useEffect( () => {
+    if( state.status === 'READY' ) {
+      fetch( `${apiEndpoint}/guestId/${roomId}` )
+        .then( res => res.text() )
+        .then( guestId => setGuestId( guestId ))
+        .catch( err => setErrMessage( err.message ))
+    }
+  }, [ state.status ])
 
   return (
     <div className='Room'>
@@ -59,7 +63,7 @@ export default function Room( props ) {
           </Col>
           <Col span={3} style={{ textAlign: "right" }}>
             <Button type="link"><a href={`/viewer/${roomId}`} rel="noreferrer" target="_blank">Viewer</a></Button><br />
-            <Button type="link"><a href={`/guest/${_guestId}`} rel="noreferrer" target="_blank">Guest link</a></Button>
+            <Button type="link"><a href={`/guest-room/${_guestId}`} rel="noreferrer" target="_blank">Guest link</a></Button>
           </Col>
         </Row>
       </div>

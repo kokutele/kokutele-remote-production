@@ -86,7 +86,7 @@ class Server {
 
     this._expressApp.use( express.static( path.join( __dirname, "..", "..", "webapp", "build") ))
     this._expressApp.use((req, res, next) => {
-      if( req.url.includes("/virtual-studio") || req.url.includes("/viewer") || req.url.includes("/guest") ) {
+      if( req.url.includes("/virtual-studio") || req.url.includes("/viewer") || req.url.includes("/guest-room") ) {
         res.sendFile( path.join( __dirname, "..", "..", "webapp", "build", "index.html" ) )
       } else {
         next()

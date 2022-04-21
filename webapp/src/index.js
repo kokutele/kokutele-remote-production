@@ -19,7 +19,7 @@ ReactDOM.render(
           <Route path="virtual-studio" element={<Entrance />} />
           <Route path="virtual-studio/:name" element={<Dashboard />} />
           <Route path="viewer/:name" element={ <StudioViewer/> } />
-          <Route path="guest/:guestId" element={ <Guest/> } />
+          <Route path="guest-room/:guestId" element={ <Guest/> } />
         </Route>
       </Routes>
     </BrowserRouter>
