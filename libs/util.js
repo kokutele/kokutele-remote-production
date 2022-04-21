@@ -12,14 +12,14 @@ const getGuestId = roomId => {
 
   const encData = cipher.update( Buffer.from( roomId ) )
 
-  return Buffer.concat([ iv, encData, cipher.final() ]).toString('base64')
+  return Buffer.concat([ iv, encData, cipher.final() ]).toString('hex')
 }
 
 const getRoomId = guestId => {
   const { secretPhrase } = api
   const key = crypto.scryptSync( secretPhrase, 'salt', 32 )
 
-  const buf = Buffer.from( guestId, 'base64')
+  const buf = Buffer.from( guestId, 'hex')
 
   const iv = buf.slice( 0, 16 )
   const encData = buf.slice( 16 )

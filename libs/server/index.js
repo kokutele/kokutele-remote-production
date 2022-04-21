@@ -113,11 +113,11 @@ class Server {
 
     this._expressApp.get('/api/guestId/:roomId', ( req, res ) => {
       const guestId = getGuestId( req.roomId )
-      res.status(200).send( encodeURIComponent( guestId ) )
+      res.status(200).send( guestId )
     })
 
     this._expressApp.get('/api/roomId/:guestId', ( req, res ) => {
-      const guestId = decodeURIComponent( req.params.guestId )
+      const guestId = req.params.guestId
       const roomId = getRoomId( guestId )
       res.status(200).send( roomId )
     })
