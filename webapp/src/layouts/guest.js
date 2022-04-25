@@ -5,6 +5,8 @@ import { Button } from "antd";
 import { useAppContext } from "../libs/reducer";
 import { apiEndpoint } from "../libs/url-factory";
 
+import { RiVideoAddFill } from 'react-icons/ri'
+
 import './guest.css'
 
 export default function Guest( props ) {
@@ -75,14 +77,16 @@ export default function Guest( props ) {
 
 
   return (
-    <div className="Guest">
+    <div className="Guest" style={{position: 'absolute', left: 0, top: 0, width: '100vw', height: '100vh', background: "#000"}}>
       <div className="wrapper">
         <div className="video-view">
           <video ref={_videoEl} playsInline />
         </div>
         <div className="controller">
           {state.status === 'IDLE' && (
-          <Button onClick={ handleStartVideoTalk } type="primary">Start Video Talk</Button>
+          <Button icon={<RiVideoAddFill/>} onClick={ handleStartVideoTalk } type="primary" danger style={{fontWeight: "bold"}}>
+            &nbsp;Join
+          </Button>
           )}
         </div>
       </div>
