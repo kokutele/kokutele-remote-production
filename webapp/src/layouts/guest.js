@@ -14,6 +14,7 @@ export default function Guest( props ) {
   const { state, appData, createRoomClient, joinRoom, createProducer } = useAppContext()
 
   const [ _roomId, setRoomId ] = useState('')
+  const [ _status, setStatus ] = useState('IDLE')
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
 
@@ -23,6 +24,13 @@ export default function Guest( props ) {
       .then( roomId => setRoomId( roomId ))
       .catch( err => { throw err })
   }, [ guestId ])
+
+  useEffect( () => {
+    window.parent.postMessage({
+      type: 'status',
+      value: _status
+    }, '*')
+  }, [ _status ])
 
   const handleStartVideoTalk = useCallback( async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -38,6 +46,7 @@ export default function Guest( props ) {
       joinRoom()
         .then( () => {
           createProducer({ peerId, displayName, stream })
+          setStatus('PRODUCING')
         } )
         .catch( err => alert( err.message ))
     }
