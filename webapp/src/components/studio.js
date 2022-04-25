@@ -129,13 +129,20 @@ export default function Studio( props ) {
 
     const render = () => {
       _ctx.current.clearRect( 0, 0, state.studio.width, state.studio.height )
-      state.studio.layout.forEach( item => {
+
+      _ctx.current.beginPath()
+      _ctx.current.strokeStyle = '#fff'
+      state.studio.layout.forEach( ( item, idx ) => {
         const videoProducerId = item.videoProducerId
         const videoEl = _videoEls.current.get( videoProducerId )
         if( videoEl ) {
           _ctx.current.drawImage( videoEl, item.posX, item.posY, item.width, item.height )
+          if( state.studio.patternId > 1 && idx > 0 ) {
+            _ctx.current.rect( item.posX, item.posY, item.width, item.height )
+          }
         }
       })
+      _ctx.current.stroke()
 
       reqId = requestAnimationFrame( render )
     }
@@ -146,7 +153,7 @@ export default function Studio( props ) {
       if( reqId ) cancelAnimationFrame( reqId )
       reqId = null
     }
-  }, [ state.status, state.studio.layout, state.studio.height, state.studio.width ])
+  }, [ state.status, state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width ])
 
   return (
     <div className="Studio">
