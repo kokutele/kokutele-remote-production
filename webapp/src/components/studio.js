@@ -14,7 +14,7 @@ export default function Studio( props ) {
     appData 
   } = useAppContext()
 
-  const { playAudio } = props
+  const { playAudio, hideAlert } = props
   const _canvasEl = useRef()
   const _ctx = useRef()
   const _videoEls = useRef( new Map() )
@@ -152,7 +152,7 @@ export default function Studio( props ) {
     <div className="Studio">
       <div className="wrapper" style={ props.style }>
         <canvas ref={ _canvasEl }></canvas>
-        { state.studio.layout.length === 0 && (
+        { !hideAlert && state.studio.layout.length === 0 && (
           <div className='alert'>
             <Alert 
               description="Click media shown below to add here for live streaming."
