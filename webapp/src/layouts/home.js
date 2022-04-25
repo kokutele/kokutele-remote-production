@@ -5,7 +5,7 @@ export default function Home(props) {
   return (
     <div className="Home" style={{textAlign: "center"}}>
       <h1 style={{
-        color:'#CEAC5C',
+          color: "#bd3634",
         padding: "1em 0 .5em 0",
         margin: 0,
         fontSize: '72pt',
@@ -14,6 +14,7 @@ export default function Home(props) {
       }}>Kokutele Studio</h1>
       <h3
         style={{
+        color:'#7e121d',
           fontSize: "24pt",
           padding: "0.2em 0 1.5em 0",
         }}
