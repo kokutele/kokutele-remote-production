@@ -17,13 +17,18 @@ export default function Dashboard( props ) {
   const [ _authenticated, setAuthenticated ] = useState( false )
   const [ _passcode, setPasscode ] = useState( '' )
   const [ _passcodeError, setPasscodeError ] = useState( '' )
+  const [ _loaded, setLoaded ] = useState( false )
   const _stream = useRef()
 
   useEffect( () => {
     fetch( `${apiEndpoint}/studio/${name}` )
       .then( res => {
-        if( res.status === 200 ) setAuthenticated( true )
+        if( res.status === 200 ) {
+          setAuthenticated( true )
+        }
+        setLoaded( true )
       })
+
     return function cleanup() {
       logger.debug('cleanup - stream:%o', _stream.current )
       if( _stream.current ) {
@@ -52,7 +57,7 @@ export default function Dashboard( props ) {
         closable={false}
         cancelButtonProps={{ disabled: true }}
         title={"passcode required."} 
-        visible={!_authenticated}
+        visible={ !_authenticated && _loaded }
         onOk={ () => {
           fetch( `${apiEndpoint}/studio/${name}`, {
             method: 'POST',
