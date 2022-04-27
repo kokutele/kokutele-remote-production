@@ -11,8 +11,9 @@ const mediasoup = require('mediasoup')
 const express = require('express')
 const cors = require('cors')
 const { AwaitQueue } = require('awaitqueue')
-const Logger = require('../logger')
 const Room = require('./room')
+const StudioDB = require('../studio-db')
+const Logger = require('../logger')
 
 const { getGuestId, getRoomId } = require('../util')
 
@@ -31,12 +32,15 @@ class Server {
   _protooWebSocketServer = null
   _mediasoupWorkers = []
   _nextMediasoupWorkerIdx = 0
+  _studioDB = new StudioDB()
 
   static create() {
     return new this()
   }
 
   start = async () => {
+    await this._studioDB.start()
+
     await this._runMediasourpWorkers()
 
     this._createExpressApp()
@@ -94,21 +98,50 @@ class Server {
     })
 
     this._expressApp.param( 'roomId', ( req, res, next, roomId ) => {
-      if( !this._rooms.has( roomId ) ) {
-        const error = new Error( `room with id "${roomId}" not found` )
-        error.status = 404
-        throw error
-      } else {
-        req.roomId = roomId
-        req.room = this._rooms.get( roomId )
-        next()
-      }
+      req.roomId = roomId
+      req.room = this._rooms.get( roomId )
+      next()
     })
 
+    // generate random name for create room
     this._expressApp.get('/api/studio', ( req, res ) => {
       const name = hashids.encode(Date.now())
       logger.info('name:%s', name)
       res.json({ name })
+    })
+
+    this._expressApp.get('/api/studio/:roomId', async ( req, res ) => {
+      // check auth is needed for req.roomId
+      const roomId = await this._studioDB.findOrSetRoomName( req.roomId )
+      const isAuthNeeded = await this._studioDB.isPasscodeExist( roomId )
+
+      if( isAuthNeeded ) {
+        res.status( 401 ).send('unauthenticated')
+      } else {
+        res.status( 200 ).send('ok')
+      }
+    })
+
+    this._expressApp.post('/api/studio/:roomId', async ( req, res ) => {
+      const { passcode } = req.body
+      const result = await this._studioDB.challengePasscode({ roomName: req.roomId, passcode })
+
+      if( result ) {
+        res.status(200).send('ok')
+      } else {
+        res.status(403).send('forbidden')
+      }
+    })
+
+    this._expressApp.put('/api/studio/:roomId', async ( req, res ) => {
+      try {
+        const { passcode } = req.body
+        await this._studioDB.setPasscode({ roomName: req.roomId, passcode })
+
+        res.status(201).send('accepted')
+      } catch( err ) {
+        res.status( err.status || 500 ).send( err.message )
+      }
     })
 
     this._expressApp.get('/api/guestId/:roomId', ( req, res ) => {
@@ -123,8 +156,15 @@ class Server {
     })
 
     this._expressApp.get('/rooms/:roomId', ( req, res ) => {
-      const data = req.room.getRouterRtpCapabilities()
-      res.status( 200 ).json( data )
+      if( req.room ) {
+        const data = req.room.getRouterRtpCapabilities()
+        res.status( 200 ).json( data )
+      } else {
+        const error = new Error( `room with id "${roomId}" not found` )
+        error.status = 404
+
+        throw error
+      }
     })
 
 

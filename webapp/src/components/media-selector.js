@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button, Card, Col, Input, Row, Select } from 'antd'
+import { Alert, Button, Card, Col, Input, Row, Select } from 'antd'
 // import AudioStreamMeter from 'audio-stream-meter'
 import pokemon from 'pokemon'
 
@@ -11,65 +11,43 @@ import './media-selector.css'
 const { Option } = Select
 const logger = new Logger('media-selector')
 
-// const AudioContext = window.AudioContext || window.webkitAudioContext
-
 export default function MediaSelector(props) {
   const { setStream } = props
 
   const [ _videoDevices, setVideoDevices ] = useState( [] )
   const [ _audioDevices, setAudioDevices ] = useState( [] )
-  // const [ _volume, setVolume ] = useState( 0 )
+  const [ _errMessage, setErrMessage ] = useState( '' )
   const [ _displayName, setDisplayName ] = useState( pokemon.random() )
 
   const _videoEl = useRef()
   const _stream = useRef()
-  // const _meter = useRef( null )
-
-  // const updateAudioMeter = useCallback( () => {
-    // if( !_stream.current ) return
-
-    // if( _meter.current ) {
-    //   _meter.current.close.bind( _meter.current )
-    // }
-
-    // const audioContext = new AudioContext()
-
-    // const audioStream = audioContext.createMediaStreamSource( _stream.current )
-    // _meter.current = AudioStreamMeter.audioStreamProcessor( audioContext, () => {
-    //   setVolume( Math.trunc( _meter.current.volume * 100 ))
-    // })
-
-    // audioStream.connect( _meter.current )
-  // }, [])
-
-
 
   useEffect( () => {
     ( async () => {
-      const stream = await navigator.mediaDevices.getUserMedia( { video: true, audio: true } )
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia( { video: true, audio: true } )
 
-      _videoEl.current.srcObject = stream
+        _videoEl.current.srcObject = stream
 
-      _videoEl.current.onloadedmetadata = async () => {
-        await _videoEl.current.play()
+        _videoEl.current.onloadedmetadata = async () => {
+          try {
+            await _videoEl.current.play()
 
-        const list = await navigator.mediaDevices.enumerateDevices()
+            const list = await navigator.mediaDevices.enumerateDevices()
 
-        setVideoDevices( list.filter( item => item.kind === 'videoinput' ))
-        setAudioDevices( list.filter( item => item.kind === 'audioinput' ))
+            setVideoDevices( list.filter( item => item.kind === 'videoinput' ))
+            setAudioDevices( list.filter( item => item.kind === 'audioinput' ))
+          } catch( err ) {
+            setErrMessage( err.message )
+          }
+        }
+        _stream.current = stream
+
+        setStream( _stream.current, '', false )
+      } catch( err ) {
+        setErrMessage('permission for accessing webcam denied. check your browser setting')
       }
-      _stream.current = stream
-
-      setStream( _stream.current, '', false )
-      // updateAudioMeter()
     })()
-
-    // return function cleanup() {
-    //   if( _meter.current ) {
-    //     logger.debug( 'cleanup - close audio meter')
-    //     _meter.current.close.bind( _meter.current )
-    //   }
-    // }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -80,29 +58,35 @@ export default function MediaSelector(props) {
   }, [ _displayName ])
 
   const handleVideoChange = useCallback( async deviceId => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId }, audio: false })
-    const track = stream.getVideoTracks()[0]
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId }, audio: false })
+      const track = stream.getVideoTracks()[0]
 
-    const oldTrack = _stream.current.getVideoTracks()[0]
-    oldTrack.stop()
-    _stream.current.removeTrack( oldTrack )
+      const oldTrack = _stream.current.getVideoTracks()[0]
+      oldTrack.stop()
+      _stream.current.removeTrack( oldTrack )
 
-    _stream.current.addTrack( track )
+      _stream.current.addTrack( track )
 
-    // updateAudioMeter()
+      setErrMessage( '' )
+    } catch( err ) {
+      setErrMessage('permission for accessing webcam denied. check your browser setting')
+    }
   }, [] )
 
   const handleAudioChange = useCallback( async deviceId => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: { deviceId } })
-    const track = stream.getAudioTracks()[0]
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: { deviceId } })
+      const track = stream.getAudioTracks()[0]
 
-    const oldTrack = _stream.current.getAudioTracks()[0]
-    oldTrack.stop()
-    _stream.current.removeTrack( oldTrack )
+      const oldTrack = _stream.current.getAudioTracks()[0]
+      oldTrack.stop()
+      _stream.current.removeTrack( oldTrack )
 
-    _stream.current.addTrack( track )
-
-    // updateAudioMeter()
+      _stream.current.addTrack( track )
+    } catch( err ) {
+      setErrMessage('permission for accessing microphone denied. check your browser setting')
+    }
   }, [] )
 
 
@@ -113,10 +97,13 @@ export default function MediaSelector(props) {
           <Row>
             <Col offset={3} span={18}>
               <Card title="Virtual studio: check webcam">
+                { _errMessage !== '' && (
+                  <Alert type="error" message={_errMessage} showIcon />
+                )}
                 <Row gutter={16}>
                   <Col span={14}>
                     <div className='video-wrapper'>
-                      <video ref={ _videoEl } muted />
+                      <video ref={ _videoEl } muted playsInline />
                     </div>
                   </Col>
                   <Col span={10}>
@@ -145,7 +132,7 @@ export default function MediaSelector(props) {
                       Are you ready?
                     </Col>
                     <Col span={12} style={{ textAlign: "left" }}>
-                      <Button type="primary" onClick={ handleClick }>Yes, I'm ready</Button>
+                      <Button type="primary" onClick={ handleClick } disabled={ !!_errMessage }>Yes, I'm ready</Button>
                     </Col>
                   </Row>
                 </div>

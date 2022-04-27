@@ -3,8 +3,10 @@
   aspect-ratio: calc( 16 / 9);
   text-align: center;
   background: #333;
+  overflow: hidden;
 }
 
 .MediaSelector .video-wrapper video {
   height: 100%;
+  transform: scale(-1, 1);
 }

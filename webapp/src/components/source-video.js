@@ -22,7 +22,7 @@ export default function SourceVideo( props ) {
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
 
   const {
-    id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId
+    id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId, idx 
   } = props
 
   const {
@@ -128,7 +128,7 @@ export default function SourceVideo( props ) {
   return (
     <div className="SourceVideo">
       <div className="videoWrapper" ref={ _wrapperEl }>
-        <video ref={ _videoEl } onClick={handleClick} />
+        <video ref={ _videoEl } onClick={handleClick} className={ idx === 0 ? 'mycam' : 'other' } />
         { _layoutIdx > -1 && (
         <div 
           className="layout-num" 

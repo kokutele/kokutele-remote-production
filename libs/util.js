@@ -32,7 +32,13 @@ const getRoomId = guestId => {
   return roomId
 }
 
+const md5 = str => {
+  const _md5 = crypto.createHash('md5')
+  return _md5.update(str, 'binary').digest('hex')
+}
+
 module.exports = {
   getGuestId,
-  getRoomId
+  getRoomId,
+  md5
 }

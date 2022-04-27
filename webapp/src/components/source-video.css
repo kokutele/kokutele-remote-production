@@ -17,6 +17,12 @@
   cursor: pointer;
 }
 
+.SourceVideo .videoWrapper video.mycam {
+  transform: scale( -1, 1 );
+}
+
+
+
 .SourceVideo .videoWrapper .meta {
   position: absolute;
   background: rgba( 126, 18, 29, 0.75 );
