@@ -35,10 +35,26 @@ $ npm run start.production
 
 then open `http://localhost:4443`
 
-## url parameters
+# api
 
-* studioViewer
-  - true : only studio viewer will be displayed.
+## set passcode for specific virtual-studio
+
+```
+path: /api/studio/:roomName
+method: PUT
+headers:
+- Content-Type: application/json
+body-parameter:
+  format: json
+  params:
+    property: passcode
+    type: text
+
+example
+
+curl -X PUT -H 'Content-Type:application/json' http://localhost:4443/api/studio/foo -d '{"passcode":"bar"}'
+```
+
 
 ## docker
 
@@ -53,7 +69,7 @@ $ npm run build.docker
 please note that docker `kokutele-studio` MUST be run on linux. ( since it requires `--net=host` option )
 
 ```
-$ docker run --net=host -e MEDIASOUP_LISTEN_IP=YOUR_SERVER_ADDRESS -e MEDIASOUP_ANNOUNCED_IP=YOUR_EXTERNAL_IP kokutele-studio
+$ docker run --net=host -e MEDIASOUP_LISTEN_IP=YOUR_SERVER_ADDRESS -e MEDIASOUP_ANNOUNCED_IP=YOUR_EXTERNAL_IP -v /var/lib/kokutele-studio:/var/lib/kokutele-studio kokutele-studio
 ```
 
 ---

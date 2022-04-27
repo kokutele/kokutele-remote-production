@@ -8,3 +8,4 @@ webapp/node_modules
 webapp/build
 __mixer
 build
+studio.db

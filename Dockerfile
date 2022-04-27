@@ -22,7 +22,8 @@ RUN \
   && npm install --production \
   && npm run build \
   && cd ..  \
-  && npm install --production
+  && npm install --production \
+  && mkdir /var/lib/kokutele-studio
 
 EXPOSE 4443
 
