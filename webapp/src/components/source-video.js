@@ -90,6 +90,7 @@ export default function SourceVideo( props ) {
         if( videoTrack ) stream.addTrack( videoTrack )
 
         _videoEl.current.srcObject = stream
+        _videoEl.current.playsInline = true
         _videoEl.current.onloadedmetadata = async () => {
           const videoWidth = _videoEl.current.videoWidth
           const videoHeight = _videoEl.current.videoHeight
@@ -117,9 +118,9 @@ export default function SourceVideo( props ) {
 
     // when they are included, we will draw border with color, otherwise with white.
     if( obj ) {
-      const idx = state.studio.layout.indexOf( obj )
-      setLayoutIdx( idx )
-      _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ idx % videoFrameColors.length ]}`
+      const layoutIdx = state.studio.layout.indexOf( obj )
+      setLayoutIdx( layoutIdx )
+      _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ layoutIdx % videoFrameColors.length ]}`
     } else {
       _wrapperEl.current.style.border = '3px solid #fff'
     }
