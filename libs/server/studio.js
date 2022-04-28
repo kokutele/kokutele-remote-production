@@ -151,8 +151,14 @@ class Studio {
 
   _calcLargeAndSmallLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
-      const height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
-      const width  = Math.floor( this._width * height / this._height )
+      let width, height
+
+      if( i > 5 ) {
+        width = 0; height = 0
+      } else {
+        height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
+        width  = Math.floor( this._width * height / this._height )
+      }
       const posX = i === 0 ? 0 : Math.floor( this._width * 4 / 5 )
       const posY = i === 0 ? Math.floor( ( this._height - height ) / 2 ) : ( i - 1 ) * height
 
@@ -162,11 +168,16 @@ class Studio {
 
   _calcPinPLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
-      const height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
-      const width  = Math.floor( this._width * height / this._height )
+      let width, height
+      if( i > 5 ) {
+        width = 0; height = 0;
+      } else {
+        height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
+        width  = Math.floor( this._width * height / this._height )
+      }
       const posX = i === 0 ? 
         0 : 
-        Math.floor( this._width / 5 ) * ( i - 1 ) + ( Math.floor( this._width / 5 ) - width )
+        Math.floor( this._width / 5 ) * ( i - 1 ) + Math.floor((( this._width / 5 ) - width ) / 2 )
       const posY = i === 0 ? 0 : this._height - height - Math.floor( this._height / 25 )
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
