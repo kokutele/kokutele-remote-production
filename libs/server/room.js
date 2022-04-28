@@ -452,6 +452,8 @@ class Room extends EventEmitter {
         }
 
         const { consumerId } = request.data
+
+        logger.info('pauseConsumer:%s', consumerId)
         const consumer = peer.data.consumers.get( consumerId )
 
         if ( !consumer ) {

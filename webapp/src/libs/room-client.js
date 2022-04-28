@@ -532,6 +532,11 @@ export default class RoomClient extends EventEmitter {
       .catch( err => { throw err })
   }
 
+  async pauseConsumer( consumerId ) {
+    await this._protoo.request( 'pauseConsumer', { consumerId })
+      .catch( err => { throw err })
+  }
+
   close() {
     this._protoo.close()
     this._closed = true

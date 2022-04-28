@@ -6,8 +6,13 @@ import { useAppContext } from "../libs/reducer";
 import { apiEndpoint } from "../libs/url-factory";
 
 import { RiVideoAddFill } from 'react-icons/ri'
+import { MdCancel } from 'react-icons/md'
+
+import Logger from "../libs/logger";
 
 import './guest.css'
+
+const logger = new Logger('guest')
 
 export default function Guest( props ) {
   const { guestId } = useParams()
@@ -17,9 +22,10 @@ export default function Guest( props ) {
   const [ _status, setStatus ] = useState('IDLE')
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
+  const _stream = useRef()
 
   useEffect( () => {
-    fetch( `${apiEndpoint}/roomId/${encodeURIComponent(guestId)}` )
+    fetch( `${apiEndpoint}/roomId/${guestId}` )
       .then( res => res.text() )
       .then( roomId => setRoomId( roomId ))
       .catch( err => { throw err })
@@ -33,6 +39,8 @@ export default function Guest( props ) {
   }, [ _status ])
 
   const handleStartVideoTalk = useCallback( async () => {
+    if( _status !== 'IDLE' ) return
+
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
@@ -50,8 +58,27 @@ export default function Guest( props ) {
         } )
         .catch( err => alert( err.message ))
     }
+
+    _stream.current = stream
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _roomId ])
+  }, [ _status, _roomId ])
+
+  const handleCancelVideoTalk = useCallback( () => {
+    if( _status !== 'PRODUCING' ) return
+
+    const tracks = _stream.current.getTracks()
+
+    for( const track of tracks ) {
+      track.stop()
+    }
+    _stream.current = null
+
+    appData.roomClient.close()
+    setStatus('IDLE')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ _status ])
+
+
 
   useEffect( () => {
     for( const consumerId of _audioEls.current.keys() ) {
@@ -83,6 +110,14 @@ export default function Guest( props ) {
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ state.audioConsumers ])
+  
+  useEffect(() => {
+    state.videoConsumers.forEach( async item => {
+      await appData.roomClient.pauseConsumer( item.consumerId )
+      logger.debug('videoConsumer - paused:%s', item.consumerId )
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ state.videoConsumers ])
 
 
   return (
@@ -92,9 +127,20 @@ export default function Guest( props ) {
           <video ref={_videoEl} playsInline />
         </div>
         <div className="controller">
-          {state.status === 'IDLE' && (
+          { _status === 'IDLE' && (
           <Button icon={<RiVideoAddFill/>} onClick={ handleStartVideoTalk } type="primary" danger style={{fontWeight: "bold"}}>
             &nbsp;Join
+          </Button>
+          )}
+        </div>
+        <div className="cancel">
+          { _status === 'PRODUCING' && (
+          <Button
+            type="link"
+            onClick={ handleCancelVideoTalk }
+            danger
+          >
+            <MdCancel size={24} />
           </Button>
           )}
         </div>
