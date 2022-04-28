@@ -122,6 +122,7 @@ export default function SourceVideo( props ) {
       setLayoutIdx( layoutIdx )
       _wrapperEl.current.style.border = `3px solid ${videoFrameColors[ layoutIdx % videoFrameColors.length ]}`
     } else {
+      setLayoutIdx( -1 )
       _wrapperEl.current.style.border = '3px solid #fff'
     }
   }, [ state.status, state.studio.layout, audioProducerId, videoProducerId ])
