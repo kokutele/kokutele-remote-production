@@ -115,8 +115,8 @@ class Studio {
   _calcMainOnlyLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       const height = i === 0 ? this._height : 0
-      const width  = i === 0 ? Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : 0
-      const posX = i === 0 ? Math.floor( ( this._width - width ) / 2 ) : 0
+      const width  = i === 0 ? this._width : 0 // Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : 0
+      const posX = 0 // i === 0 ? Math.floor( ( this._width - width ) / 2 ) : 0
       const posY = 0
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
@@ -138,9 +138,9 @@ class Studio {
 
         if( idx < this._layout.length ) {
           const height = _height
-          const width = Math.floor( this._layout[idx].videoWidth * _height / this._layout[idx].videoHeight )
+          const width = _width
 
-          const posX = x * _width + ( _width > width ? Math.floor( ( _width - width ) / 2 ) : 0 )
+          const posX = x * _width
           const posY = y * _height + paddingY
 
           this._layout[idx] = { ...this._layout[idx], posX, posY, width, height }
@@ -152,8 +152,8 @@ class Studio {
   _calcLargeAndSmallLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       const height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
-      const width  = Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight )
-      const posX = i === 0 ? Math.floor( ( ( this._width * 4 / 5 ) - width ) / 2 ) : Math.floor( (( this._width * 1 / 5 ) - width ) / 2 + ( this._width * 4 / 5 ) )
+      const width  = Math.floor( this._width * height / this._height )
+      const posX = i === 0 ? 0 : Math.floor( this._width * 4 / 5 )
       const posY = i === 0 ? Math.floor( ( this._height - height ) / 2 ) : ( i - 1 ) * height
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
@@ -163,12 +163,10 @@ class Studio {
   _calcPinPLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       const height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
-      const width  = i === 0 ? 
-        Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight ) : 
-        Math.floor( this._layout[i].videoWidth * height / this._layout[i].videoHeight )
+      const width  = Math.floor( this._width * height / this._height )
       const posX = i === 0 ? 
-        Math.floor( ( this._width - width ) / 2 ) : 
-        Math.floor( (this._width / 5 - width ) / 2 ) + Math.floor( this._width / 5 ) * ( i - 1 )
+        0 : 
+        Math.floor( this._width / 5 ) * ( i - 1 ) + ( Math.floor( this._width / 5 ) - width )
       const posY = i === 0 ? 0 : this._height - height - Math.floor( this._height / 25 )
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
