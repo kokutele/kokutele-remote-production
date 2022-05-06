@@ -107,11 +107,11 @@ module.exports = {
           announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
         }
       ],
-      initialAvailableOutgoingBitrate : 1_000_000,
+      initialAvailableOutgoingBitrate : 2_000_000,
       minimumAvailableOutgoingBitrate : 600_000,
       maxSctpMessageSize              : 262_144,
       // Additional options that are not part of WebRtcTransportOptions.
-      maxIncomingBitrate              : 1_500_000
+      maxIncomingBitrate              : 3_500_000
     },
     // mediasoup PlainTransport options for legacy RTP endpoints (FFmpeg,
     // GStreamer).
