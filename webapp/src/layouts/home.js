@@ -22,9 +22,12 @@ export default function Home(props) {
  
       <nav>
         <Button type="primary">
-          <Link to="/virtual-studio">enter Virtual Studio</Link>
+          <Link to="/virtual-studio">Enter Virtual Studio</Link>
         </Button>
       </nav>
+      <div style={{
+        height: "8em"
+      }}/>
     </div>
   )
 }
