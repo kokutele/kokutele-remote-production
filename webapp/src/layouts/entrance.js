@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { Button,Card, Col, Divider, Input, Row, Typography } from 'antd'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Button,Card, Col, Divider, Form, Input, Row, Typography } from 'antd'
 import { apiEndpoint } from '../libs/url-factory'
 
 const { Title } = Typography
 
 export default function Entrance( props ) {
   const [ _url, setUrl ] = useState('')
-  const [ _name, setName ] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetch( `${apiEndpoint}/studio` )
@@ -16,9 +17,10 @@ export default function Entrance( props ) {
       .catch( err => { throw err })
   }, [])
 
-  const handleChange =  useCallback( e => {
-    setName( e.target.value )
-  }, [])
+  const handleFinish = useCallback( values => {
+    const { studioname } = values
+    navigate( `${location.pathname}/${studioname}` )
+  }, [ navigate, location.pathname ] )
 
   return (
     <div className="Entrance">
@@ -37,17 +39,26 @@ export default function Entrance( props ) {
                 </Row>
                 <Divider plain>or</Divider>
                 <Title level={4}>Enter existing studio name</Title>
-                <Row gutter={16}>
-                  <Col offset={2} span={18}>
-                    <Input type="text" onChange={handleChange} value={_name}></Input>
-                  </Col>
-                  <Col span={4}>
-                    <Link to={_name}>
-                      <Button type="primary">Enter</Button>
-                    </Link>
-                  </Col>
-                </Row>
-             </Card>
+                <Form
+                  name="existing-room"
+                  labelCol={{ span: 6 }}
+                  wrapperCol={{ span: 18 }}
+                  initialValues={{ remember: true }}
+                  onFinish={ handleFinish }
+                  autoComplete="off"
+                >
+                  <Form.Item
+                    label="Name"
+                    name="studioname"
+                    rules={[{ required: true, message: 'Input studio name' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item wrapperCol={{ offset: 6, span: 18 }}>
+                    <Button type="primary" htmlType='submit'>Enter</Button>
+                  </Form.Item>
+                </Form>
+              </Card>
             </Col>
           </Row>
         </div>
