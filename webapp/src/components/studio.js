@@ -168,14 +168,22 @@ export default function Studio( props ) {
         const videoProducerId = item.videoProducerId
         const videoEl = _videoEls.current.get( videoProducerId )
         if( videoEl ) {
-          const height = item.height
-          const width = Math.floor( videoEl.videoWidth * height / videoEl.videoHeight )
-          const posY = item.posY
-          const posX = item.posX + Math.floor(( item.width - width ) / 2 )
+          // const height = item.height
+          // const width = Math.floor( videoEl.videoWidth * height / videoEl.videoHeight )
+          // const posY = item.posY
+          // const posX = item.posX + Math.floor(( item.width - width ) / 2 )
+          const sw = videoEl.videoWidth
+          const sh = Math.floor( videoEl.videoWidth * item.height / item.width )
+          const sx = 0
+          const sy = Math.floor( ( videoEl.videoHeight - sh ) / 2 )
 
-          _ctx.current.drawImage( videoEl, posX, posY, width, height )
+          _ctx.current.drawImage( 
+            videoEl, 
+            sx, sy, sw, sh,
+            item.posX, item.posY, item.width, item.height 
+          )
           if( state.studio.patternId > 1 && idx > 0 ) {
-            _ctx.current.rect( posX, posY, width, height )
+            _ctx.current.rect( item.posX, item.posY, item.width, item.height )
           }
         }
       })
