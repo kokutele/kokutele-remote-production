@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react'
 import { Alert } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
+import { Mutex } from 'async-mutex'
 import './studio.css'
 
 const logger = new Logger('studio')
+const mutext = new Mutex()
 
 export default function Studio( props ) {
   const { 
@@ -36,7 +38,7 @@ export default function Studio( props ) {
   }, [state.studio.height, state.studio.width ])
 
   useEffect( () => {
-    ( async () => {
+    mutext.runExclusive( async () => {
       // delete video elements which is not included in layout object.
       for( const videoProducerId of _videoEls.current.keys() ) {
         if( !state.studio.layout
@@ -150,7 +152,7 @@ export default function Studio( props ) {
           }
         }
       }
-    })()
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
 
