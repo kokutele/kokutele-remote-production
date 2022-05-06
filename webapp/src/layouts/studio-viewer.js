@@ -31,7 +31,12 @@ export default function StudioViewer( props ) {
 
   return (
     <div className="StudioViewer">
-      <Studio style={{ height: "100vh", width: "100vw", background: "#000", position: 'absolute', top: 0 }} playAudio={true} hideAlert={true} />
+      <Studio 
+        style={{ height: "100vh", width: "100vw", background: "#000", position: 'absolute', top: 0 }} 
+        playAudio={true} 
+        hideAlert={true} 
+        viewer={true}
+      />
       { process.env.NODE_ENV === 'development' && (
       <div className='debug'>
         <strong>debug window</strong>

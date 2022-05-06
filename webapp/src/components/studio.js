@@ -14,7 +14,7 @@ export default function Studio( props ) {
     appData 
   } = useAppContext()
 
-  const { playAudio, hideAlert } = props
+  const { playAudio, hideAlert, viewer } = props
   const _canvasEl = useRef()
   const _ctx = useRef()
   const _videoEls = useRef( new Map() )
@@ -36,91 +36,123 @@ export default function Studio( props ) {
   }, [state.studio.height, state.studio.width ])
 
   useEffect( () => {
-    for( const videoProducerId of _videoEls.current.keys() ) {
-      if( !state.studio.layout
-        .filter( item => ( item.width !== 0 && item.height !== 0 ))
-        .find( item => item.videoProducerId === videoProducerId ) 
-      ) {
-        const videoElem = _videoEls.current.get( videoProducerId )
-        videoElem.pause()
-        videoElem.remove()
-        _videoEls.current.delete(videoProducerId)
+    ( async () => {
+      // delete video elements which is not included in layout object.
+      for( const videoProducerId of _videoEls.current.keys() ) {
+        if( !state.studio.layout
+          .filter( item => ( item.width !== 0 && item.height !== 0 ))
+          .find( item => item.videoProducerId === videoProducerId ) 
+        ) {
+          const videoElem = _videoEls.current.get( videoProducerId )
+          videoElem.pause()
+          videoElem.remove()
+          _videoEls.current.delete(videoProducerId)
+        }
       }
-    }
 
-    for( const audioProducerId of _audioEls.current.keys() ) {
-      if( !state.studio.layout
-        .filter( item => ( item.width !== 0 && item.height !== 0 ))
-        .find( item => item.audioProducerId === audioProducerId ) 
-      ) {
-        const audioElem = _audioEls.current.get( audioProducerId )
-        audioElem.pause()
-        audioElem.remove()
-        _audioEls.current.delete(audioProducerId)
+      // delete audio elements which is not included in layout object.
+      for( const audioProducerId of _audioEls.current.keys() ) {
+        if( !state.studio.layout
+          .filter( item => ( item.width !== 0 && item.height !== 0 ))
+          .find( item => item.audioProducerId === audioProducerId ) 
+        ) {
+          const audioElem = _audioEls.current.get( audioProducerId )
+          audioElem.pause()
+          audioElem.remove()
+          _audioEls.current.delete(audioProducerId)
+        }
       }
-    }
 
-    state.studio.layout
-      .filter( item => ( item.width !== 0 && item.height !== 0 ))
-      .forEach( item => {
-      if( !_videoEls.current.has( item.videoProducerId ) ) {
-        const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
-        logger.debug( 'consumers:%o', appData.roomClient.consumers )
-        setTimeout( () => {
-          logger.debug( 'consumers:%o', appData.roomClient.consumers )
-        }, 1000 )
-        const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
+      // create new video and audio elements which is not exist.
+      const layout = state.studio.layout
+        .filter( item => ( item.width !== 0 && item.height !== 0 ))
 
-        let stream
-        if( localMedia ) {
-          stream = appData.localStreams.get( localMedia.localStreamId )
-        } else {
-          if( !consumer ) {
-            logger.warn('no consumer found for %s', item.videoProducerId )
-            return
+      for( const item of layout ) {
+        if( !_videoEls.current.has( item.videoProducerId ) ) {
+          const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
+          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
+
+          let stream
+          if( localMedia ) {
+            stream = appData.localStreams.get( localMedia.localStreamId )
           } else {
+            if( !consumer ) {
+              logger.warn('no consumer found for %s', item.videoProducerId )
+              return
+            } else {
+              // when viewer is true, call resumeConsumer to obtain track
+              if (viewer) {
+                logger.debug('consumer:%o', consumer)
+                await appData.roomClient.resumeConsumer(consumer.id)
+              }
+
+              const track = consumer.track
+              stream = new MediaStream( [ track ] )
+            }
+          }
+
+          const videoEl = document.createElement( 'video' )
+          videoEl.srcObject = stream
+          videoEl.muted = true
+
+          videoEl.onloadedmetadata = async () => {
+            await videoEl.play()
+          }
+
+          _videoEls.current.set( item.videoProducerId, videoEl )
+        }
+        
+        if( playAudio ) {
+          if( !_audioEls.current.has( item.audioProducerId ) ) {
+            const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
+
+            if( !consumer ) {
+              logger.warn('no consumer found for %s', item.audioProducerId )
+              return
+            }
+
+            // when viewer is true, call resumeConsumer to obtain track
+            if( viewer ) {
+              await appData.roomClient.resumeConsumer( consumer.id )
+            }
+
             const track = consumer.track
-            stream = new MediaStream( [ track ] )
+            const stream = new MediaStream( [ track ] )
+
+            const audioEl = document.createElement( 'audio' )
+            audioEl.srcObject = stream
+            audioEl.muted = false
+
+            audioEl.onloadedmetadata = async () => {
+              logger.debug('audio played')
+              await audioEl.play()
+            }
+
+            _audioEls.current.set( item.audioProducerId, audioEl )
           }
-        }
-
-        const videoEl = document.createElement( 'video' )
-        videoEl.srcObject = stream
-        videoEl.muted = true
-
-        videoEl.onloadedmetadata = async () => {
-          await videoEl.play()
-        }
-
-        _videoEls.current.set( item.videoProducerId, videoEl )
-      }
-    
-      if( playAudio ) {
-        if( !_audioEls.current.has( item.audioProducerId ) ) {
-          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
-
-          if( !consumer ) {
-            logger.warn('no consumer found for %s', item.audioProducerId )
-            return
-          }
-
-          const track = consumer.track
-          const stream = new MediaStream( [ track ] )
-
-          const audioEl = document.createElement( 'audio' )
-          audioEl.srcObject = stream
-          audioEl.muted = false
-
-          audioEl.onloadedmetadata = async () => {
-            logger.debug('audio played')
-            await audioEl.play()
-          }
-
-          _audioEls.current.set( item.audioProducerId, audioEl )
         }
       }
-    })
-  }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, appData ])
+      
+
+      // when viewer is true, pause unused consumer
+      if( viewer ) {
+        for( const item of state.videoConsumers ) {
+          if( !_videoEls.current.has( item.producerId ) ) {
+            logger.debug('pause video consumer:%s', item.consumerId )
+            await appData.roomClient.pauseConsumer( item.consumerId )
+          }
+        }
+
+        for( const item of state.audioConsumers ) {
+          if( !_audioEls.current.has( item.producerId ) ) {
+            logger.debug('pause audio consumer:%s', item.consumerId )
+            await appData.roomClient.pauseConsumer( item.consumerId )
+          }
+        }
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 
@@ -136,7 +168,6 @@ export default function Studio( props ) {
         const videoProducerId = item.videoProducerId
         const videoEl = _videoEls.current.get( videoProducerId )
         if( videoEl ) {
-          // _ctx.current.drawImage( videoEl, item.posX, item.posY, item.width, item.height )
           const height = item.height
           const width = Math.floor( videoEl.videoWidth * height / videoEl.videoHeight )
           const posY = item.posY
