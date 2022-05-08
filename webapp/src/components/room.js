@@ -46,7 +46,7 @@ export default function Room( props ) {
         .then( guestId => setGuestId( guestId ))
         .catch( err => setErrMessage( err.message ))
     }
-  }, [ state.status ])
+  }, [ state.status, roomId ])
 
   return (
     <div className='Room'>

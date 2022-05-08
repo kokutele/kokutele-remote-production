@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { Button, Modal, Popover } from 'antd'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button, Modal, Popover, message } from 'antd'
 import { GrAddCircle } from 'react-icons/gr'
 import { RiUserAddFill } from 'react-icons/ri'
 import { VscFileMedia } from 'react-icons/vsc'
+import { MdOutlineScreenShare } from 'react-icons/md'
 
 import { useAppContext } from '../libs/reducer'
 
@@ -15,6 +16,8 @@ const logger = new Logger('add-source')
 const SelectVideoFile = props => {
   const { appData, state, createProducer } = useAppContext()
   const { visible, setModalVisibility } = props
+
+  const [ _filename, setFilename ] = useState('')
   const _inputEl = useRef( null )
   const _videoEl = useRef( '' )
   const _videoWrapper = useRef( null )
@@ -22,12 +25,11 @@ const SelectVideoFile = props => {
 
   useEffect( () => {
     if( visible ) {
-      logger.debug( 'appData.localVideos: %o', appData.localVideos )
-      logger.debug( 'appData.localStreams: %o', appData.localStreams )
       const inputEl = document.createElement('input')
       inputEl.type = 'file'
       inputEl.addEventListener( 'change', e => {
         const file = e.target.files[0]
+        setFilename( file.name )
 
         _url.current = URL.createObjectURL( file )
         logger.debug( 'change event fired. file:%s', _url.current )
@@ -74,18 +76,14 @@ const SelectVideoFile = props => {
           const videoEl = document.createElement('video')
           videoEl.src = _url.current
           videoEl.loop = true
-          logger.debug('appData.localVideos:%o', appData.localVideos )
           appData.localVideos.set( `videoEl-${Date.now()}`, videoEl )
-          logger.debug('appData.localVideos:%o', appData.localVideos )
-          logger.debug('videoEl:%o', videoEl )
 
           videoEl.onloadedmetadata = async () => {
-            logger.debug( 'onloadedmetadata' )
             await videoEl.play()
             const stream = videoEl.captureStream()
             await createProducer({
               peerId: state.peerId,
-              displayName: 'todo - FILENAME',
+              displayName: _filename,
               stream
             })
             setModalVisibility( false )
@@ -103,12 +101,39 @@ const SelectVideoFile = props => {
 }
 
 const MediaButtons = props => {
+  const { state, createProducer } = useAppContext()
   const style = { width: "120px", marginBottom: "2px" }
   const [ _isSelectFileVisible, setIsSelectFileVisible ] = useState( false )
+
+  const handleScreenCapture = useCallback( async () => {
+    const options = {
+      video: { "cursor": "always" },
+      audio: true
+    }
+
+    const stream = await navigator.mediaDevices.getDisplayMedia( options )
+      .catch( err => {
+        logger.error( '[Error] getDisplayMedia:%o', err )
+        message.error( err.message )
+        return null
+      })
+
+    if( stream ) {
+      logger.debug('getDisplayMedia - stream:%o', stream)
+      await createProducer({
+        peerId: state.peerId,
+        displayName: 'screen capture',
+        stream
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ state.peerId])
+
   return (
     <div className='MediaButtons'>
       <SelectVideoFile visible={ _isSelectFileVisible } setModalVisibility={ setIsSelectFileVisible } />
       <div className='wrapper'>
+        <Button icon={<MdOutlineScreenShare />} style={style} type='primary' onClick={ handleScreenCapture }>&nbsp;Capture</Button><br/>
         <Button icon={<VscFileMedia />}  style={style} type='primary' onClick={ () => {
           setIsSelectFileVisible( true ) 
         }}>&nbsp;File</Button><br />
