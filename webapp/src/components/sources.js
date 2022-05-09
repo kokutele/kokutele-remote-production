@@ -9,9 +9,10 @@ import './sources.css'
 
 const logger = new Logger('sources')
 
-export default function Sources() {
+export default function Sources( props ) {
   const { state } = useAppContext()
   const [ _sources, setSources ] = useState([])
+  const { roomId } = props
 
   useEffect(() => {
     const remoteMedias = state.videoConsumers.map( videoConsumer => {
@@ -54,7 +55,7 @@ export default function Sources() {
         </Col>
       ))}
         <Col xs={8} md={6} lg={4}>
-          <AddSource />
+          <AddSource roomId={roomId} />
         </Col>
       </Row>
     </div>
