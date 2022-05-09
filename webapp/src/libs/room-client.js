@@ -247,10 +247,6 @@ export default class RoomClient extends EventEmitter {
       })
 
       this._protoo.on('notification', notification => {
-        logger.debug(
-          'protoo "notification" event [method: %s, data: %o]',
-          notification.method, notification.data
-        )
         switch( notification.method ) {
           case 'producerScore': {
             const { producerId, score } = notification.data

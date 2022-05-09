@@ -13,6 +13,7 @@ const cors = require('cors')
 const { AwaitQueue } = require('awaitqueue')
 const Room = require('./room')
 const StudioDB = require('../studio-db')
+const exporter = require('../observer/exporter')
 const Logger = require('../logger')
 
 const { getGuestId, getRoomId } = require('../util')
@@ -40,6 +41,8 @@ class Server {
 
   start = async () => {
     await this._studioDB.start()
+
+    await exporter({ port: 4000 })
 
     await this._runMediasourpWorkers()
 
