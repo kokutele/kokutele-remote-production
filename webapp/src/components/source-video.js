@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from 'antd'
 import { useAppContext } from '../libs/reducer'
+import { GiCancel } from 'react-icons/gi'
 import Logger from "../libs/logger"
 
 import './source-video.css'
@@ -16,7 +18,7 @@ const videoFrameColors = [
 ]
 
 export default function SourceVideo( props ) {
-  const { state, appData, addStudioLayout, deleteStudioLayout, toMainInStudioLayout } = useAppContext()
+  const { state, appData, addStudioLayout, deleteStudioLayout, toMainInStudioLayout, deleteProducer, deleteLocalStream } = useAppContext()
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
@@ -141,6 +143,25 @@ export default function SourceVideo( props ) {
             }
           }}
         >{_layoutIdx === 0 ? "Main" : `Sub-${_layoutIdx}`}</div>
+        )}
+        { localStreamId && (
+          <div className="close"><Button size='small' type="link" onClick={
+            async () => {
+              const obj = state.studio.layout.find(item => (
+                item.videoProducerId === videoProducerId && item.audioProducerId === audioProducerId
+              ))
+              if( obj ) {
+                deleteStudioLayout({
+                  peerId: id,
+                  audioProducerId,
+                  videoProducerId,
+                  mediaId
+                })
+              }
+              await deleteProducer( { audioProducerId, videoProducerId } )
+              await deleteLocalStream( localStreamId )
+            }
+          }><GiCancel/></Button></div>
         )}
         <div className="meta">
           {displayName}

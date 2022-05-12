@@ -77,16 +77,16 @@ const SelectVideoFile = props => {
           const videoEl = document.createElement('video')
           videoEl.src = _url.current
           videoEl.loop = true
-          appData.localVideos.set( `videoEl-${Date.now()}`, videoEl )
 
           videoEl.onloadedmetadata = async () => {
             await videoEl.play()
             const stream = videoEl.captureStream()
-            await createProducer({
+            const streamId = await createProducer({
               peerId: state.peerId,
               displayName: _filename,
               stream
             })
+            appData.localVideos.set( streamId, videoEl )
             setModalVisibility( false )
           }
         }
