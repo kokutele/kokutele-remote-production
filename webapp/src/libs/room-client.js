@@ -488,6 +488,20 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  async closeProducer( producerId ) {
+    const producer = this._producers.get( producerId )
+
+    if( producer ) {
+      producer.close()
+      await this._protoo.request( 'closeProducer', { producerId } )
+        .then( () => this._producers.delete( producerId ))
+        .catch( err => {
+          logger.error( 'Error closing producer:%o', err )
+          throw err
+        })
+    }
+  }
+
   async getStudioPatterns() {
     return await this._protoo.request( 'getStudioPatterns' )
       .catch( err => { throw err })
@@ -561,14 +575,6 @@ export default class RoomClient extends EventEmitter {
 
   async unmuteAudio() {
     // todo
-  }
-
-  async starScreenShare() {
-    // todo ( in mediasoup-demo, enableShare() )
-  }
-
-  async stopScreenShare() {
-    // todo ( in mediasoup-demo, disableShare() )
   }
 
   async setMaxSendingSpatialLayer( spatialLayer ) {

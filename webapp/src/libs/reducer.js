@@ -42,14 +42,19 @@ export const reducer = ( state, action ) => {
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
     }
-    case 'ADD_LOCAL_MEDIA': {
-      return { ...state, localMedias: [ ...state.localMedias, action.value ] }
-    }
     case 'DELETE_PEER': {
       return { 
         ...state, 
         peers: state.peers.filter( peer => peer.id !== action.value )
       }
+    }
+    case 'ADD_LOCAL_MEDIA': {
+      return { ...state, localMedias: [ ...state.localMedias, action.value ] }
+    }
+    case 'DELETE_LOCAL_MEDIA': {
+      return { ...state, localMedias: state.localMedias.filter( item => ( 
+        item.audioProducerId !== action.value.audioProducerId || item.videoProducerId !== action.value.videoProducerId
+      ))}
     }
     case 'ADD_AUDIO_CONSUMER': {
       const { consumerId, producerId, peerId, mediaId } = action.value
@@ -136,7 +141,7 @@ export const useAppContext = () => {
     appData.localStreams.clear()
 
     for( const elem of appData.localVideos.values() ) {
-      await elem.pause()
+      elem.pause()
       elem.remove()
     }
     appData.localVideos.clear()
@@ -171,6 +176,37 @@ export const useAppContext = () => {
     })
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
+
+    return localStreamId
+  }
+
+  const  deleteProducer = async ( { audioProducerId, videoProducerId } ) => {
+    logger.debug('deleteProducer:%s, %s', audioProducerId, videoProducerId )
+    appData.roomClient.closeProducer( audioProducerId )
+    appData.roomClient.closeProducer( videoProducerId )
+    dispatch({ type: 'DELETE_LOCAL_MEDIA', value: { audioProducerId, videoProducerId }})
+  }
+
+  const deleteLocalStream = async streamId => {
+    logger.debug('deleteLocalStream:%s',streamId )
+
+    const localStream = appData.localStreams.get( streamId )
+    if( localStream ) {
+      const tracks = localStream.getTracks()
+      for( const track of tracks ) {
+        track.stop()
+      }
+      appData.localStreams.delete( streamId )
+    }
+
+    const localVideo = appData.localVideos.get( streamId )
+    if( localVideo ) {
+      localVideo.pause()
+      localVideo.remove()
+      appData.localVideos.delete( streamId )
+    }
+
+    logger.debug('appData:%o', appData )
   }
 
   const getStudioSize = async () => {
@@ -244,6 +280,8 @@ export const useAppContext = () => {
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
+    deleteProducer,
+    deleteLocalStream,
     joinRoom,
     setStatusReady,
     close,
