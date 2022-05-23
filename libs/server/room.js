@@ -404,7 +404,7 @@ class Room extends EventEmitter {
         producer.close()
 
         peer.data.producers.delete( producer.id )
-
+        logger.info('producerId:%o', producerId )
         accept()
 
         break

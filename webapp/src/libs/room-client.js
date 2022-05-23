@@ -289,9 +289,7 @@ export default class RoomClient extends EventEmitter {
             consumer.close()
             this._consumers.delete( consumerId )
 
-            const { peerId } = consumer.appData
-
-            this.emit('consumerClosed', { consumerId, peerId })
+            this.emit('leaveConsumer', consumer )
 
             break
           }

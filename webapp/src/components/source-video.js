@@ -83,8 +83,12 @@ export default function SourceVideo( props ) {
         logger.debug( 'audioTrack:%o, videoTrack:%o', audioTrack, videoTrack )
         _videoEl.current.muted = true
       } else {
-        audioTrack = audioConsumerId ? roomClient.consumers.get( audioConsumerId ).track : null
-        videoTrack = videoConsumerId ? roomClient.consumers.get( videoConsumerId ).track : null
+        audioTrack = audioConsumerId && roomClient.consumers && roomClient.consumers.get( audioConsumerId ) 
+          ? roomClient.consumers.get( audioConsumerId ).track 
+          : null
+        videoTrack = videoConsumerId && roomClient.consumers && roomClient.consumers.get( videoConsumerId ) 
+          ? roomClient.consumers.get( videoConsumerId ).track 
+          : null
       }
 
       if( videoTrack ) {

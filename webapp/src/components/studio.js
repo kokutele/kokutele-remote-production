@@ -23,7 +23,6 @@ export default function Studio( props ) {
   const _audioEls = useRef( new Map() )
 
   useEffect( () => {
-    logger.debug( state.status )
     if( state.status === 'READY' ) {
       _ctx.current = _canvasEl.current.getContext('2d')
       getStudioSize()
@@ -78,10 +77,7 @@ export default function Studio( props ) {
           if( localMedia ) {
             stream = appData.localStreams.get( localMedia.localStreamId )
           } else {
-            if( !consumer ) {
-              logger.warn('no consumer found for %s', item.videoProducerId )
-              return
-            } else {
+            if( consumer ) {
               // when viewer is true, call resumeConsumer to obtain track
               if (viewer) {
                 logger.debug('consumer:%o', consumer)
@@ -93,44 +89,43 @@ export default function Studio( props ) {
             }
           }
 
-          const videoEl = document.createElement( 'video' )
-          videoEl.srcObject = stream
-          videoEl.muted = true
+          if( stream ) {
+            const videoEl = document.createElement( 'video' )
+            videoEl.srcObject = stream
+            videoEl.muted = true
 
-          videoEl.onloadedmetadata = async () => {
-            await videoEl.play()
+            videoEl.onloadedmetadata = async () => {
+              await videoEl.play()
+            }
+
+            _videoEls.current.set( item.videoProducerId, videoEl )
           }
-
-          _videoEls.current.set( item.videoProducerId, videoEl )
         }
         
         if( playAudio ) {
           if( !_audioEls.current.has( item.audioProducerId ) ) {
             const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
 
-            if( !consumer ) {
-              logger.warn('no consumer found for %s', item.audioProducerId )
-              return
+            if( consumer ) {
+              // when viewer is true, call resumeConsumer to obtain track
+              if( viewer ) {
+                await appData.roomClient.resumeConsumer( consumer.id )
+              }
+
+              const track = consumer.track
+              const stream = new MediaStream( [ track ] )
+
+              const audioEl = document.createElement( 'audio' )
+              audioEl.srcObject = stream
+              audioEl.muted = false
+
+              audioEl.onloadedmetadata = async () => {
+                logger.debug('audio played')
+                await audioEl.play()
+              }
+
+              _audioEls.current.set( item.audioProducerId, audioEl )
             }
-
-            // when viewer is true, call resumeConsumer to obtain track
-            if( viewer ) {
-              await appData.roomClient.resumeConsumer( consumer.id )
-            }
-
-            const track = consumer.track
-            const stream = new MediaStream( [ track ] )
-
-            const audioEl = document.createElement( 'audio' )
-            audioEl.srcObject = stream
-            audioEl.muted = false
-
-            audioEl.onloadedmetadata = async () => {
-              logger.debug('audio played')
-              await audioEl.play()
-            }
-
-            _audioEls.current.set( item.audioProducerId, audioEl )
           }
         }
       }
@@ -170,10 +165,6 @@ export default function Studio( props ) {
         const videoProducerId = item.videoProducerId
         const videoEl = _videoEls.current.get( videoProducerId )
         if( videoEl ) {
-          // const height = item.height
-          // const width = Math.floor( videoEl.videoWidth * height / videoEl.videoHeight )
-          // const posY = item.posY
-          // const posX = item.posX + Math.floor(( item.width - width ) / 2 )
           const sw = videoEl.videoWidth
           const sh = Math.floor( videoEl.videoWidth * item.height / item.width )
           const sx = 0
@@ -184,9 +175,11 @@ export default function Studio( props ) {
             sx, sy, sw, sh,
             item.posX, item.posY, item.width, item.height 
           )
-          if( state.studio.patternId > 1 && idx > 0 ) {
-            _ctx.current.rect( item.posX, item.posY, item.width, item.height )
-          }
+        }
+        if( state.studio.patternId === 1 || idx > 0 ) {
+          _ctx.current.lineWidth = 3
+          _ctx.current.strokeStyle = 'yellow'
+          _ctx.current.rect( item.posX, item.posY, item.width, item.height )
         }
       })
       _ctx.current.stroke()
