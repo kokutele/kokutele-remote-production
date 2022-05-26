@@ -16,14 +16,14 @@ const PC_PROPRIETARY_CONSTRAINTS = {
 
 const VIDEO_SIMULCAST_ENCODINGS = [
   { scaleResolutionDownBy: 4, maxBitrate: 500_000 },
-  { scaleResolutionDownBy: 2, maxBitrate: 1_000_000 },
-  { scaleResolutionDownBy: 1, maxBitrate: 5_000_000 }
+  // { scaleResolutionDownBy: 2, maxBitrate: 500_000 },
+  { scaleResolutionDownBy: 1, maxBitrate: 2_500_000 }
 ]
 
-// const SCREEN_SHARING_SIMULCAST_ENCODINGS = [
-//   { dtx: true, maxBitrate: 1_500_000 },
-//   { dtx: true, maxBitrate: 6_000_000 }
-// ]
+const SCREEN_SHARING_SIMULCAST_ENCODINGS = [
+  { dtx: true, maxBitrate: 1_500_000 },
+  { dtx: true, maxBitrate: 6_000_000 }
+]
 
 export default class RoomClient extends EventEmitter {
   /**
@@ -31,13 +31,14 @@ export default class RoomClient extends EventEmitter {
    * @param {Object} props
    * @param {String} props.displayName
    * @param {String} props.roomId
+   * @param {Boolean} [props.useSimulcast] - default `false`
    * @returns {RoomClient}
    */
-  static create( { displayName, roomId } ) {
+  static create( { displayName, roomId, useSimulcast } ) {
     const peerId = randomString()
-    const useSimulcast = false
+    const _useSimulcast = !!useSimulcast
 
-    return new RoomClient( { peerId, roomId, displayName, useSimulcast })
+    return new RoomClient( { peerId, roomId, displayName, useSimulcast: _useSimulcast })
   }
 
   constructor( props ) {
@@ -370,9 +371,11 @@ export default class RoomClient extends EventEmitter {
    * create producer
    * 
    * @param {MediaStream} stream 
+   * @param {Boolean} [isCapture] - default false
    * @return {Promise<Object>} - { audioProducerId:String, videoProducerId:String }
    */
-  async createProducer( stream ) {
+  async createProducer( stream, isCapture ) {
+    const _isCapture = !!isCapture
     if( !( stream instanceof MediaStream ) ) {
       throw new TypeError( 'createProducer - MediaStream object MUST set.' )
     }
@@ -439,7 +442,7 @@ export default class RoomClient extends EventEmitter {
       try {
         track = stream.getVideoTracks()[0]
 
-        const encodings = this._useSimulcast ? VIDEO_SIMULCAST_ENCODINGS : undefined
+        const encodings = this._useSimulcast ? ( _isCapture ? SCREEN_SHARING_SIMULCAST_ENCODINGS : VIDEO_SIMULCAST_ENCODINGS ) : undefined
         const codecOptions = {
           videoGoogleStartBitrate: 1_000
         }

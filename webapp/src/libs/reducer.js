@@ -99,7 +99,8 @@ export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
   const createRoomClient = ( { displayName, roomId } ) => {
-    const client = RoomClient.create( { displayName, roomId })
+    const useSimulcast = true
+    const client = RoomClient.create( { displayName, roomId, useSimulcast })
 
     logger.debug( '"createRoomClient":%o', client )
 
@@ -149,12 +150,12 @@ export const useAppContext = () => {
     dispatch({ type: 'INIT' })
   }
 
-  const createProducer = async ({ peerId, displayName, stream }) => {
+  const createProducer = async ({ peerId, displayName, stream, isCapture }) => {
     const { 
       audioProducerId, 
       videoProducerId,
       mediaId
-    } = await appData.roomClient.createProducer( stream )
+    } = await appData.roomClient.createProducer( stream, !!isCapture )
       .catch( err => { throw err } )
 
     logger.debug( 'createProducer - audioProducerId:%s, videoProducerId: %s', audioProducerId, videoProducerId )

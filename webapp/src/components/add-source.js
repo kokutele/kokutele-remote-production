@@ -162,7 +162,8 @@ const MediaButtons = props => {
       await createProducer({
         peerId: state.peerId,
         displayName: 'screen capture',
-        stream
+        stream,
+        isCapture: true
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
