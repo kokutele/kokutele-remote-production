@@ -48,6 +48,12 @@ export default function Studio( props ) {
           videoElem.pause()
           videoElem.remove()
           _videoEls.current.delete(videoProducerId)
+
+          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === videoProducerId )
+          if( consumer ) {
+            await appData.roomClient.setPreferredLayers( consumer.id, 0 )
+              .catch( err => console.warn( 'setPreferredLayers:%o', err ))
+          }
         }
       }
 
@@ -84,6 +90,9 @@ export default function Studio( props ) {
                 await appData.roomClient.resumeConsumer(consumer.id)
               }
 
+              await appData.roomClient.setPreferredLayers(consumer.id, 1)
+                .catch(err => console.warn('setPreferredLayers:%o', err))
+
               const track = consumer.track
               stream = new MediaStream( [ track ] )
             }
@@ -99,6 +108,15 @@ export default function Studio( props ) {
             }
 
             _videoEls.current.set( item.videoProducerId, videoEl )
+
+            if( consumer ) {
+              await appData.roomClient.getPreferredLayers( consumer.id )
+                .then( layers => {
+                  logger.debug( 'layers for consumerId:%s is %o', consumer.id, layers )
+                }).catch( err => {
+                  logger.error( 'getPreferredLayers:%o', err )
+                })
+            }
           }
         }
         

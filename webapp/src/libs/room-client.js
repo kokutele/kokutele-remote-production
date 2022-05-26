@@ -158,6 +158,10 @@ export default class RoomClient extends EventEmitter {
 
               this._consumers.set( consumer.id, consumer )
 
+              await this.setPreferredLayers( consumer.id, 0 )
+                .catch( err => console.warn( 'setPreferredLayers:%o', err ))
+
+
               consumer.on('transportclose', () => {
                 this._consumers.delete( consumer.id )
                 this.emit( "leaveConsumer", {
@@ -503,6 +507,42 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  async getPreferredLayers( consumerId ) {
+    const consumer = this._consumers.get( consumerId )
+
+    if( consumer ) {
+      const layers = await this._protoo.request('getPreferredLayers', { consumerId } )
+        .catch( err => { throw err } )
+      return layers
+    } else {
+      throw new Error( `No consumer found:${consumerId}` )
+    }
+  }
+
+  async getCurrentLayers( consumerId ) {
+    const consumer = this._consumers.get( consumerId )
+
+    if( consumer ) {
+      const layers = await this._protoo.request('getCurrentLayers', { consumerId } )
+        .catch( err => { throw err } )
+      return layers
+    } else {
+      throw new Error( `No consumer found:${consumerId}` )
+    }
+  }
+
+  async setPreferredLayers( consumerId, spatialLayer ) {
+    const consumer = this._consumers.get( consumerId )
+
+    if( consumer ) {
+      await this._protoo.request('setPreferredLayers', { consumerId, spatialLayer } )
+        .catch( err => { throw err } )
+    } else {
+      throw new Error( `No consumer found:${consumerId}` )
+    }
+  }
+
+
   async getStudioPatterns() {
     return await this._protoo.request( 'getStudioPatterns' )
       .catch( err => { throw err })
@@ -579,10 +619,6 @@ export default class RoomClient extends EventEmitter {
   }
 
   async setMaxSendingSpatialLayer( spatialLayer ) {
-    // todo
-  }
-
-  async setConsumerPreferredLayers( consumerId, spatialLayer, temporalLayer ) {
     // todo
   }
 
@@ -746,5 +782,4 @@ export default class RoomClient extends EventEmitter {
       this.close()
     }
   }
-
 }

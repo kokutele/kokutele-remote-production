@@ -486,7 +486,41 @@ class Room extends EventEmitter {
         break
       }
 
-      case 'setConsumerPreferredLayers': {
+      case 'getPreferredLayers': {
+        if( !peer.data.joined ) {
+          throw new Error( 'Peer not yet joined' )
+        }
+
+        const { consumerId } = request.data
+        const consumer = peer.data.consumers.get( consumerId )
+
+        if( !consumer ) {
+          throw new Error( `consumer with id "${consumerId}" not found`)
+        }
+
+        accept( consumer.preferredLayers )
+
+        break
+      }
+
+      case 'getCurrentLayers': {
+        if( !peer.data.joined ) {
+          throw new Error( 'Peer not yet joined' )
+        }
+
+        const { consumerId } = request.data
+        const consumer = peer.data.consumers.get( consumerId )
+
+        if( !consumer ) {
+          throw new Error( `consumer with id "${consumerId}" not found`)
+        }
+
+        accept( consumer.currentLayers )
+
+        break
+      }
+
+      case 'setPreferredLayers': {
         if( !peer.data.joined ) {
           throw new Error( 'Peer not yet joined' )
         }
