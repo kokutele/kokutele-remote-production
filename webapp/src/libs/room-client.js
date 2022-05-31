@@ -661,7 +661,7 @@ export default class RoomClient extends EventEmitter {
         })
 
         const { 
-          id, iceParameters, iceCandidates, dtlsParameters, sctpParameters 
+          id, iceParameters, iceCandidates, dtlsParameters, sctpParameters, iceServers, iceTransportPolicy
         } = transportInfo
 
         logger.debug('create transport for producer' )
@@ -677,7 +677,8 @@ export default class RoomClient extends EventEmitter {
           iceCandidates,
           dtlsParameters            : { ...dtlsParameters, role: 'auto' },
           sctpParameters,
-          iceServers                : [],
+          iceServers,
+          iceTransportPolicy,
           proprietaryConstraints    : PC_PROPRIETARY_CONSTRAINTS,
           additionalSettings        : {
             encodedInsertableStreams: false
@@ -733,12 +734,14 @@ export default class RoomClient extends EventEmitter {
           forceTcp        : false,
           producing       : false,
           consuming       : true,
-          sctpCapabilities: this._mediasoupDevice.sctpCapabilities
+          sctpCapabilities: this._mediasoupDevice.sctpCapabilities,
         })
 
         const {
-          id, iceParameters, iceCandidates, dtlsParameters, sctpParameters
+          id, iceParameters, iceCandidates, dtlsParameters, sctpParameters, iceServers, iceTransportPolicy
         } = transportInfo
+
+        logger.debug('transportInfo:%o', transportInfo )
 
         this._recvTransport = this._mediasoupDevice.createRecvTransport( {
           id,
@@ -746,7 +749,8 @@ export default class RoomClient extends EventEmitter {
           iceCandidates,
           dtlsParameters: { ...dtlsParameters, role: 'auto' },
           sctpParameters,
-          iceServers: [],
+          iceServers,
+          iceTransportPolicy,
           additionalSettings: {
             encodedInsertableStreams: false
           }

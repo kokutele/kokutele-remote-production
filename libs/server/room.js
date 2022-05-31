@@ -286,12 +286,17 @@ class Room extends EventEmitter {
 
         peer.data.transports.set( transport.id, transport )
 
+        const {
+          iceServers, iceTransportPolicy
+        } = config.mediasoup
         accept( {
           id: transport.id,
           iceParameters: transport.iceParameters,
           iceCandidates: transport.iceCandidates,
           dtlsParameters: transport.dtlsParameters,
-          sctpParameters: transport.sctpParameters
+          sctpParameters: transport.sctpParameters,
+          iceServers,
+          iceTransportPolicy
         })
 
         const { maxIncomingBitrate } = config.mediasoup.webRtcTransportOptions

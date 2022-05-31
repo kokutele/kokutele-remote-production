@@ -113,6 +113,16 @@ module.exports = {
       // Additional options that are not part of WebRtcTransportOptions.
       maxIncomingBitrate              : 4_500_000
     },
+    // comma separated ice servers url
+    iceServers: [
+      {
+        urls: process.env.ICE_SERVERS ? process.env.ICE_SERVERS.split(','): 'turns:studio-turn.m-pipe.net:443?transport=tcp,turn:studio-turn.m-pipe.net:80?transport=udp,turn:studio-turn.m-pipe.net:80?transport=tcp'.split(','),
+        username: 'guest',
+        credential: 'somepassword'
+      }
+    ],
+    // `all` or `relay`
+    iceTransportPolicy: process.env.ICE_TRANSPORT_POLICY || 'all',
     // mediasoup PlainTransport options for legacy RTP endpoints (FFmpeg,
     // GStreamer).
     // See https://mediasoup.org/documentation/v3/mediasoup/api/#PlainTransportOptions
