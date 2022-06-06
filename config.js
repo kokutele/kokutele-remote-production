@@ -114,13 +114,14 @@ module.exports = {
       maxIncomingBitrate              : 4_500_000
     },
     // comma separated ice servers url
-    iceServers: [
+    iceServers: process.env.ICE_SERVERS ? [
       {
-        urls: process.env.ICE_SERVERS ? process.env.ICE_SERVERS.split(','): 'turns:studio-turn.m-pipe.net:443?transport=tcp,turn:studio-turn.m-pipe.net:80?transport=udp,turn:studio-turn.m-pipe.net:80?transport=tcp'.split(','),
-        username: 'guest',
-        credential: 'somepassword'
+        // 'turns:example.com:443?transport=tcp,turn:example.com:80?transport=udp
+        urls: process.env.ICE_SERVERS.split(','),
+        username: process.env.ICE_USERNAME || 'guest',
+        credential: process.env.ICE_CREDENTIAL || 'somepassword'
       }
-    ],
+    ]: [],
     // `all` or `relay`
     iceTransportPolicy: process.env.ICE_TRANSPORT_POLICY || 'all',
     // mediasoup PlainTransport options for legacy RTP endpoints (FFmpeg,

@@ -1,0 +1,35 @@
+version: '3'
+services:
+  kokutele-studio:
+    image: kokutele-studio
+    ports:
+    - "4443:4443"
+    volumes:
+    - volume-kokutele-studio:/var/lib/kokutele-studio
+    environment:
+    - MEDIASOUP_LISTEN_IP=172.30.0.2
+    - ICE_TRANSPORT_POLICY=relay
+    - ICE_SERVERS=turn:127.0.0.1:80?transport=udp,turn:127.0.0.1:80?transport=tcp
+    networks:
+      kokutele_net:
+        ipv4_address: 172.30.0.2
+  coturn:
+    image: coturn/coturn
+    ports:
+    - "80:80/udp"
+    - "80:80/tcp"
+    volumes:
+    - $PWD/turnserver.conf:/etc/turnserver.conf
+    networks:
+      kokutele_net:
+        ipv4_address: 172.30.0.3
+volumes:
+  volume-kokutele-studio: {}
+networks:
+  kokutele_net:
+    name: kokutele_net
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 172.30.0.0/24
