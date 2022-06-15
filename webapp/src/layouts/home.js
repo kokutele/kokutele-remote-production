@@ -10,7 +10,7 @@ export default function Home(props) {
         margin: 0,
         fontSize: '72pt',
         fontWeight: 'normal',
-        fontFamily: "'Lobster', cursive",
+        fontFamily: "'Dosis', sans-serif",
       }}>Kokutele Studio</h1>
       <h3
         style={{

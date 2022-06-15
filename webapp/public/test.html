@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+  <head>
+    <title>kokutele test page for viewer and guest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@600&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background: #034F1B;
+        padding: 0 0;
+        margin: 0 0;
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+      }
+      iframe {
+        border: none;
+        aspect-ratio: calc( 16 / 9 );
+      }
+
+      iframe#viewer {
+        width: 100vw;
+      }
+
+      iframe#guest {
+        bottom: 2px;
+        position: absolute;
+        right: 4px;
+        width: 50vw;
+        z-index: 1001;
+      }
+
+      main {
+        color: #fff;
+        padding: 1.25em;
+        text-align: center;
+      }
+
+      main .title {
+        font-family: 'Dosis', sans-serif;
+        font-size: 1.8em;
+      }
+
+      main .description {
+        font-family: "Gill Sans", sans-serif;
+        font-size: 1.2em;
+      }
+
+    </style>
+  </head>
+  <body>
+    <iframe id="viewer" ></iframe>
+    <main>
+      <span class="title">Kokutele Studio test page</span>
+      <br />
+      <span class="description">viewer and guest</span>
+    </main>
+    <iframe id="guest"></iframe>
+  </body>
+  <script>
+    const $viewer = document.querySelector('iframe#viewer')
+      , $guest    = document.querySelector('iframe#guest')
+
+    const params = new URLSearchParams( window.location.search )
+      , viewerId = params.get('viewerId')
+      , guestId  = params.get('guestId')
+    
+    if( !viewerId || !guestId ) {
+      alert('Both `viewerId` and `guestId` must be specified in URL parameter')
+    } else {
+      const viewerUrl = `/viewer/${viewerId}?disableAutoPlay`
+      const guestUrl = `/guest-room/${guestId}`
+
+      $viewer.src = viewerUrl
+      $guest.src = guestUrl
+    }
+
+  </script>
+</html>

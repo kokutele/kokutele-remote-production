@@ -3,13 +3,13 @@ export default function Header( props ) {
     <div className="Header">
       <div className='container'>
         <h1 style={{
-          color:'#CEAC5C',
+          color:'#fff',
           padding: 0,
           margin: 0,
           height: '46px',
           fontWeight: 'normal',
-          fontFamily: "'Lobster', cursive",
-        }}><a href="/" style={{color:'#ceac5c'}}>Kokutele Studio</a></h1>
+          fontFamily: "'Dosis', sans-serif",
+        }}><a href="/" style={{color:'#fff'}}>Kokutele Studio</a></h1>
       </div>
     </div>
   )
