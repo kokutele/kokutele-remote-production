@@ -493,6 +493,25 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  /**
+   * 
+   * @param {MediaStream} stream  
+   */
+  async replaceStream( stream ) {
+    const videoTrack = stream.getVideoTracks()[0]
+    const audioTrack = stream.getAudioTracks()[0]
+
+    for( const producer of this._producers.values() ) {
+      if( producer.kind === 'audio' && audioTrack ) {
+        producer.replaceTrack( { track: audioTrack } )
+      }
+
+      if( producer.kind === 'video' && videoTrack ) {
+        producer.replaceTrack( { track: videoTrack } )
+      }
+    }
+  }
+
   async closeProducer( producerId ) {
     const producer = this._producers.get( producerId )
 

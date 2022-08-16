@@ -40,3 +40,10 @@
   right: 0;
   z-index: 1001;
 }
+
+.Guest .wrapper .operation {
+  position: absolute;
+  top: 18vh;
+  right: 0;
+  z-index: 1001;
+}

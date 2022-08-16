@@ -5,8 +5,11 @@ import { Button } from "antd";
 import { useAppContext } from "../libs/reducer";
 import { apiEndpoint } from "../libs/url-factory";
 
+import SwitchMedia from "../components/switch-media";
+
 import { RiVideoAddFill } from 'react-icons/ri'
-import { MdCancel } from 'react-icons/md'
+import { AiFillSetting }  from 'react-icons/ai'
+import { MdCancel }       from 'react-icons/md'
 
 import Logger from "../libs/logger";
 
@@ -16,10 +19,12 @@ const logger = new Logger('guest')
 
 export default function Guest( props ) {
   const { guestId } = useParams()
-  const { state, appData, createRoomClient, joinRoom, createProducer } = useAppContext()
+  const { state, appData, createRoomClient, joinRoom, createProducer, replaceStream } = useAppContext()
 
   const [ _roomId, setRoomId ] = useState('')
   const [ _status, setStatus ] = useState('IDLE')
+  const [ _deviceId, setDeviceId ] = useState({ video: 'default', audio: 'default' })
+  const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
   const _stream = useRef()
@@ -38,10 +43,44 @@ export default function Guest( props ) {
     }, '*')
   }, [ _status ])
 
+  useEffect( () => {
+    if( !_stream.current ) return
+    ( async () => {
+      logger.debug('deviceId - video:%s, audio:%s', _deviceId.video, _deviceId.audio)
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: _deviceId.video }, 
+          audio: { deviceId: _deviceId.audio } 
+        })
+        const audioTrack = stream.getAudioTracks()[0]
+        const videoTrack = stream.getVideoTracks()[0]
+
+        const oldAudioTrack = _stream.current.getAudioTracks()[0]
+        oldAudioTrack.stop()
+        _stream.current.removeTrack( oldAudioTrack )
+
+        const oldVideoTrack = _stream.current.getVideoTracks()[0]
+        oldVideoTrack.stop()
+        _stream.current.removeTrack( oldVideoTrack )
+
+        _stream.current.addTrack( audioTrack )
+        _stream.current.addTrack( videoTrack )
+
+        replaceStream( _stream.current )
+      } catch( err ) {
+        logger.warn('Error while changing track:%o', err)
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ _deviceId.video, _deviceId.audio ])
+
   const handleStartVideoTalk = useCallback( async () => {
     if( _status !== 'IDLE' ) return
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { deviceId: _deviceId.video }, 
+      audio: { deviceId: _deviceId.audio } 
+    })
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
 
@@ -58,10 +97,9 @@ export default function Guest( props ) {
         } )
         .catch( err => alert( err.message ))
     }
-
     _stream.current = stream
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _status, _roomId ])
+  }, [ _status, _roomId, _deviceId.video, _deviceId.audio ])
 
   const handleCancelVideoTalk = useCallback( () => {
     if( _status !== 'PRODUCING' ) return
@@ -133,17 +171,36 @@ export default function Guest( props ) {
           </Button>
           )}
         </div>
-        <div className="cancel">
-          { _status === 'PRODUCING' && (
-          <Button
-            type="link"
-            onClick={ handleCancelVideoTalk }
-            danger
-          >
-            <MdCancel size={24} />
-          </Button>
-          )}
+        { _status === 'PRODUCING' && (
+        <div>
+
+          <div className="operation">
+            <Button
+              type="primary"
+              onClick={() => {
+                setIsSettingVisible( true )
+              }}
+            >
+              <AiFillSetting size={24}/>
+            </Button>
+            <SwitchMedia 
+              deviceId={ _deviceId } 
+              setDeviceId={ setDeviceId } 
+              visible={ _isSettingVisible }
+              setVisible={ setIsSettingVisible }
+            />
+          </div>
+          <div className="cancel">
+            <Button
+              type='primary'
+              onClick={ handleCancelVideoTalk }
+              danger
+            >
+              <MdCancel size={24} />
+            </Button>
+          </div>
         </div>
+        )}
       </div>
     </div>
   )

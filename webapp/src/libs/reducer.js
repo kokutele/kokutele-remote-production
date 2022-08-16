@@ -181,6 +181,10 @@ export const useAppContext = () => {
     return localStreamId
   }
 
+  const replaceStream = async stream => {
+    await appData.roomClient.replaceStream( stream )
+  }
+
   const  deleteProducer = async ( { audioProducerId, videoProducerId } ) => {
     logger.debug('deleteProducer:%s, %s', audioProducerId, videoProducerId )
     appData.roomClient.closeProducer( audioProducerId )
@@ -281,6 +285,7 @@ export const useAppContext = () => {
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
+    replaceStream,
     deleteProducer,
     deleteLocalStream,
     joinRoom,
