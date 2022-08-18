@@ -19,11 +19,12 @@ const logger = new Logger('guest')
 
 export default function Guest( props ) {
   const { guestId } = useParams()
-  const { state, appData, createRoomClient, joinRoom, createProducer, replaceStream } = useAppContext()
+  const { state, appData, createRoomClient, joinRoom, createProducer, deleteProducer } = useAppContext()
 
   const [ _roomId, setRoomId ] = useState('')
   const [ _status, setStatus ] = useState('IDLE')
   const [ _deviceId, setDeviceId ] = useState({ video: 'default', audio: 'default' })
+  const [ _localStreamId, setLocalStreamId ] = useState()
   const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
@@ -43,43 +44,59 @@ export default function Guest( props ) {
     }, '*')
   }, [ _status ])
 
-  useEffect( () => {
-    if( !_stream.current ) return
-    ( async () => {
-      logger.debug('deviceId - video:%s, audio:%s', _deviceId.video, _deviceId.audio)
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: _deviceId.video }, 
-          audio: { deviceId: _deviceId.audio } 
-        })
-        const audioTrack = stream.getAudioTracks()[0]
-        const videoTrack = stream.getVideoTracks()[0]
+  // useEffect( () => {
+  //   if( !_stream.current ) return
+  //   ( async () => {
+  //     logger.debug('deviceId - video:%s, audio:%s', _deviceId.video, _deviceId.audio)
+  //     try {
+  //       const stream = await navigator.mediaDevices.getUserMedia({
+  //         video: { deviceId: _deviceId.video }, 
+  //         audio: { deviceId: _deviceId.audio } 
+  //       })
+  //       const audioTrack = stream.getAudioTracks()[0]
+  //       const videoTrack = stream.getVideoTracks()[0]
 
-        const oldAudioTrack = _stream.current.getAudioTracks()[0]
-        oldAudioTrack.stop()
-        _stream.current.removeTrack( oldAudioTrack )
+  //       const oldAudioTrack = _stream.current.getAudioTracks()[0]
+  //       oldAudioTrack.stop()
+  //       _stream.current.removeTrack( oldAudioTrack )
 
-        const oldVideoTrack = _stream.current.getVideoTracks()[0]
-        oldVideoTrack.stop()
-        _stream.current.removeTrack( oldVideoTrack )
+  //       const oldVideoTrack = _stream.current.getVideoTracks()[0]
+  //       oldVideoTrack.stop()
+  //       _stream.current.removeTrack( oldVideoTrack )
 
-        _stream.current.addTrack( audioTrack )
-        _stream.current.addTrack( videoTrack )
+  //       _stream.current.addTrack( audioTrack )
+  //       _stream.current.addTrack( videoTrack )
 
-        replaceStream( _stream.current )
-      } catch( err ) {
-        logger.warn('Error while changing track:%o', err)
+  //       replaceStream( _stream.current )
+  //     } catch( err ) {
+  //       logger.warn('Error while changing track:%o', err)
+  //     }
+  //   })()
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [ _deviceId.video, _deviceId.audio ])
+
+  const handleStartVideoTalk = useCallback( async ( videoDeviceId = 'default', audioDeviceId = 'default' ) => {
+    logger.debug('handleStartVideoTalk - %s', _localStreamId )
+
+    if( _localStreamId ) {
+      const localMedia = state.localMedias.find( item => item.localStreamId === _localStreamId )
+      await deleteProducer( localMedia )
+
+      if( _stream.current ) {
+        const tracks = _stream.current.getTracks()
+
+        for( const track of tracks ) {
+          track.stop()
+        }
+        _stream.current = null
       }
-    })()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _deviceId.video, _deviceId.audio ])
+    }
 
-  const handleStartVideoTalk = useCallback( async () => {
-    if( _status !== 'IDLE' ) return
+    if( _stream.current ) return
 
     const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { deviceId: _deviceId.video }, 
-      audio: { deviceId: _deviceId.audio } 
+      video: { deviceId: videoDeviceId }, 
+      audio: { deviceId: audioDeviceId } 
     })
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
@@ -91,15 +108,16 @@ export default function Guest( props ) {
       const peerId = createRoomClient({ roomId: _roomId, displayName })
 
       joinRoom()
-        .then( () => {
-          createProducer({ peerId, displayName, stream })
+        .then( async () => {
+          const localStreamId = await createProducer({ peerId, displayName, stream })
+          setLocalStreamId( localStreamId )
           setStatus('PRODUCING')
         } )
         .catch( err => alert( err.message ))
     }
     _stream.current = stream
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _status, _roomId, _deviceId.video, _deviceId.audio ])
+  }, [ _roomId, _localStreamId ])
 
   const handleCancelVideoTalk = useCallback( () => {
     if( _status !== 'PRODUCING' ) return
@@ -131,7 +149,7 @@ export default function Guest( props ) {
 
     state.audioConsumers.forEach( item => {
       const audioConsumerId = item.consumerId
-      if( !_audioEls.current.has( audioConsumerId ) ) {
+      if( !_audioEls.current.has( audioConsumerId ) && appData.roomClient.consumers.has( audioConsumerId ) ) {
         const el = document.createElement( 'audio' )
         el.playsInline = true
         const track = appData.roomClient.consumers.get( audioConsumerId ).track
@@ -142,7 +160,7 @@ export default function Guest( props ) {
 
         el.onloadedmetadata = async () => {
           await el.play()
-          console.log( 'consumerId:%s', audioConsumerId )
+          logger.debug( 'consumerId:%s', audioConsumerId )
         }
       }
     })
@@ -151,8 +169,10 @@ export default function Guest( props ) {
   
   useEffect(() => {
     state.videoConsumers.forEach( async item => {
-      await appData.roomClient.pauseConsumer( item.consumerId )
-      logger.debug('videoConsumer - paused:%s', item.consumerId )
+      if( appData.roomClient.consumers.has( item.consumerId )) {
+        await appData.roomClient.pauseConsumer( item.consumerId )
+        logger.debug('videoConsumer - paused:%s', item.consumerId )
+      }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ state.videoConsumers ])
@@ -188,6 +208,7 @@ export default function Guest( props ) {
               setDeviceId={ setDeviceId } 
               visible={ _isSettingVisible }
               setVisible={ setIsSettingVisible }
+              handleStartVideoTalk={ handleStartVideoTalk }
             />
           </div>
           <div className="cancel">

@@ -6,7 +6,7 @@ import { FaMicrophone, FaVideo } from 'react-icons/fa'
 const { Option } = Select
 
 export default function SwitchMedia( props ) {
-  const { deviceId, setDeviceId, setVisible, visible } = props
+  const { deviceId, setDeviceId, setVisible, visible, handleStartVideoTalk } = props
 
   const [ _videoId, setVideoId ] = useState( deviceId.video )
   const [ _audioId, setAudioId ] = useState( deviceId.audio )
@@ -33,6 +33,7 @@ export default function SwitchMedia( props ) {
       onOk={ () => {
         setDeviceId({ video: _videoId, audio: _audioId })
         setVisible( false )
+        handleStartVideoTalk( _videoId, _audioId )
       }}
       onCancel={ () => setVisible( false )}
     >

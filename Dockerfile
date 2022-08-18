@@ -7,7 +7,7 @@ RUN \
  && apt-get install -y net-tools build-essential python3 python3-pip valgrind sqlite3 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*e
+  && rm -rf /var/lib/apt/lists/*
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
@@ -19,10 +19,10 @@ COPY . .
 
 RUN \
   cd webapp \
-  && npm install --production \
+  && npm install --omit=dev \
   && npm run build \
   && cd ..  \
-  && npm install --production \
+  && npm install --omit=dev \
   && mkdir /var/lib/kokutele-studio
 
 EXPOSE 4443
