@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import { GiCancel } from 'react-icons/gi'
+import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
 import Logger from "../libs/logger"
 
 import './source-video.css'
@@ -22,6 +23,7 @@ export default function SourceVideo( props ) {
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
+  const [ _muted, setMuted ] = useState( true )
 
   const {
     id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId, idx 
@@ -133,6 +135,20 @@ export default function SourceVideo( props ) {
     }
   }, [ state.status, state.studio.layout, audioProducerId, videoProducerId ])
 
+  // mute or unmute audio
+  useEffect( () => {
+    if( state.status !== 'READY' ) return
+
+    if( localStreamId ) {
+      const audioTrack = localStreams.get( localStreamId ).getAudioTracks()[0]
+
+      if( audioTrack ) {
+        audioTrack.enabled = !_muted
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ state.status, _muted, state.localMedias, localStreamId ])
+
   return (
     <div className="SourceVideo">
       <div className="videoWrapper" ref={ _wrapperEl }>
@@ -166,6 +182,21 @@ export default function SourceVideo( props ) {
               await deleteLocalStream( localStreamId )
             }
           }><GiCancel/></Button></div>
+        )}
+        { localStreamId && (
+          <div className='mute'>
+            <Button
+              type='primary'
+              shape='circle'
+              danger={ _muted ? true : false }
+              style={{ color: '#fff', fontSize: '1em' }}
+              onClick={() => {
+                setMuted( !_muted )
+              }}
+            >
+              { _muted ? <MdVolumeOff /> : <MdVolumeUp /> }
+            </Button>
+          </div>
         )}
         <div className="meta">
           {displayName}

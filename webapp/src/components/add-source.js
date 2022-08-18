@@ -38,6 +38,7 @@ const SelectVideoFile = props => {
         const videoEl = document.createElement( 'video' )
         videoEl.src = _url.current
         videoEl.loop = true
+        videoEl.muted = true
         videoEl.addEventListener('loadedmetadata', async e => {
           await videoEl.play()
         }, false)

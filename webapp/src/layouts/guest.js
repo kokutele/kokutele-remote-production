@@ -10,6 +10,7 @@ import SwitchMedia from "../components/switch-media";
 import { RiVideoAddFill } from 'react-icons/ri'
 import { AiFillSetting }  from 'react-icons/ai'
 import { MdCancel }       from 'react-icons/md'
+import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
 
 import Logger from "../libs/logger";
 
@@ -26,6 +27,7 @@ export default function Guest( props ) {
   const [ _deviceId, setDeviceId ] = useState({ video: 'default', audio: 'default' })
   const [ _localStreamId, setLocalStreamId ] = useState()
   const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
+  const [ _muted, setMuted ] = useState( true )
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
   const _stream = useRef()
@@ -44,39 +46,11 @@ export default function Guest( props ) {
     }, '*')
   }, [ _status ])
 
-  // useEffect( () => {
-  //   if( !_stream.current ) return
-  //   ( async () => {
-  //     logger.debug('deviceId - video:%s, audio:%s', _deviceId.video, _deviceId.audio)
-  //     try {
-  //       const stream = await navigator.mediaDevices.getUserMedia({
-  //         video: { deviceId: _deviceId.video }, 
-  //         audio: { deviceId: _deviceId.audio } 
-  //       })
-  //       const audioTrack = stream.getAudioTracks()[0]
-  //       const videoTrack = stream.getVideoTracks()[0]
-
-  //       const oldAudioTrack = _stream.current.getAudioTracks()[0]
-  //       oldAudioTrack.stop()
-  //       _stream.current.removeTrack( oldAudioTrack )
-
-  //       const oldVideoTrack = _stream.current.getVideoTracks()[0]
-  //       oldVideoTrack.stop()
-  //       _stream.current.removeTrack( oldVideoTrack )
-
-  //       _stream.current.addTrack( audioTrack )
-  //       _stream.current.addTrack( videoTrack )
-
-  //       replaceStream( _stream.current )
-  //     } catch( err ) {
-  //       logger.warn('Error while changing track:%o', err)
-  //     }
-  //   })()
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [ _deviceId.video, _deviceId.audio ])
-
+  
   const handleStartVideoTalk = useCallback( async ( videoDeviceId = 'default', audioDeviceId = 'default' ) => {
     logger.debug('handleStartVideoTalk - %s', _localStreamId )
+
+    setMuted( true )
 
     if( _localStreamId ) {
       const localMedia = state.localMedias.find( item => item.localStreamId === _localStreamId )
@@ -100,6 +74,9 @@ export default function Guest( props ) {
     })
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
+
+    const audioTrack = stream.getAudioTracks()[0]
+    if( audioTrack ) audioTrack.enabled = false
 
     _videoEl.current.onloadedmetadata = async () => {
       await _videoEl.current.play()
@@ -133,6 +110,13 @@ export default function Guest( props ) {
     setStatus('IDLE')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ _status ])
+
+  useEffect( () => {
+    if( !_stream.current ) return
+
+    const audioTrack = _stream.current.getAudioTracks()[0]
+    if( audioTrack ) audioTrack.enabled = !_muted
+  }, [_muted])
 
 
 
@@ -218,6 +202,18 @@ export default function Guest( props ) {
               danger
             >
               <MdCancel size={24} />
+            </Button>
+          </div>
+          <div className='mute'>
+            <Button
+              type='primary'
+              danger={ _muted ? true : false }
+              shape='circle'
+              size="large"
+              style={{ coloe: '#fff', fontSize: '1.5em' }}
+              onClick={ () => setMuted( !_muted ) }
+            >
+              { _muted ? <MdVolumeOff /> : <MdVolumeUp /> }
             </Button>
           </div>
         </div>
