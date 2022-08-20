@@ -3,6 +3,7 @@ const protoo = require('protoo-server')
 const throttle = require('@sitespeed.io/throttle')
 
 const Studio = require('./studio')
+const ReactionManager = require('./reaction-manager')
 const Logger = require('../logger')
 const config = require('../../config')
 
@@ -28,6 +29,7 @@ class Room extends EventEmitter {
       roomId, protooRoom, mediasoupRouter, audioLevelObserver
     })
 
+    room.startReactionManager()
     room.startStudio()
 
     return room
@@ -51,7 +53,22 @@ class Room extends EventEmitter {
 
     this._studio = new Studio( { mediasoupRouter, ...config.studio  })
 
+    this._reactionManager = new ReactionManager()
+
     this._handleAudioLevelObserver()
+  }
+
+  startReactionManager() {
+    if( this._reactionManager ) {
+      this._reactionManager.start( this._roomId )
+
+      this._reactionManager.on(`reactions/${this._roomId}`, data => {
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'reactionsUpdated', data )
+            .catch( () => {} )
+        }
+      })
+    }
   }
 
   startStudio() {
@@ -64,6 +81,8 @@ class Room extends EventEmitter {
     logger.debug('close()')
 
     this._closed = true
+
+    this._reactionManager.destroy()
 
     this._protooRoom.close()
 
@@ -158,6 +177,10 @@ class Room extends EventEmitter {
 
   getRouterCapabilities() {
     return this._mediasoupRouter.rtpCapabilities
+  }
+
+  addReaction( reactionId ) {
+    this._reactionManager.add( reactionId )
   }
 
   _handleAudioLevelObserver() {

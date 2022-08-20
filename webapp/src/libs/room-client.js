@@ -281,8 +281,12 @@ export default class RoomClient extends EventEmitter {
             this.emit('studioPatternIdUpdated', notification.data )
             break
           }
+          case 'reactionsUpdated': {
+            this.emit('reactionsUpdated', notification.data )
+            break
+          }
           case 'downlinkBwe': {
-            logger.debug('"downlinkBwe" event:%o', notification.data)
+            // logger.debug('"downlinkBwe" event:%o', notification.data)
             break
           }
           case 'consumerClosed': {

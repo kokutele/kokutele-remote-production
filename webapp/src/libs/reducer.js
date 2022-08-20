@@ -19,6 +19,7 @@ export const initialState = {
     layout: [],
     patterns: [],
     patternId: 0, 
+    reactions: { sum: 0, lastUpdated: Date.now() }
   }
 }
 
@@ -87,6 +88,11 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_STUDIO_LAYOUT': {
       const studio = { ...state.studio, layout: action.value }
+      return { ...state, studio }
+    }
+    case 'REACTIONS_UPDATED': {
+      const reactions = { ...action.value, lastUpdated: Date.now() }
+      const studio = { ...state.studio, reactions }
       return { ...state, studio }
     }
     default: {
@@ -311,6 +317,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("studioLayoutUpdated", layout => {
     dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
+  })
+
+  client.on("reactionsUpdated", data => {
+    dispatch({ type: 'REACTIONS_UPDATED', value: data })
   })
 
   client.on("peerClosed", peerId => {

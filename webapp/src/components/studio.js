@@ -3,10 +3,15 @@ import { Alert } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import { Mutex } from 'async-mutex'
+
+import thumbUp from '../assets/thumb-up64.png'
 import './studio.css'
 
 const logger = new Logger('studio')
 const mutext = new Mutex()
+
+const thumbUpImage = new Image()
+thumbUpImage.src = thumbUp
 
 export default function Studio( props ) {
   const { 
@@ -21,6 +26,7 @@ export default function Studio( props ) {
   const _ctx = useRef()
   const _videoEls = useRef( new Map() )
   const _audioEls = useRef( new Map() )
+  const _reactions = useRef( [] )
 
   useEffect( () => {
     if( state.status === 'READY' ) {
@@ -171,6 +177,22 @@ export default function Studio( props ) {
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 
+    const duration = 2000
+
+    for( let i = 0; i < state.studio.reactions.sum; i++ ) {
+      setTimeout( () => {
+        const id = Date.now()
+        _reactions.current.push({
+          id,
+          x: _canvasEl.current.width,
+          y: Math.floor(_canvasEl.current.height / 3 * Math.random()) + 50
+        })
+
+        setTimeout(() => {
+          _reactions.current = _reactions.current.filter( item => item.id !== id )
+        }, duration)
+      }, Math.floor(Math.random() * 1000))
+    }
 
     let reqId
 
@@ -200,7 +222,18 @@ export default function Studio( props ) {
           _ctx.current.rect( item.posX, item.posY, item.width, item.height )
         }
       })
+
       _ctx.current.stroke()
+      
+      _reactions.current.forEach( item => {
+      // draw reactions
+        const dx = Math.floor(Math.sin(( Date.now() - item.id ) / duration * Math.PI) * _canvasEl.current.width / 3 )
+        item.x = _canvasEl.current.width - dx
+        // _ctx.current.font = '48px serif';
+        // _ctx.current.fillStyle = '#fff'
+        // _ctx.current.fillText( "a", item.x, item.y )
+        _ctx.current.drawImage( thumbUpImage, item.x, item.y )
+      })
 
       reqId = requestAnimationFrame( render )
     }
@@ -211,7 +244,10 @@ export default function Studio( props ) {
       if( reqId ) cancelAnimationFrame( reqId )
       reqId = null
     }
-  }, [ state.status, state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width ])
+  }, [ 
+    state.status, 
+    state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width, 
+    state.studio.reactions.sum, state.studio.reactions.lastUpdated ])
 
   return (
     <div className="Studio">
