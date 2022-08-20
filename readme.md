@@ -62,6 +62,23 @@ example
 curl -X PUT -H 'Content-Type:application/json' http://localhost:4443/api/studio/foo -d '{"passcode":"bar"}'
 ```
 
+## reaction
+
+```
+path: /api/reaction/:roomName
+method: POST
+
+example
+
+curl -X POST http://localhost:4443/api/reaction/foo
+```
+
+### attributions
+
+```
+<a href="https://www.flaticon.com/free-icons/like" title="like icons">Like icons created by Pixel perfect - Flaticon</a>
+```
+
 # prometheus interface
 
 Kokutele-Studio supports prometheus client interface, which is running on port 4000.
