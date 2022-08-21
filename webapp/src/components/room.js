@@ -4,6 +4,7 @@ import { Alert, Col, Collapse, Divider, Row } from 'antd'
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
 import LikeButton from './like-button'
+import Captions from './captions'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -27,8 +28,8 @@ export default function Room( props ) {
     logger.debug("client created:%o", appData.roomClient )
 
     joinRoom()
-      .then( () => {
-        createProducer({ peerId, displayName, stream })
+      .then( async () => {
+        await createProducer({ peerId, displayName, stream })
       } )
       .catch( err => setErrMessage( err.message ))
 
@@ -57,7 +58,10 @@ export default function Room( props ) {
       </div>
       <div className='container' style={{ textAlign: "center" }}>
         <Row gutter={16}>
-          <Col offset={3} span={18} style={{ textAlign: "center" }}>
+          <Col offset={1} span={2} style={{ textAlign: "left"}}>
+            <Captions />
+          </Col>
+          <Col offset={0} span={18} style={{ textAlign: "center" }}>
             <StudioPatterns />
           </Col>
           <Col offset={1} span={2} style={{ textAlign: "center"}}>

@@ -145,5 +145,5 @@ module.exports = {
     height: process.env.STUDIO_HEIGHT ? Math.trunc( process.env.STUDIO_HEIGHT ) : 1080,
     useMixer: false, // does not make any effect. for future use, maybe.
     rtmpUrl: process.env.STUDIO_RTMP_URL || 'rtmp://localhost/live/test' // does not make any effect. for future use, maybe.
-  }
+  },
 };

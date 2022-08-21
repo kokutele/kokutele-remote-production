@@ -11,6 +11,8 @@ export const initialState = {
   displayName: '',
   localMedias: [], // Array<{ id, displayName, audioProducerId, videoProducerId, localStreamId }>
   peers: [],
+  caption: '',
+  logo: '',
   audioConsumers: [],
   videoConsumers: [],
   studio: {
@@ -39,6 +41,12 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_PEERS': {
       return { ...state, peers: action.value }
+    }
+    case 'SET_CAPTION': {
+      return { ...state, caption: action.value }
+    }
+    case 'SET_LOGO': {
+      return { ...state, logo: action.value }
     }
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
@@ -220,6 +228,22 @@ export const useAppContext = () => {
     logger.debug('appData:%o', appData )
   }
 
+  const setCaption = str => {
+    const caption = !!str ? str : ''
+    dispatch({ type: 'SET_CAPTION', value: caption })
+    appData.roomClient.setCaption( caption )
+  }
+
+  const getCaption = async () => {
+    const data = await appData.roomClient.getCaption()
+      .catch( err => { return { caption: '' } })
+    dispatch({ type: 'SET_CAPTION', value: data.caption })
+  }
+
+  const setLogo = str => {
+    dispatch({ type: 'SET_Logo', value: !!str ? str : '' })
+  }
+
   const getStudioSize = async () => {
     try {
       const size = await appData.roomClient.getStudioSize()
@@ -288,6 +312,9 @@ export const useAppContext = () => {
     getStudioLayout,
     addStudioLayout,
     deleteStudioLayout,
+    getCaption,
+    setCaption,
+    setLogo,
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
@@ -321,6 +348,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("reactionsUpdated", data => {
     dispatch({ type: 'REACTIONS_UPDATED', value: data })
+  })
+
+  client.on("setCaption", data => {
+    dispatch({ type: 'SET_CAPTION', value: data.caption })
   })
 
   client.on("peerClosed", peerId => {

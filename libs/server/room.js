@@ -55,6 +55,8 @@ class Room extends EventEmitter {
 
     this._reactionManager = new ReactionManager()
 
+    this._caption = ''
+
     this._handleAudioLevelObserver()
   }
 
@@ -726,6 +728,24 @@ class Room extends EventEmitter {
           peer.notify( 'studioLayoutUpdated', this._studio.layout )
             .catch( () => {} )
         }
+        break
+      }
+
+      case 'getCaption': {
+        accept({ caption: this._caption })
+        break
+      }
+
+      case 'setCaption': {
+        const { caption } = request.data
+        this._caption = caption
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'setCaption', { caption } )
+            .catch( () => {} )
+        }
+
         break
       }
 

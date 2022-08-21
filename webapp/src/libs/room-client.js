@@ -285,6 +285,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('reactionsUpdated', notification.data )
             break
           }
+          case 'setCaption': {
+            this.emit('setCaption', notification.data )
+            break
+          }
           case 'downlinkBwe': {
             // logger.debug('"downlinkBwe" event:%o', notification.data)
             break
@@ -589,6 +593,17 @@ export default class RoomClient extends EventEmitter {
   async getStudioLayout() {
     return await this._protoo.request( 'getStudioLayout' )
       .catch( err => { throw err })
+  }
+
+  async setCaption( caption ) {
+    return await this._protoo.request( 'setCaption', { caption })
+      .catch( err => { throw err })
+  }
+
+  async getCaption() {
+    const res = await this._protoo.request( 'getCaption' )
+      .catch( err => { return { caption: '' } })
+    return res
   }
 
   async addStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {

@@ -17,6 +17,7 @@ export default function Studio( props ) {
   const { 
     getStudioLayout, 
     getStudioSize, 
+    getCaption,
     state, 
     appData 
   } = useAppContext()
@@ -30,9 +31,12 @@ export default function Studio( props ) {
 
   useEffect( () => {
     if( state.status === 'READY' ) {
-      _ctx.current = _canvasEl.current.getContext('2d')
-      getStudioSize()
-      getStudioLayout()
+      ( async () => {
+        _ctx.current = _canvasEl.current.getContext('2d')
+        await getStudioSize()
+        await getStudioLayout()
+        await getCaption()
+      })();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ state.status ])
@@ -222,8 +226,8 @@ export default function Studio( props ) {
 
       _ctx.current.stroke()
       
-      _reactions.current.forEach( item => {
       // draw reactions
+      _reactions.current.forEach( item => {
         const dx = Math.floor(Math.sin(( Date.now() - item.id ) / duration * Math.PI) * _canvasEl.current.width / 3 )
         item.x = _canvasEl.current.width - dx
         // _ctx.current.font = '48px serif';
@@ -231,6 +235,18 @@ export default function Studio( props ) {
         // _ctx.current.fillText( "a", item.x, item.y )
         _ctx.current.drawImage( thumbUpImage, item.x, item.y )
       })
+
+      // draw caption
+      if( state.caption !== '' ) {
+        _ctx.current.font = 'bold 48px sans-serif';
+        const { width }= _ctx.current.measureText( state.caption )
+        _ctx.current.fillStyle = '#bd3634'
+        _ctx.current.fillRect( 0, _canvasEl.current.height - 48 - 50, width + 20, 88 )
+        _ctx.current.fillRect( width + 30, _canvasEl.current.height - 48 - 50, 20, 88 )
+        //_ctx.current.fillStyle = '#000'
+        _ctx.current.fillStyle = '#fff'
+        _ctx.current.fillText( state.caption, 10, _canvasEl.current.height - 30  )
+      }
 
       reqId = requestAnimationFrame( render )
     }
@@ -244,7 +260,8 @@ export default function Studio( props ) {
   }, [ 
     state.status, 
     state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width, 
-    state.studio.reactions.sum, state.studio.reactions.lastUpdated ])
+    state.studio.reactions.sum, state.studio.reactions.lastUpdated,
+    state.caption ])
 
   return (
     <div className="Studio">
