@@ -4,6 +4,8 @@ import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import { Mutex } from 'async-mutex'
 
+import { logo } from '../config'
+
 import thumbUp from '../assets/thumb-up64.png'
 import './studio.css'
 
@@ -18,6 +20,7 @@ export default function Studio( props ) {
     getStudioLayout, 
     getStudioSize, 
     getCaption,
+    setLogo,
     state, 
     appData 
   } = useAppContext()
@@ -36,6 +39,7 @@ export default function Studio( props ) {
         await getStudioSize()
         await getStudioLayout()
         await getCaption()
+        await setLogo( logo )
       })();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,6 +250,14 @@ export default function Studio( props ) {
         //_ctx.current.fillStyle = '#000'
         _ctx.current.fillStyle = '#fff'
         _ctx.current.fillText( state.caption, 10, _canvasEl.current.height - 30  )
+      }
+
+      // draw logo
+      if( state.logo !== '' ) {
+        _ctx.current.font = "bold 48px 'Dosis', sans-serif";
+        const { width }= _ctx.current.measureText( state.logo )
+        _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
+        _ctx.current.fillText( state.logo, _canvasEl.current.width - width - 10, 58  )
       }
 
       reqId = requestAnimationFrame( render )

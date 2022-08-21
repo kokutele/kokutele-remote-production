@@ -241,7 +241,7 @@ export const useAppContext = () => {
   }
 
   const setLogo = str => {
-    dispatch({ type: 'SET_Logo', value: !!str ? str : '' })
+    dispatch({ type: 'SET_LOGO', value: !!str ? str : '' })
   }
 
   const getStudioSize = async () => {
