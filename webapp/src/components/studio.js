@@ -63,19 +63,6 @@ export default function Studio( props ) {
         }
       }
 
-      // delete audio elements which is not included in layout object.
-      for( const audioProducerId of _audioEls.current.keys() ) {
-        if( !state.studio.layout
-          .filter( item => ( item.width !== 0 && item.height !== 0 ))
-          .find( item => item.audioProducerId === audioProducerId ) 
-        ) {
-          const audioElem = _audioEls.current.get( audioProducerId )
-          audioElem.pause()
-          audioElem.remove()
-          _audioEls.current.delete(audioProducerId)
-        }
-      }
-
       // create new video and audio elements which is not exist.
       const layout = state.studio.layout
         .filter( item => ( item.width !== 0 && item.height !== 0 ))
@@ -125,35 +112,45 @@ export default function Studio( props ) {
             }
           }
         }
-        
-        if( playAudio ) {
-          if( !_audioEls.current.has( item.audioProducerId ) ) {
-            const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
+      }
 
-            if( consumer ) {
-              // when viewer is true, call resumeConsumer to obtain track
-              if( viewer ) {
-                await appData.roomClient.resumeConsumer( consumer.id )
-              }
-
-              const track = consumer.track
-              const stream = new MediaStream( [ track ] )
-
-              const audioEl = document.createElement( 'audio' )
-              audioEl.srcObject = stream
-              audioEl.muted = false
-
-              audioEl.onloadedmetadata = async () => {
-                logger.debug('audio played')
-                await audioEl.play()
-              }
-
-              _audioEls.current.set( item.audioProducerId, audioEl )
-            }
+      if( playAudio ) {
+        // delete audio elements which is not included in layout object.
+        for( const consumerId of _audioEls.current.keys() ) {
+          if( !appData.roomClient.consumers.has( consumerId ) ) {
+            const audioElem = _audioEls.current.get( consumerId )
+            audioElem.pause()
+            audioElem.remove()
+            _audioEls.current.delete(consumerId)
+            logger.debug('deleted audioEl:%s', consumerId )
           }
         }
+
+
+        //const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.audioProducerId )
+        state.audioConsumers 
+          .filter( item => !_audioEls.current.has( item.consumerId ) )
+          .forEach( async item => {
+            logger.debug('audioConsumer - %s:%o', item.consumerId, appData.roomClient.consumers.get( item.consumerId ))
+            // when viewer is true, call resumeConsumer to obtain track
+            if( viewer ) {
+              await appData.roomClient.resumeConsumer( item.consumerId )
+            }
+
+            const track = appData.roomClient.consumers.get( item.consumerId ).track
+            const stream = new MediaStream( [ track ] )
+
+            const audioEl = document.createElement( 'audio' )
+            audioEl.srcObject = stream
+            audioEl.muted = false
+
+            audioEl.onloadedmetadata = async () => {
+              await audioEl.play()
+            }
+
+            _audioEls.current.set( item.consumerId, audioEl )
+          })
       }
-      
 
       // when viewer is true, pause unused consumer
       if( viewer ) {
@@ -164,12 +161,12 @@ export default function Studio( props ) {
           }
         }
 
-        for( const item of state.audioConsumers ) {
-          if( !_audioEls.current.has( item.producerId ) ) {
-            logger.debug('pause audio consumer:%s', item.consumerId )
-            await appData.roomClient.pauseConsumer( item.consumerId )
-          }
-        }
+        // for( const item of state.audioConsumers ) {
+        //   if( !_audioEls.current.has( item.producerId ) ) {
+        //     logger.debug('pause audio consumer:%s', item.consumerId )
+        //      await appData.roomClient.pauseConsumer( item.consumerId )
+        //   }
+        // }
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps

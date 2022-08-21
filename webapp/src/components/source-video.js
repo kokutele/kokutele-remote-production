@@ -140,7 +140,7 @@ export default function SourceVideo( props ) {
     if( state.status !== 'READY' ) return
 
     if( localStreamId ) {
-      const audioTrack = localStreams.get( localStreamId ).getAudioTracks()[0]
+      const audioTrack = localStreams.get( localStreamId ) && localStreams.get( localStreamId ).getAudioTracks()[0]
 
       if( audioTrack ) {
         audioTrack.enabled = !_muted
