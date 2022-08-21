@@ -3,6 +3,7 @@ import { Alert, Col, Collapse, Divider, Row } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
+import LikeButton from './like-button'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -58,6 +59,9 @@ export default function Room( props ) {
         <Row gutter={16}>
           <Col offset={3} span={18} style={{ textAlign: "center" }}>
             <StudioPatterns />
+          </Col>
+          <Col offset={1} span={2} style={{ textAlign: "center"}}>
+            <LikeButton roomId={roomId} />
           </Col>
         </Row>
       </div>
