@@ -273,7 +273,7 @@ export default function Studio( props ) {
     state.status, 
     state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width, 
     state.studio.reactions.sum, state.studio.reactions.lastUpdated,
-    state.caption ])
+    state.caption, state.logo ])
 
   return (
     <div className="Studio">
