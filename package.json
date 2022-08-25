@@ -1,6 +1,6 @@
 {
   "name": "kokutele-studio",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "open source virtual studio ( remote production ) app with RealTime Web Technology",
   "main": "index.js",
   "scripts": {
