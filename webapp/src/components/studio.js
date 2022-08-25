@@ -4,6 +4,7 @@ import { useAppContext } from '../libs/reducer'
 import Logger from '../libs/logger'
 import { Mutex } from 'async-mutex'
 
+import { isNumber } from '../libs/util'
 import { logo } from '../config'
 
 import thumbUp from '../assets/thumb-up64.png'
@@ -20,12 +21,14 @@ export default function Studio( props ) {
     getStudioLayout, 
     getStudioSize, 
     getCaption,
+    getStudioPatternId,
+    getStudioPatterns,
     setLogo,
     state, 
     appData 
   } = useAppContext()
 
-  const { playAudio, hideAlert, viewer } = props
+  const { playAudio, hideAlert, viewer, videoIdx } = props
   const _canvasEl = useRef()
   const _ctx = useRef()
   const _videoEls = useRef( new Map() )
@@ -36,6 +39,8 @@ export default function Studio( props ) {
     if( state.status === 'READY' ) {
       ( async () => {
         _ctx.current = _canvasEl.current.getContext('2d')
+        await getStudioPatterns()
+        await getStudioPatternId()
         await getStudioSize()
         await getStudioLayout()
         await getCaption()
@@ -55,12 +60,15 @@ export default function Studio( props ) {
       // delete video elements which is not included in layout object.
       for( const videoProducerId of _videoEls.current.keys() ) {
         if( !state.studio.layout
-          .filter( item => ( item.width !== 0 && item.height !== 0 ))
+          //.filter( item => ( item.width !== 0 && item.height !== 0 ))
           .find( item => item.videoProducerId === videoProducerId ) 
         ) {
           const videoElem = _videoEls.current.get( videoProducerId )
-          videoElem.pause()
-          videoElem.remove()
+
+          if( videoElem ) {
+            videoElem.pause()
+            videoElem.remove()
+          }
           _videoEls.current.delete(videoProducerId)
 
           const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === videoProducerId )
@@ -210,32 +218,65 @@ export default function Studio( props ) {
       const type = pattern ? pattern.type : null
 
       state.studio.layout.forEach( ( item, idx ) => {
-        const videoProducerId = item.videoProducerId
-        const videoEl = _videoEls.current.get( videoProducerId )
-        if( videoEl ) {
-          const sw = type === 'horizontal' ?
-            videoEl.videoWidth :
-            Math.floor( videoEl.videoHeight * item.width / item.height ) 
-          const sh = type === 'horizontal' ?
-            Math.floor( videoEl.videoWidth * item.height / item.width ) :
-            videoEl.videoHeight
-          const sx = type === 'horizontal' ? 
-            0 :
-            Math.floor( ( videoEl.videoWidth - sw ) / 2 ) 
-          const sy = type === 'horizontal' ?
-            Math.floor( ( videoEl.videoHeight - sh ) / 2 ) :
-            0
+        if( isNumber( videoIdx ) ) {
+          if( videoIdx !== idx ) return
+          console.log( pattern )
+          
+          const videoProducerId = item.videoProducerId
+          const videoEl = _videoEls.current.get( videoProducerId )
+          if( videoEl ) {
+            const sw = type === 'horizontal' ?
+              videoEl.videoWidth :
+              Math.floor( videoEl.videoHeight * state.studio.height / state.studio.width ) 
+            const sh = type === 'horizontal' ?
+              Math.floor( videoEl.videoWidth * state.studio.height / state.studio.width ) :
+              videoEl.videoHeight
+            const sx = type === 'horizontal' ? 
+              0 :
+              Math.floor( ( videoEl.videoWidth - sw ) / 2 ) 
+            const sy = type === 'horizontal' ?
+              Math.floor( ( videoEl.videoHeight - sh ) / 2 ) :
+              0
 
-          _ctx.current.drawImage( 
-            videoEl, 
-            sx, sy, sw, sh,
-            item.posX, item.posY, item.width, item.height 
-          )
-        }
-        if( state.studio.patternId === 1 || idx > 0 ) {
-          _ctx.current.lineWidth = 3
-          _ctx.current.strokeStyle = 'yellow'
-          _ctx.current.rect( item.posX, item.posY, item.width, item.height )
+            const w = type === 'horizontal' ? state.studio.width : Math.floor( state.studio.height * 9 / 16 )
+            const h = state.studio.height
+            const posX = type === 'horizontal' ? 0 : Math.floor( ( state.studio.width - w ) / 2 )
+            const posY = 0
+
+            _ctx.current.drawImage( 
+              videoEl,
+              sx, sy, sw, sh,
+              posX, posY, w, h 
+            )
+          }
+        } else {
+          const videoProducerId = item.videoProducerId
+          const videoEl = _videoEls.current.get( videoProducerId )
+          if( videoEl ) {
+            const sw = type === 'horizontal' ?
+              videoEl.videoWidth :
+              Math.floor( videoEl.videoHeight * item.width / item.height ) 
+            const sh = type === 'horizontal' ?
+              Math.floor( videoEl.videoWidth * item.height / item.width ) :
+              videoEl.videoHeight
+            const sx = type === 'horizontal' ? 
+              0 :
+              Math.floor( ( videoEl.videoWidth - sw ) / 2 ) 
+            const sy = type === 'horizontal' ?
+              Math.floor( ( videoEl.videoHeight - sh ) / 2 ) :
+              0
+
+            _ctx.current.drawImage( 
+              videoEl, 
+              sx, sy, sw, sh,
+              item.posX, item.posY, item.width, item.height 
+            )
+          }
+          if( state.studio.patternId === 1 || idx > 0 ) {
+            _ctx.current.lineWidth = 3
+            _ctx.current.strokeStyle = 'yellow'
+            _ctx.current.rect( item.posX, item.posY, item.width, item.height )
+          }
         }
       })
 
@@ -281,6 +322,7 @@ export default function Studio( props ) {
       reqId = null
     }
   }, [ 
+    videoIdx,
     state.status, 
     state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width, 
     state.studio.patterns,

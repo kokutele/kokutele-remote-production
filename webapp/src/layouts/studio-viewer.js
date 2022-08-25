@@ -13,6 +13,7 @@ const urlParams = new URLSearchParams( window.location.search )
 const logger = new Logger('studio-viewer')
 const disableAutoPlay = urlParams.has('disableAutoPlay')
 const muted = urlParams.has('muted')
+const idx = urlParams.has('idx') ? Number( urlParams.get('idx') ) : null
 
 export default function StudioViewer( props ) {
   const [ _showPlayButton, changeShowPlayButton ] = useState( disableAutoPlay )
@@ -44,6 +45,7 @@ export default function StudioViewer( props ) {
         playAudio={ !muted ? true : false } 
         hideAlert={true} 
         viewer={true}
+        videoIdx={idx}
       />
       ):(
       <div
