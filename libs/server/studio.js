@@ -5,10 +5,36 @@ const MediaMixer = {} // for future use, maybe.  `= require('../../mixer')`
 const logger = new Logger('studio')
 
 const layoutPatterns = [
-  { id: 0, label: "main only" },
-  { id: 1, label: "tile" },
-  { id: 2, label: "large and small" },
-  { id: 3, label: "p-in-p" },
+  { 
+    id: 0, 
+    label: "main only",
+    type: 'horizontal'
+  },
+  { 
+    id: 1, 
+    label: "tile",
+    type: 'horizontal'
+  },
+  { 
+    id: 2, 
+    label: "large and small",
+    type: 'horizontal'
+  },
+  { 
+    id: 3, 
+    label: "p-in-p",
+    type: 'horizontal'
+  },
+  { 
+    id: 4, 
+    label: "vertical-main",
+    type: 'vertical'
+  },
+  { 
+    id: 5, 
+    label: "vertical-tile",
+    type: 'vertical'
+  },
 ]
 
 class Studio {
@@ -105,8 +131,12 @@ class Studio {
       this._calcTileLayout()
     } else if( this._patternId === 2 ) {
       this._calcLargeAndSmallLayout()
-    } else {
+    } else if( this._patternId === 3 ) {
       this._calcPinPLayout()
+    } else if( this._patternId === 4 ) {
+      this._calcVerticalMain()
+    } else if( this._patternId === 5 ) {
+      this._calcVerticalTile()
     }
 
     logger.info( '"_calcLayout()" - layout:%o', this._layout )
@@ -181,6 +211,42 @@ class Studio {
       const posY = i === 0 ? 0 : this._height - height - Math.floor( this._height / 25 )
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
+  }
+
+  _calcVerticalMain() {
+    for( let i = 0; i < this._layout.length; i++ ) {
+      const height = i === 0 ? this._height : 0
+      const width  = i === 0 ? Math.floor( this._height * 9 / 16 ) : 0 // Math.floor( this._layout[0].videoWidth * height / this._layout[0].videoHeight ) : 0
+      const posX = Math.floor( ( this._width - width ) / 2 ) // i === 0 ? Math.floor( ( this._width - width ) / 2 ) : 0
+      const posY = 0
+
+      this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
+  }
+
+  _calcVerticalTile() {
+    const numCol = Math.ceil( Math.sqrt( this._layout.length ) ) 
+    const numRow = ( this._layout.length > ( numCol * ( numCol - 1 ) ) ) ? numCol : numCol - 1
+    const _width = Math.floor( this._height * 9 / 16 )
+
+    const width = Math.floor( _width / numCol )
+    const height = Math.floor( this._height / numCol )
+
+    const paddingX = Math.floor( ( this._width - _width ) / 2 )
+    const paddingY = numRow < numCol ? Math.floor( height / 2 ) : 0
+
+    for( let y = 0; y < numRow; y++ ) {
+      for( let x = 0; x < numCol; x++ ) {
+        const idx = x + y * numCol
+
+        if( idx < this._layout.length ) {
+          const posX = x * width + paddingX
+          const posY = y * height + paddingY
+
+          this._layout[idx] = { ...this._layout[idx], posX, posY, width, height }
+        }
+      }
     }
   }
 }

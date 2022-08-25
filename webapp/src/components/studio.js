@@ -206,14 +206,25 @@ export default function Studio( props ) {
 
       _ctx.current.beginPath()
       _ctx.current.strokeStyle = '#fff'
+      const pattern = state.studio.patterns[ state.studio.patternId ]
+      const type = pattern ? pattern.type : null
+
       state.studio.layout.forEach( ( item, idx ) => {
         const videoProducerId = item.videoProducerId
         const videoEl = _videoEls.current.get( videoProducerId )
         if( videoEl ) {
-          const sw = videoEl.videoWidth
-          const sh = Math.floor( videoEl.videoWidth * item.height / item.width )
-          const sx = 0
-          const sy = Math.floor( ( videoEl.videoHeight - sh ) / 2 )
+          const sw = type === 'horizontal' ?
+            videoEl.videoWidth :
+            Math.floor( videoEl.videoHeight * item.width / item.height ) 
+          const sh = type === 'horizontal' ?
+            Math.floor( videoEl.videoWidth * item.height / item.width ) :
+            videoEl.videoHeight
+          const sx = type === 'horizontal' ? 
+            0 :
+            Math.floor( ( videoEl.videoWidth - sw ) / 2 ) 
+          const sy = type === 'horizontal' ?
+            Math.floor( ( videoEl.videoHeight - sh ) / 2 ) :
+            0
 
           _ctx.current.drawImage( 
             videoEl, 
@@ -272,6 +283,7 @@ export default function Studio( props ) {
   }, [ 
     state.status, 
     state.studio.layout, state.studio.patternId, state.studio.height, state.studio.width, 
+    state.studio.patterns,
     state.studio.reactions.sum, state.studio.reactions.lastUpdated,
     state.caption, state.logo ])
 
