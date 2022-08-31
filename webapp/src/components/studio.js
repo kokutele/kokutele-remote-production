@@ -8,6 +8,8 @@ import { isNumber } from '../libs/util'
 import { logo } from '../config'
 
 import thumbUp from '../assets/thumb-up64.png'
+import heart from '../assets/heart.png'
+import clap from '../assets/clapping.png'
 import './studio.css'
 
 const logger = new Logger('studio')
@@ -15,6 +17,14 @@ const mutext = new Mutex()
 
 const thumbUpImage = new Image()
 thumbUpImage.src = thumbUp
+const heartImage = new Image()
+heartImage.src = heart
+const clapImage = new Image()
+clapImage.src = clap
+
+const icons = [
+  thumbUpImage, heartImage, clapImage
+]
 
 export default function Studio( props ) {
   const { 
@@ -195,10 +205,14 @@ export default function Studio( props ) {
     for( let i = 0; i < state.studio.reactions.sum; i++ ) {
       setTimeout( () => {
         const id = Date.now()
+        const width = Math.floor(_canvasEl.current.width / ( 3 + Math.random() ))
         _reactions.current.push({
           id,
           x: _canvasEl.current.width,
-          y: Math.floor(_canvasEl.current.height / 3 * Math.random()) + 50
+          y: Math.floor(_canvasEl.current.height / 3 * Math.random()) + 50,
+          width,
+          max: Math.floor( width * ( 0.8 + 0.2 * Math.random() ) ),
+          icon: icons[ Math.floor( icons.length * Math.random() )]
         })
 
         setTimeout(() => {
@@ -283,14 +297,13 @@ export default function Studio( props ) {
       _ctx.current.stroke()
       
       // draw reactions
+      // _ctx.current.scale( 1.5, 1.5 )
       _reactions.current.forEach( item => {
-        const dx = Math.floor(Math.sin(( Date.now() - item.id ) / duration * Math.PI) * _canvasEl.current.width / 3 )
-        item.x = _canvasEl.current.width - dx
-        // _ctx.current.font = '48px serif';
-        // _ctx.current.fillStyle = '#fff'
-        // _ctx.current.fillText( "a", item.x, item.y )
-        _ctx.current.drawImage( thumbUpImage, item.x, item.y )
+        const dx = Math.floor(Math.sin(( Date.now() - item.id ) / duration * Math.PI) * item.width )
+        item.x = Math.floor( type === 'vertical' ? _canvasEl.current.width * 2 / 3 : _canvasEl.current.width ) - ( dx > item.max ? item.max : dx )
+        _ctx.current.drawImage( item.icon, item.x, item.y )
       })
+      // _ctx.current.scale( 1, 1 )
 
       // draw caption
       if( state.caption !== '' ) {

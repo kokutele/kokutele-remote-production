@@ -35,6 +35,11 @@ const layoutPatterns = [
     label: "vertical-tile",
     type: 'vertical'
   },
+  { 
+    id: 6, 
+    label: "vertical-p-in-p",
+    type: 'vertical'
+  },
 ]
 
 class Studio {
@@ -137,6 +142,8 @@ class Studio {
       this._calcVerticalMain()
     } else if( this._patternId === 5 ) {
       this._calcVerticalTile()
+    } else if( this._patternId === 6 ) {
+      this._calcVerticalPinP()
     }
 
     logger.info( '"_calcLayout()" - layout:%o', this._layout )
@@ -249,6 +256,43 @@ class Studio {
       }
     }
   }
+
+  _calcVerticalPinP() {
+    for( let i = 0; i < this._layout.length; i++ ) {
+      let width, height
+      if( i > 5 ) {
+        width = 0; height = 0;
+      } else {
+        //height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
+        //width  = Math.floor( this._width * height / this._height )
+        height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
+        width  = Math.floor( height * this._height / this._width )
+      }
+      const offset = 15
+      const padX = Math.floor( ( this._width - this._height * this._height / this._width ) / 2 ) 
+      const posXs = [
+        padX, 
+        padX + offset, 
+        padX + this._height * this._height / this._width - width - offset,
+        padX + offset, 
+        padX + this._height * this._height / this._width - width - offset,
+      ]
+      const posX = posXs[i]
+
+      const posYs = [
+        0,
+        offset,
+        offset,
+        height + offset * 2,
+        height + offset * 2,
+      ]
+      const posY = posYs[i]
+
+      this._layout[i] = { ...this._layout[i], posX, posY, width, height }
+    }
+  }
+
+
 }
 
 module.exports = Studio
