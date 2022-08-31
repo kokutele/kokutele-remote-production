@@ -17,7 +17,6 @@ export default function SwitchMedia( props ) {
   useEffect( () => {
     ( async () => {
       const list = await navigator.mediaDevices.enumerateDevices()
-      console.log( list )
 
       setVideoDevices( list.filter( item => item.kind === 'videoinput') )
       setAudioDevices( list.filter( item => item.kind === 'audioinput') )

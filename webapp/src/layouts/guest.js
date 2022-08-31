@@ -192,7 +192,10 @@ export default function Guest( props ) {
               setDeviceId={ setDeviceId } 
               visible={ _isSettingVisible }
               setVisible={ setIsSettingVisible }
-              handleStartVideoTalk={ handleStartVideoTalk }
+              handleStartVideoTalk={ ( _videoId, _audioId ) => {
+                handleCancelVideoTalk()
+                handleStartVideoTalk( _videoId, _audioId )
+              }}
             />
           </div>
           <div className="cancel">
