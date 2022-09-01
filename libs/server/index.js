@@ -152,6 +152,13 @@ class Server {
       res.status(201).send('accepted')
     })
 
+    this._expressApp.get('/api/reaction/:roomId', ( req, res ) => {
+      const numReaction = req.room.numReaction
+      res.status(200).json(numReaction)
+    })
+
+
+
     this._expressApp.get('/api/guestId/:roomId', ( req, res ) => {
       const guestId = getGuestId( req.roomId )
       res.status(200).send( guestId )

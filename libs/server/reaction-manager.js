@@ -8,6 +8,10 @@ class ReactionManager extends EventEmitter {
   _timer = null
   _roomId = null
 
+  get numReaction() {
+    return this._numReaction
+  }
+
 
   start( roomId ) {
     this._roomId = roomId

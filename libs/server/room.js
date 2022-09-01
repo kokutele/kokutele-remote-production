@@ -60,6 +60,10 @@ class Room extends EventEmitter {
     this._handleAudioLevelObserver()
   }
 
+  get numReaction() {
+    return this._reactionManager.numReaction
+  }
+
   startReactionManager() {
     if( this._reactionManager ) {
       this._reactionManager.start( this._roomId )
