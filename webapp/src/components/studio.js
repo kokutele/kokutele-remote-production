@@ -10,6 +10,7 @@ import { logo } from '../config'
 import thumbUp from '../assets/thumb-up64.png'
 import heart from '../assets/heart.png'
 import clap from '../assets/clapping.png'
+import tgcIcon from '../assets/TGC_icon64.png'
 import './studio.css'
 
 const logger = new Logger('studio')
@@ -21,9 +22,14 @@ const heartImage = new Image()
 heartImage.src = heart
 const clapImage = new Image()
 clapImage.src = clap
+const tgcIconImage = new Image()
+tgcIconImage.src = tgcIcon
 
 const icons = [
-  thumbUpImage, heartImage, clapImage
+  // thumbUpImage, 
+  heartImage, 
+  // clapImage,
+  tgcIconImage,
 ]
 
 export default function Studio( props ) {

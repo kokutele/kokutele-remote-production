@@ -268,23 +268,23 @@ class Studio {
         height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
         width  = Math.floor( height * this._height / this._width )
       }
-      const offset = 15
+      const offsetX = 25, offsetY = 125
       const padX = Math.floor( ( this._width - this._height * this._height / this._width ) / 2 ) 
       const posXs = [
         padX, 
-        padX + offset, 
-        padX + this._height * this._height / this._width - width - offset,
-        padX + offset, 
-        padX + this._height * this._height / this._width - width - offset,
+        padX + offsetX, 
+        padX + this._height * this._height / this._width - width - offsetX,
+        padX + offsetX, 
+        padX + this._height * this._height / this._width - width - offsetX,
       ]
       const posX = posXs[i]
 
       const posYs = [
         0,
-        offset,
-        offset,
-        height + offset * 2,
-        height + offset * 2,
+        offsetY,
+        offsetY,
+        height + offsetY + 15,
+        height + offsetY + 15,
       ]
       const posY = posYs[i]
 
