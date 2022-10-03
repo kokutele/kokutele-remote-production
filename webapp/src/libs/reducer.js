@@ -4,6 +4,7 @@ import { AppContext } from '../App'
 import Logger from './logger';
 
 const logger = new Logger("reducer")
+const USE_SIMULCAST = false
 
 export const initialState = {
   status: 'IDLE',
@@ -113,7 +114,7 @@ export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
   const createRoomClient = ( { displayName, roomId } ) => {
-    const useSimulcast = true
+    const useSimulcast = USE_SIMULCAST
     const client = RoomClient.create( { displayName, roomId, useSimulcast })
 
     logger.debug( '"createRoomClient":%o', client )
