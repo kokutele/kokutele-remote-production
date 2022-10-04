@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import { GiCancel } from 'react-icons/gi'
-import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
+import { BsMicMuteFill, BsMicFill } from 'react-icons/bs'
 import Logger from "../libs/logger"
 
 import './source-video.css'
@@ -186,16 +186,15 @@ export default function SourceVideo( props ) {
         { localStreamId && (
           <div className='mute'>
             <Button
-              type='primary'
+              type='link'
               shape='circle'
-              danger={ _muted ? true : false }
+              size="small"
+              icon={_muted ? <BsMicMuteFill /> : <BsMicFill />}
               style={{ color: '#fff', fontSize: '1em' }}
               onClick={() => {
                 setMuted( !_muted )
               }}
-            >
-              { _muted ? <MdVolumeOff /> : <MdVolumeUp /> }
-            </Button>
+            />
           </div>
         )}
         <div className="meta">

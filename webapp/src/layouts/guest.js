@@ -10,7 +10,8 @@ import SwitchMedia from "../components/switch-media";
 import { RiVideoAddFill } from 'react-icons/ri'
 import { AiFillSetting }  from 'react-icons/ai'
 import { MdCancel }       from 'react-icons/md'
-import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
+//import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
+import { BsMicFill, BsMicMuteFill } from 'react-icons/bs'
 
 import Logger from "../libs/logger";
 
@@ -50,7 +51,7 @@ export default function Guest( props ) {
   const handleStartVideoTalk = useCallback( async ( videoDeviceId = 'default', audioDeviceId = 'default' ) => {
     logger.debug('handleStartVideoTalk - %s', _localStreamId )
 
-    setMuted( true )
+    setMuted( false )
 
     if( _localStreamId ) {
       const localMedia = state.localMedias.find( item => item.localStreamId === _localStreamId )
@@ -209,14 +210,14 @@ export default function Guest( props ) {
           </div>
           <div className='mute'>
             <Button
-              type='primary'
+              type='link'
               danger={ _muted ? true : false }
               shape='circle'
               size="large"
-              style={{ coloe: '#fff', fontSize: '1.5em' }}
+              style={{ coloe: '#fff', fontSize: '1em' }}
               onClick={ () => setMuted( !_muted ) }
             >
-              { _muted ? <MdVolumeOff /> : <MdVolumeUp /> }
+              { _muted ? <BsMicMuteFill /> : <BsMicFill /> }
             </Button>
           </div>
         </div>
