@@ -76,8 +76,9 @@ export default function Guest( props ) {
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
 
-    const audioTrack = stream.getAudioTracks()[0]
-    if( audioTrack ) audioTrack.enabled = false
+    // const audioTrack = stream.getAudioTracks()[0]
+    // if( audioTrack ) audioTrack.enabled = true
+    setMuted( false )
 
     _videoEl.current.onloadedmetadata = async () => {
       await _videoEl.current.play()
@@ -214,7 +215,7 @@ export default function Guest( props ) {
               danger={ _muted ? true : false }
               shape='circle'
               size="large"
-              style={{ coloe: '#fff', fontSize: '1em' }}
+              style={{ coloe: '#fff' }}
               onClick={ () => setMuted( !_muted ) }
             >
               { _muted ? <BsMicMuteFill /> : <BsMicFill /> }

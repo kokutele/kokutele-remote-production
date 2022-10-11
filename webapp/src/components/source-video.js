@@ -23,7 +23,7 @@ export default function SourceVideo( props ) {
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
-  const [ _muted, setMuted ] = useState( true )
+  const [ _muted, setMuted ] = useState( false )
 
   const {
     id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId, idx 
@@ -188,7 +188,6 @@ export default function SourceVideo( props ) {
             <Button
               type='link'
               shape='circle'
-              size="small"
               icon={_muted ? <BsMicMuteFill /> : <BsMicFill />}
               style={{ color: '#fff', fontSize: '1em' }}
               onClick={() => {
