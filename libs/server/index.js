@@ -136,6 +136,56 @@ class Server {
       }
     })
 
+    this._expressApp.get('/api/studio/:roomId/covers', async ( req, res ) => {
+      const roomName = req.params.roomId
+
+      const result = await this._studioDB.getCoverUrls( roomName )
+
+      if( result ) {
+        res.status( 200 ).send( result )
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+    this._expressApp.post('/api/studio/:roomId/covers', async ( req, res ) => {
+      const roomName = req.params.roomId
+      const { url } = req.body
+      logger.info('POST covers - %s, %s', roomName, url)
+
+      if( !roomName || !url ) {
+        res.status( 400 ).send('Both roomName and url MUST be specified.')
+      }
+
+      const result = await this._studioDB.setCoverUrl({ roomName, url })
+
+      if( result ) {
+        res.status( 200 ).send( result )
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+    this._expressApp.delete('/api/studio/:roomId/covers', async ( req, res ) => {
+      const roomName = req.params.roomId
+      const { id } = req.body
+      logger.info('DELETE covers - %s, %s', roomName, id)
+
+      if( !roomName || !id ) {
+        res.status( 400 ).send('Both roomName and url MUST be specified.')
+      }
+
+      const result = await this._studioDB.deleteCoverUrl({ roomName, id })
+
+      if( result ) {
+        res.status( 200 ).send( result )
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+
+
     this._expressApp.put('/api/studio/:roomId', async ( req, res ) => {
       try {
         const { passcode } = req.body

@@ -71,6 +71,51 @@ class StudioDB {
     }
   }
 
+  getCoverUrls = async ( roomName ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  setCoverUrl = async ( { roomName, url } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('insert into covers ( roomId, url ) values ( ?, ? );', [ room.id, url ] )
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  deleteCoverUrl = async ( { roomName, id } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('delete from covers where id = ? and roomId = ?;', [ id, room.id ] )
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
   
   _migrate = async () => {
     const sqlRooms = [
@@ -91,6 +136,16 @@ class StudioDB {
     ].join("")
 
     await this._db.run( sqlPasscodes )
+    
+    const sqlCovers = [
+      "create table if not exists covers(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  url TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlCovers )
   }
 }
 

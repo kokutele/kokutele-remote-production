@@ -8,6 +8,7 @@ const USE_SIMULCAST = false
 
 export const initialState = {
   status: 'IDLE',
+  roomId: '',
   peerId: '',
   displayName: '',
   localMedias: [], // Array<{ id, displayName, audioProducerId, videoProducerId, localStreamId }>
@@ -17,6 +18,7 @@ export const initialState = {
   audioConsumers: [],
   videoConsumers: [],
   studio: {
+    coverUrl: '',
     width: 0,
     height: 0,
     layout: [],
@@ -34,6 +36,9 @@ export const reducer = ( state, action ) => {
     case 'SET_STATUS': {
       return { ...state, status: action.value }
     }
+    case 'SET_ROOM_ID': {
+      return { ...state, roomId: action.value }
+    }
     case 'SET_PEERID': {
       return { ...state, peerId: action.value }
     }
@@ -48,6 +53,9 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_LOGO': {
       return { ...state, logo: action.value }
+    }
+    case 'SET_COVER_URL': {
+      return { ...state, studio: { ...state.studio, coverUrl: action.value } }
     }
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
@@ -229,6 +237,10 @@ export const useAppContext = () => {
     logger.debug('appData:%o', appData )
   }
 
+  const setRoomId = name => {
+    dispatch({ type: 'SET_ROOM_ID', value: name })
+  }
+
   const setCaption = str => {
     const caption = !!str ? str : ''
     dispatch({ type: 'SET_CAPTION', value: caption })
@@ -239,6 +251,10 @@ export const useAppContext = () => {
     const data = await appData.roomClient.getCaption()
       .catch( err => { return { caption: '' } })
     dispatch({ type: 'SET_CAPTION', value: data.caption })
+  }
+
+  const setCoverUrl = url => {
+    dispatch({ type: 'SET_COVER_URL', value: !!url ? url : '' })
   }
 
   const setLogo = str => {
@@ -313,9 +329,11 @@ export const useAppContext = () => {
     getStudioLayout,
     addStudioLayout,
     deleteStudioLayout,
+    setRoomId,
     getCaption,
     setCaption,
     setLogo,
+    setCoverUrl,
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
