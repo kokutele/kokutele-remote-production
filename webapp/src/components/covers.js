@@ -1,14 +1,15 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
-import { Button, Drawer, Form, Input, Typography } from 'antd'
+import { Button, Card, Col, Drawer, Form, Input, Row, Typography } from 'antd'
 
 import { BsCardImage } from 'react-icons/bs'
+import { BiTrash } from 'react-icons/bi'
 
 import { useAppContext } from '../libs/reducer'
-import Logger from '../libs/logger'
 import { apiEndpoint } from '../libs/url-factory'
 
+import './covers.css'
+
 const { Paragraph } = Typography
-const logger = new Logger('covers.js')
 
 export default function Covers(props) {
   const _formRef = useRef()
@@ -72,26 +73,48 @@ export default function Covers(props) {
       <Button onClick={() => setShowDrawer( true )} type='default' icon={<BsCardImage />}>&nbsp;Covers</Button>
       <Drawer title="covers" placement='left' onClose={() => setShowDrawer( false )} visible={ _showDrawer } >
         <Paragraph>
-          Select cover image shown below.
+          <Card title="Select cover image">
+            <Row gutter={4}>
+              <Col span={8}>
+                <div className='cover-wrapper'>
+                  <div className='cover-body' data-selected={ !state.studio.coverUrl } onClick={() => setCoverUrl('')}>
+                    None
+                  </div>
+                </div>
+              </Col>
+              { _urls.map( ( item, idx ) => (
+              <Col span={8} key={idx}>
+                <div className='cover-wrapper' onClick={() => setCoverUrl( item.url ) }>
+                  <div className='cover-body' data-selected={ state.studio.coverUrl === item.url }>
+                    <img src={item.url} alt={`cover-${idx}`} />
+                  </div>
+                  <div className='delete'>
+                    <Button 
+                      danger
+                      icon={<BiTrash />}
+                      onClick={() => deleteUrl(item.id)} 
+                      shape="circle"
+                      size="small" 
+                      type="primary" 
+                    />
+                  </div>
+                </div>
+              </Col>
+              ))}
+            </Row>
+          </Card>
         </Paragraph>
         <Paragraph>
-          add image url:<br />
-          <Form size="small" ref={_formRef} onFinish={onFinish}>
-            <Form.Item name="coverUrl" rules={[{ required: true, message: 'Input cover url.'}]}>
-              <Input type="url" placeholder="image url" />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType='submit'>add</Button>
-            </Form.Item>
-          </Form>
-        </Paragraph>
-        <Paragraph>
-          { _urls.map( ( item, idx ) => (
-            <div key={idx}>
-              {item.id}:{item.url}
-              <Button type="link" onClick={() => deleteUrl(item.id)}>delete</Button>
-            </div>
-          ))}
+          <Card title="Add image url">
+            <Form size="small" ref={_formRef} onFinish={onFinish}>
+              <Form.Item name="coverUrl" rules={[{ required: true, message: 'Input cover url.'}]}>
+                <Input type="url" placeholder="image url" />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType='submit'>add</Button>
+              </Form.Item>
+            </Form>
+          </Card>
         </Paragraph>
       </Drawer>
     </div>

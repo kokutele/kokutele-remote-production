@@ -48,6 +48,7 @@ class Studio {
     this._height = props.height
     this._width  = props.width 
     this._rtmpUrl = props.rtmpUrl
+    this._coverUrl = ''
     this._useMixer = props.useMixer
     this._patternId = layoutPatterns[0].id
 
@@ -82,6 +83,10 @@ class Studio {
 
   get patterns() {
     return layoutPatterns
+  }
+
+  get coverUrl() {
+    return this._coverUrl
   }
 
   start() {
@@ -120,6 +125,10 @@ class Studio {
   deletePeer( peerId ) {
     this._layout = this._layout.filter( item => item.peerId !== peerId )
     this._calcLayout()
+  }
+
+  setCoverUrl( url ) {
+    this._coverUrl = url
   }
 
   calcLayout() {

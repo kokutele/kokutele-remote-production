@@ -289,6 +289,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('setCaption', notification.data )
             break
           }
+          case 'setCoverUrl': {
+            this.emit('setCoverUrl', notification.data )
+            break
+          }
           case 'downlinkBwe': {
             // logger.debug('"downlinkBwe" event:%o', notification.data)
             break
@@ -601,9 +605,18 @@ export default class RoomClient extends EventEmitter {
   }
 
   async getCaption() {
-    const res = await this._protoo.request( 'getCaption' )
+    return await this._protoo.request( 'getCaption' )
       .catch( err => { return { caption: '' } })
-    return res
+  }
+
+  async setCoverUrl( url ) {
+    return await this._protoo.request( 'setCoverUrl', { coverUrl: url } )
+      .catch( err => { throw err })
+  }
+
+  async getCoverUrl() {
+    return await this._protoo.request( 'getCoverUrl' )
+      .catch( err => { return { coverUrl: '' }})
   }
 
   async addStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {

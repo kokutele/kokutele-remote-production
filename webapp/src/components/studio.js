@@ -28,11 +28,14 @@ const icons = [
   clapImage,
 ]
 
+const IS_VIEWER = window.location.pathname.includes('/viewer/')
+
 export default function Studio( props ) {
   const { 
     getStudioLayout, 
     getStudioSize, 
     getCaption,
+    getCoverUrl,
     getStudioPatternId,
     getStudioPatterns,
     setLogo,
@@ -56,6 +59,7 @@ export default function Studio( props ) {
         await getStudioSize()
         await getStudioLayout()
         await getCaption()
+        await getCoverUrl()
         await setLogo( logo )
       })();
     }
@@ -348,6 +352,11 @@ export default function Studio( props ) {
     <div className="Studio">
       <div className="wrapper" style={ props.style }>
         <canvas ref={ _canvasEl }></canvas>
+        { ( IS_VIEWER && !!state.studio.coverUrl ) && (
+          <div className='cover-area'>
+            <img src={state.studio.coverUrl} alt="cover" />
+          </div>
+        ) }
         { !hideAlert && state.studio.layout.length === 0 && (
           <div className='alert'>
             <Alert 

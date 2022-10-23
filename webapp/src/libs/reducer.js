@@ -253,8 +253,13 @@ export const useAppContext = () => {
     dispatch({ type: 'SET_CAPTION', value: data.caption })
   }
 
-  const setCoverUrl = url => {
-    dispatch({ type: 'SET_COVER_URL', value: !!url ? url : '' })
+  const setCoverUrl = async url => {
+    await appData.roomClient.setCoverUrl( url )
+  }
+
+  const getCoverUrl = async () => {
+    const data = await appData.roomClient.getCoverUrl()
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
   }
 
   const setLogo = str => {
@@ -333,6 +338,7 @@ export const useAppContext = () => {
     getCaption,
     setCaption,
     setLogo,
+    getCoverUrl,
     setCoverUrl,
     toMainInStudioLayout,
     createRoomClient,
@@ -371,6 +377,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("setCaption", data => {
     dispatch({ type: 'SET_CAPTION', value: data.caption })
+  })
+
+  client.on("setCoverUrl", data => {
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
   })
 
   client.on("peerClosed", peerId => {

@@ -6,6 +6,7 @@ import StudioPatterns from './studio-patterns'
 import LikeButton from './like-button'
 import Captions from './captions'
 import Covers from './covers'
+import CoverIndicator from './cover-indicator'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -59,6 +60,7 @@ export default function Room( props ) {
       <div className='studio-container'>
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
+      <CoverIndicator />
       <div className='container' style={{ textAlign: "center" }}>
         <Row gutter={16}>
           <Col offset={1} span={2} style={{ textAlign: "left"}}>
