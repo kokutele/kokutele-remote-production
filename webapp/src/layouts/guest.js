@@ -45,6 +45,11 @@ export default function Guest( props ) {
       type: 'status',
       value: _status
     }, '*')
+
+    window.opener.postMessage({
+      type: 'status',
+      value: _status
+    }, '*')
   }, [ _status ])
 
   
