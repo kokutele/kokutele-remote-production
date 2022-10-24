@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Alert, Col, Collapse, Divider, Row } from 'antd'
+import { Alert, Col, Collapse, Divider, Row, Space } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
 import LikeButton from './like-button'
+import Deselect from './deselect'
 import Captions from './captions'
 import Covers from './covers'
 import CoverIndicator from './cover-indicator'
@@ -64,14 +65,19 @@ export default function Room( props ) {
       <div className='container' style={{ textAlign: "center" }}>
         <Row gutter={16}>
           <Col offset={1} span={2} style={{ textAlign: "left"}}>
-            <Captions />
-            <Covers />
+            <Space direction='vertical'>
+              <Captions />
+              <Covers />
+            </Space>
           </Col>
           <Col offset={0} span={18} style={{ textAlign: "center" }}>
             <StudioPatterns />
           </Col>
           <Col offset={1} span={2} style={{ textAlign: "center"}}>
-            <LikeButton roomId={roomId} />
+            <Space direction='vertical'>
+              <LikeButton roomId={roomId} />
+              <Deselect />
+            </Space>
           </Col>
         </Row>
       </div>
