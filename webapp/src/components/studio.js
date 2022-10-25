@@ -75,10 +75,11 @@ export default function Studio( props ) {
     mutext.runExclusive( async () => {
       // delete video elements which is not included in layout object.
       for( const videoProducerId of _videoEls.current.keys() ) {
-        if( !state.studio.layout
-          //.filter( item => ( item.width !== 0 && item.height !== 0 ))
-          .find( item => item.videoProducerId === videoProducerId ) 
-        ) {
+        const consumer = Array.from( appData.roomClient.consumers.values() )
+          .find( consumer => consumer.producerId === videoProducerId )
+        const included = state.studio.layout.find( item => item.videoProducerId === videoProducerId )
+
+        if( !included || !consumer || !consumer.track ) {
           const videoElem = _videoEls.current.get( videoProducerId )
 
           if( videoElem ) {
@@ -87,7 +88,6 @@ export default function Studio( props ) {
           }
           _videoEls.current.delete(videoProducerId)
 
-          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === videoProducerId )
           if( consumer ) {
             await appData.roomClient.setPreferredLayers( consumer.id, 0 )
               .catch( err => console.warn( 'setPreferredLayers:%o', err ))
@@ -99,11 +99,23 @@ export default function Studio( props ) {
       const layout = state.studio.layout
         .filter( item => ( item.width !== 0 && item.height !== 0 ))
 
-      for( const item of layout ) {
-        if( !_videoEls.current.has( item.videoProducerId ) ) {
-          const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
-          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
+      for( let idx = 0; idx < layout.length; idx++ ) {
+        const item = layout[idx]
+        const localMedia = state.localMedias
+          .find( media => media.videoProducerId === item.videoProducerId )
+        const consumer = Array.from( appData.roomClient.consumers.values() )
+          .find( consumer => consumer.producerId === item.videoProducerId )
 
+        // only main video will be got as high quality
+        if( consumer && ( ( state.studio.patternId === 1 && layout.length <= 4 ) || idx === 0 ) ) {
+          await appData.roomClient.setPreferredLayers(consumer.id, 1)
+            .catch(err => console.warn('setPreferredLayers:%o', err))
+        } else if ( consumer && idx > 0 ) {
+          await appData.roomClient.setPreferredLayers(consumer.id, 0)
+            .catch(err => console.warn('setPreferredLayers:%o', err))
+        }
+
+        if( !_videoEls.current.has( item.videoProducerId ) ) {
           let stream
           if( localMedia ) {
             stream = appData.localStreams.get( localMedia.localStreamId )
@@ -114,9 +126,6 @@ export default function Studio( props ) {
                 logger.debug('consumer:%o', consumer)
                 await appData.roomClient.resumeConsumer(consumer.id)
               }
-
-              await appData.roomClient.setPreferredLayers(consumer.id, 1)
-                .catch(err => console.warn('setPreferredLayers:%o', err))
 
               const track = consumer.track
               stream = new MediaStream( [ track ] )
@@ -192,17 +201,10 @@ export default function Studio( props ) {
             await appData.roomClient.pauseConsumer( item.consumerId )
           }
         }
-
-        // for( const item of state.audioConsumers ) {
-        //   if( !_audioEls.current.has( item.producerId ) ) {
-        //     logger.debug('pause audio consumer:%s', item.consumerId )
-        //      await appData.roomClient.pauseConsumer( item.consumerId )
-        //   }
-        // }
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
+  }, [ playAudio, state.studio.layout, state.studio.patternId, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 
