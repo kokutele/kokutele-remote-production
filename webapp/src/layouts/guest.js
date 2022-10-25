@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Button } from "antd";
+import { Button, Input, Space } from "antd";
 
 import { useAppContext } from "../libs/reducer";
 import { apiEndpoint } from "../libs/url-factory";
@@ -29,6 +29,7 @@ export default function Guest( props ) {
   const [ _localStreamId, setLocalStreamId ] = useState()
   const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
   const [ _muted, setMuted ] = useState( true )
+  const [ _displayName, setDisplayName ] = useState('guest')
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
   const _stream = useRef()
@@ -46,10 +47,12 @@ export default function Guest( props ) {
       value: _status
     }, '*')
 
-    window.opener.postMessage({
-      type: 'status',
-      value: _status
-    }, '*')
+    if( window.opener) {
+      window.opener.postMessage({
+        type: 'status',
+        value: _status
+      }, '*')
+    }
   }, [ _status ])
 
   
@@ -88,12 +91,11 @@ export default function Guest( props ) {
     _videoEl.current.onloadedmetadata = async () => {
       await _videoEl.current.play()
 
-      const displayName = 'guest'
-      const peerId = createRoomClient({ roomId: _roomId, displayName })
+      const peerId = createRoomClient({ roomId: _roomId, displayName: _displayName })
 
       joinRoom()
         .then( async () => {
-          const localStreamId = await createProducer({ peerId, displayName, stream })
+          const localStreamId = await createProducer({ peerId, displayName: _displayName, stream })
           setLocalStreamId( localStreamId )
           setStatus('PRODUCING')
         } )
@@ -177,9 +179,16 @@ export default function Guest( props ) {
         </div>
         <div className="controller">
           { _status === 'IDLE' && (
-          <Button icon={<RiVideoAddFill/>} onClick={ handleStartVideoTalk } type="primary" danger style={{fontWeight: "bold"}}>
-            &nbsp;Join
-          </Button>
+          <Space direction="vertical">
+            <div>
+              <span style={{color: "#fff"}}>Name:</span> <Input type="text" value={_displayName} onChange={ e => setDisplayName( e.target.value) }/>
+            </div>
+            <div>
+              <Button icon={<RiVideoAddFill/>} onClick={ handleStartVideoTalk } type="primary" danger style={{fontWeight: "bold"}}>
+                &nbsp;Join
+              </Button>
+            </div>
+          </Space>
           )}
         </div>
         { _status === 'PRODUCING' && (
