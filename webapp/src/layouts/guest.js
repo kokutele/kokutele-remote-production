@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button, Input, Space } from "antd";
 
@@ -11,9 +11,9 @@ import { RiVideoAddFill } from 'react-icons/ri'
 import { AiFillSetting }  from 'react-icons/ai'
 import { MdCancel }       from 'react-icons/md'
 //import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
-import { BsMicFill, BsMicMuteFill } from 'react-icons/bs'
+import { BsMicFill, BsMicMuteFill, BsCameraVideoFill, BsCameraVideoOffFill } from 'react-icons/bs'
 
-import { defaultMic } from "../config";
+import { defaultMic, defaultVideo } from "../config";
 
 import Logger from "../libs/logger";
 
@@ -23,18 +23,27 @@ const logger = new Logger('guest')
 
 export default function Guest( props ) {
   const { guestId } = useParams()
-  const { state, appData, createRoomClient, joinRoom, createProducer, deleteProducer } = useAppContext()
+  const { state, appData, 
+    createRoomClient, joinRoom, createProducer, deleteProducer,
+    addParticipant, updateParticipantAudio, updateParticipantVideo, deleteParticipantByMediaId
+  } = useAppContext()
 
   const [ _roomId, setRoomId ] = useState('')
+  const [ _peerId, setPeerId ] = useState('')
+  const [ _mediaId, setMediaId ] = useState('')
   const [ _status, setStatus ] = useState('IDLE')
   const [ _deviceId, setDeviceId ] = useState({ video: 'default', audio: 'default' })
   const [ _localStreamId, setLocalStreamId ] = useState()
   const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
-  const [ _enableMic, setEnableMic ] = useState( defaultMic )
   const [ _displayName, setDisplayName ] = useState('guest')
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
   const _stream = useRef()
+
+  const _myParticipantInfo = useMemo( () => {
+    return state.studio.participants.find( item => item.peerId = _peerId && item.mediaId === _mediaId )
+      || { peerId: _peerId, mediaId: _mediaId, displayName: _displayName, audio: defaultMic, video: defaultVideo }
+  }, [state.studio.participants, _peerId, _mediaId, _displayName ])
 
   useEffect( () => {
     fetch( `${apiEndpoint}/roomId/${guestId}` )
@@ -57,7 +66,6 @@ export default function Guest( props ) {
     }
   }, [ _status ])
 
-  
   const handleStartVideoTalk = useCallback( async ( videoDeviceId = 'default', audioDeviceId = 'default' ) => {
     logger.debug('handleStartVideoTalk - %s', _localStreamId )
 
@@ -87,23 +95,25 @@ export default function Guest( props ) {
     _videoEl.current.srcObject = stream
 
     const audioTrack = stream.getAudioTracks()[0]
-    if( audioTrack ) audioTrack.enabled = _enableMic
+    if( audioTrack ) audioTrack.enabled = _myParticipantInfo.audio
 
     _videoEl.current.onloadedmetadata = async () => {
       await _videoEl.current.play()
 
       const peerId = createRoomClient({ roomId: _roomId, displayName: _displayName })
+      setPeerId( peerId )
 
       joinRoom()
         .then( async () => {
-          const localStreamId = await createProducer({ peerId, displayName: _displayName, stream })
+          const { localStreamId, mediaId } = await createProducer({ peerId, displayName: _displayName, stream })
           setLocalStreamId( localStreamId )
+          setMediaId( mediaId )
           setStatus('PRODUCING')
+          addParticipant({ peerId, mediaId, displayName:_displayName, audio: defaultMic, video: defaultVideo })
         } )
         .catch( err => alert( err.message ))
     }
     _stream.current = stream
-    setEnableMic( _enableMic )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ _roomId, _localStreamId ])
 
@@ -117,6 +127,8 @@ export default function Guest( props ) {
     }
     _stream.current = null
 
+    deleteParticipantByMediaId({ mediaId: _mediaId })
+
     appData.roomClient.close()
     setStatus('IDLE')
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,10 +138,15 @@ export default function Guest( props ) {
     if( !_stream.current ) return
 
     const audioTrack = _stream.current.getAudioTracks()[0]
-    if( audioTrack ) audioTrack.enabled = _enableMic
-  }, [_enableMic])
+    if( audioTrack ) audioTrack.enabled = _myParticipantInfo.audio
+  }, [_myParticipantInfo.audio])
 
+  useEffect( () => {
+    if( !_stream.current ) return
 
+    const videoTrack = _stream.current.getVideoTracks()[0]
+    if( videoTrack ) videoTrack.enabled = _myParticipantInfo.video
+  }, [_myParticipantInfo.video])
 
   useEffect( () => {
     for( const consumerId of _audioEls.current.keys() ) {
@@ -228,15 +245,32 @@ export default function Guest( props ) {
           <div className='mute'>
             <Button
               type='link'
-              danger={ !_enableMic }
+              danger={ !_myParticipantInfo.audio }
               shape='circle'
               size="large"
               style={{ coloe: '#fff' }}
-              onClick={ () => setEnableMic( !_enableMic ) }
+              onClick={ () => {
+                updateParticipantAudio({ mediaId: _mediaId, audio: !_myParticipantInfo.audio })
+              } }
             >
-              { !_enableMic ? <BsMicMuteFill /> : <BsMicFill /> }
+              { !_myParticipantInfo.audio ? <BsMicMuteFill /> : <BsMicFill /> }
             </Button>
           </div>
+          <div className='video-mute'>
+            <Button
+              type='link'
+              danger={ !_myParticipantInfo.video }
+              shape='circle'
+              size="large"
+              style={{ coloe: '#fff' }}
+              onClick={ () => {
+                updateParticipantVideo({ mediaId: _mediaId, video: !_myParticipantInfo.video })
+              } }
+            >
+              { !_myParticipantInfo.video ? <BsCameraVideoOffFill /> : <BsCameraVideoFill /> }
+            </Button>
+          </div>
+ 
         </div>
         )}
       </div>

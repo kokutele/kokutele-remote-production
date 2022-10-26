@@ -24,6 +24,7 @@ export const initialState = {
     layout: [],
     patterns: [],
     patternId: 0, 
+    participants: [],
     reactions: { sum: 0, lastUpdated: Date.now() }
   }
 }
@@ -97,6 +98,10 @@ export const reducer = ( state, action ) => {
     case 'SET_STUDIO_PATTERN_ID': {
       const patternId = action.value
       return { ...state, studio: { ...state.studio, patternId }}
+    }
+    case 'SET_STUDIO_PARTICIPANTS': {
+      const participants = action.value
+      return { ...state, studio: { ...state.studio, participants }}
     }
     case 'SET_STUDIO_SIZE': {
       const { width, height } = action.value
@@ -200,7 +205,7 @@ export const useAppContext = () => {
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
 
-    return localStreamId
+    return { localStreamId, mediaId }
   }
 
   const replaceStream = async stream => {
@@ -324,6 +329,47 @@ export const useAppContext = () => {
     await appData.roomClient.toMainInStudioLayout( layoutIdx )
   }
 
+  const getStudioParticipants = async () => {
+    try {
+      const participants = await appData.roomClient.getStudioParticipants()
+      dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
+    } catch( err ) {
+      logger.error( 'getStudioParticipants():%o', err )
+    }
+  }
+
+  const addParticipant = async ({ peerId, mediaId, displayName, audio, video }) => {
+    try {
+      await appData.roomClient.addParticipant({ peerId, mediaId, displayName, audio, video })
+    } catch( err ) {
+      logger.error( 'addParticipant():%o', err )
+    }
+  }
+
+  const updateParticipantAudio = async ({ mediaId, audio }) => {
+    try {
+      await appData.roomClient.updateParticipantAudio({ mediaId, audio })
+    } catch( err ) {
+      logger.error( 'updateParticipantAudio():%o', err )
+    }
+  }
+
+  const updateParticipantVideo = async ({ mediaId, video }) => {
+    try {
+      await appData.roomClient.updateParticipantVideo({ mediaId, video })
+    } catch( err ) {
+      logger.error( 'updateParticipantVideo():%o', err )
+    }
+  }
+
+  const deleteParticipantByMediaId = async ({ mediaId }) => {
+    try {
+      await appData.roomClient.deleteParticipantByMediaId({ mediaId })
+    } catch( err ) {
+      logger.error( 'deleteParticipantByMediaId():%o', err )
+    }
+  }
+
   return {
     appData,
     getStudioPatterns,
@@ -333,6 +379,11 @@ export const useAppContext = () => {
     getStudioLayout,
     addStudioLayout,
     deleteStudioLayout,
+    getStudioParticipants,
+    addParticipant,
+    updateParticipantAudio,
+    updateParticipantVideo,
+    deleteParticipantByMediaId,
     setRoomId,
     getCaption,
     setCaption,
@@ -368,6 +419,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("studioLayoutUpdated", layout => {
     dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
+  })
+
+  client.on("studioParticipantsUpdated", participants => {
+    dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
   })
 
   client.on("reactionsUpdated", data => {

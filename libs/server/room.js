@@ -155,11 +155,15 @@ class Room extends EventEmitter {
 
         this._studio.deletePeer( peer.id )
 
+        this._studio.deleteParticipantsByPeerId( peer.id )
+
         if( peer.data.joined ) {
           for( const otherPeer of this._getJoinedPeers({ excludePeer: peer }) ) {
             otherPeer.notify('peerClosed', {peerId: peer.id })
               .catch(() => {})
             otherPeer.notify('studioLayoutUpdated', this._studio.layout )
+              .catch(() => {})
+            otherPeer.notify('studioParticipantsUpdated', this._studio.participants )
               .catch(() => {})
           }
         }
@@ -716,6 +720,75 @@ class Room extends EventEmitter {
 
         for( const peer of this._getJoinedPeers() ) {
           peer.notify( 'studioLayoutUpdated', this._studio.layout )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'getStudioParticipants': {
+        accept( this._studio.participants )
+        break
+      }
+
+      case 'addParticipant': {
+        const { peerId, mediaId, displayName, audio, video } = request.data
+        logger.info('"addParticipant" - request.data:%o', request.data )
+
+        this._studio.addParticipant({ peerId, mediaId, displayName, audio, video })
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioParticipantsUpdated', this._studio.participants )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'updateParticipantAudio': {
+        const { mediaId, audio } = request.data
+        logger.info('"updateParticipantAudio" - request.data:%o', request.data )
+
+        this._studio.updateParticipantAudio( mediaId, audio )
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioParticipantsUpdated', this._studio.participants )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'updateParticipantVideo': {
+        const { mediaId, video } = request.data
+        logger.info('"updateParticipantVideo" - request.data:%o', request.data )
+
+        this._studio.updateParticipantVideo( mediaId, video )
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioParticipantsUpdated', this._studio.participants )
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'deleteParticipantByMediaId': {
+        const { mediaId } = request.data
+        logger.info('"deleteParticipantByMediaId" - request.data:%o', request.data )
+
+        this._studio.deleteParticipantByMediaId( mediaId )
+
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'studioParticipantsUpdated', this._studio.participants )
             .catch( () => {} )
         }
 

@@ -33,6 +33,7 @@ const IS_VIEWER = window.location.pathname.includes('/viewer/')
 export default function Studio( props ) {
   const { 
     getStudioLayout, 
+    getStudioParticipants,
     getStudioSize, 
     getCaption,
     getCoverUrl,
@@ -55,6 +56,7 @@ export default function Studio( props ) {
       ( async () => {
         _ctx.current = _canvasEl.current.getContext('2d')
         await getStudioPatterns()
+        await getStudioParticipants()
         await getStudioPatternId()
         await getStudioSize()
         await getStudioLayout()

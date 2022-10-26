@@ -59,6 +59,7 @@ class Studio {
     this._consumers = new Map()
 
     this._layout = []
+    this._participants = []
   }
 
   get height() {
@@ -71,6 +72,10 @@ class Studio {
 
   get layout() {
     return this._layout
+  }
+
+  get participants() {
+    return this._participants
   }
 
   get patternId() {
@@ -129,6 +134,30 @@ class Studio {
 
   setCoverUrl( url ) {
     this._coverUrl = url
+  }
+
+  addParticipant( { peerId, mediaId, displayName, audio, video } ) {
+    this._participants = [ ...this._participants, { peerId, mediaId, displayName, audio, video }]
+  }
+
+  updateParticipantAudio( mediaId, audio )  {
+    this._participants = this._participants.map( item => (
+      item.mediaId === mediaId ? { ...item, audio } : item
+    ))
+  }
+
+  updateParticipantVideo( mediaId, video )  {
+    this._participants = this._participants.map( item => (
+      item.mediaId === mediaId ? { ...item, video } : item
+    ))
+  }
+
+  deleteParticipantsByPeerId( peerId ) {
+    this._participants = this._participants.filter( item => item.peerId !== peerId )
+  }
+
+  deleteParticipantByMediaId( mediaId ) {
+    this._participants = this._participants.filter( item => item.mediaId !== mediaId )
   }
 
   calcLayout() {

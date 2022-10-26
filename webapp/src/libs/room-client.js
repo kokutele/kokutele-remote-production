@@ -281,6 +281,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('studioPatternIdUpdated', notification.data )
             break
           }
+          case 'studioParticipantsUpdated': {
+            this.emit('studioParticipantsUpdated', notification.data )
+            break
+          }
           case 'reactionsUpdated': {
             this.emit('reactionsUpdated', notification.data )
             break
@@ -626,6 +630,31 @@ export default class RoomClient extends EventEmitter {
 
   async deleteStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId } ) {
     await this._protoo.request( 'deleteStudioLayout', { peerId, mediaId, audioProducerId, videoProducerId } )
+      .catch( err => { throw err })
+  }
+
+  async getStudioParticipants() {
+    return this._protoo.request( 'getStudioParticipants' )
+      .catch( err => { throw err })
+  }
+  
+  async addParticipant( { mediaId, peerId, displayName, audio, video }) {
+    return this._protoo.request( 'addParticipant', { mediaId, peerId, displayName, audio, video } )
+      .catch( err => { throw err })
+  }
+
+  async updateParticipantAudio( { mediaId, audio }) {
+    return this._protoo.request( 'updateParticipantAudio', { mediaId, audio } )
+      .catch( err => { throw err })
+  }
+
+  async updateParticipantVideo( { mediaId, video }) {
+    return this._protoo.request( 'updateParticipantVideo', { mediaId, video } )
+      .catch( err => { throw err })
+  }
+
+  async deleteParticipantByMediaId( { mediaId } ) {
+    return this._protoo.request( 'deleteParticipantByMediaId', { mediaId } )
       .catch( err => { throw err })
   }
 
