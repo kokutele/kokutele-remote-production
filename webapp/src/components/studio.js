@@ -79,7 +79,7 @@ export default function Studio( props ) {
           .find( consumer => consumer.producerId === videoProducerId )
         const included = state.studio.layout.find( item => item.videoProducerId === videoProducerId )
 
-        if( !included || !consumer || !consumer.track ) {
+        if( !included ) {
           const videoElem = _videoEls.current.get( videoProducerId )
 
           if( videoElem ) {
