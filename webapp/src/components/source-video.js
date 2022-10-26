@@ -5,7 +5,10 @@ import { GiCancel } from 'react-icons/gi'
 import { BsMicMuteFill, BsMicFill } from 'react-icons/bs'
 import Logger from "../libs/logger"
 
+import { defaultMic } from '../config'
+
 import './source-video.css'
+
 
 const logger = new Logger('source-video')
 
@@ -23,7 +26,7 @@ export default function SourceVideo( props ) {
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
-  const [ _muted, setMuted ] = useState( false )
+  const [ _enableMic, setEnableMic ] = useState( defaultMic )
 
   const {
     id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId, idx 
@@ -143,11 +146,11 @@ export default function SourceVideo( props ) {
       const audioTrack = localStreams.get( localStreamId ) && localStreams.get( localStreamId ).getAudioTracks()[0]
 
       if( audioTrack ) {
-        audioTrack.enabled = !_muted
+        audioTrack.enabled = _enableMic
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ state.status, _muted, state.localMedias, localStreamId ])
+  }, [ state.status, _enableMic, state.localMedias, localStreamId ])
 
   return (
     <div className="SourceVideo">
@@ -188,10 +191,10 @@ export default function SourceVideo( props ) {
             <Button
               type='link'
               shape='circle'
-              icon={_muted ? <BsMicMuteFill /> : <BsMicFill />}
+              icon={!_enableMic ? <BsMicMuteFill /> : <BsMicFill />}
               style={{ color: '#fff', fontSize: '1em' }}
               onClick={() => {
-                setMuted( !_muted )
+                setEnableMic( !_enableMic )
               }}
             />
           </div>

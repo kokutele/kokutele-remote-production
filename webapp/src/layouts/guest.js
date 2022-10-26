@@ -13,6 +13,8 @@ import { MdCancel }       from 'react-icons/md'
 //import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
 import { BsMicFill, BsMicMuteFill } from 'react-icons/bs'
 
+import { defaultMic } from "../config";
+
 import Logger from "../libs/logger";
 
 import './guest.css'
@@ -28,7 +30,7 @@ export default function Guest( props ) {
   const [ _deviceId, setDeviceId ] = useState({ video: 'default', audio: 'default' })
   const [ _localStreamId, setLocalStreamId ] = useState()
   const [ _isSettingVisible, setIsSettingVisible ] = useState( false )
-  const [ _muted, setMuted ] = useState( true )
+  const [ _enableMic, setEnableMic ] = useState( defaultMic )
   const [ _displayName, setDisplayName ] = useState('guest')
   const _videoEl = useRef()
   const _audioEls = useRef( new Map() )
@@ -59,7 +61,7 @@ export default function Guest( props ) {
   const handleStartVideoTalk = useCallback( async ( videoDeviceId = 'default', audioDeviceId = 'default' ) => {
     logger.debug('handleStartVideoTalk - %s', _localStreamId )
 
-    setMuted( false )
+    // setEnableMic( _enableMic )
 
     if( _localStreamId ) {
       const localMedia = state.localMedias.find( item => item.localStreamId === _localStreamId )
@@ -84,9 +86,8 @@ export default function Guest( props ) {
     _videoEl.current.muted = true
     _videoEl.current.srcObject = stream
 
-    // const audioTrack = stream.getAudioTracks()[0]
-    // if( audioTrack ) audioTrack.enabled = true
-    setMuted( false )
+    const audioTrack = stream.getAudioTracks()[0]
+    if( audioTrack ) audioTrack.enabled = _enableMic
 
     _videoEl.current.onloadedmetadata = async () => {
       await _videoEl.current.play()
@@ -102,6 +103,7 @@ export default function Guest( props ) {
         .catch( err => alert( err.message ))
     }
     _stream.current = stream
+    setEnableMic( _enableMic )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ _roomId, _localStreamId ])
 
@@ -124,8 +126,8 @@ export default function Guest( props ) {
     if( !_stream.current ) return
 
     const audioTrack = _stream.current.getAudioTracks()[0]
-    if( audioTrack ) audioTrack.enabled = !_muted
-  }, [_muted])
+    if( audioTrack ) audioTrack.enabled = _enableMic
+  }, [_enableMic])
 
 
 
@@ -226,13 +228,13 @@ export default function Guest( props ) {
           <div className='mute'>
             <Button
               type='link'
-              danger={ _muted ? true : false }
+              danger={ !_enableMic }
               shape='circle'
               size="large"
               style={{ coloe: '#fff' }}
-              onClick={ () => setMuted( !_muted ) }
+              onClick={ () => setEnableMic( !_enableMic ) }
             >
-              { _muted ? <BsMicMuteFill /> : <BsMicFill /> }
+              { !_enableMic ? <BsMicMuteFill /> : <BsMicFill /> }
             </Button>
           </div>
         </div>
