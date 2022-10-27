@@ -329,10 +329,17 @@ export default function Studio( props ) {
 
       // draw logo
       if( state.logo !== '' ) {
-        _ctx.current.font = "bold 48px 'Dosis', sans-serif";
         const { width }= _ctx.current.measureText( state.logo )
-        _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
-        _ctx.current.fillText( state.logo, _canvasEl.current.width - width - 10, 58  )
+        if( false ) {  // top-right
+          _ctx.current.font = "bold 48px 'Dosis', sans-serif";
+          _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
+          _ctx.current.fillText( state.logo, _canvasEl.current.width - width - 10, 58  )
+        }
+        if( true ) {  // top-left
+          _ctx.current.font = "bold 48px 'Dosis', sans-serif";
+          _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
+          _ctx.current.fillText( state.logo, 29, 58  )
+        }
       }
 
       reqId = requestAnimationFrame( render )
