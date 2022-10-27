@@ -37,6 +37,7 @@ export default function Studio( props ) {
     getStudioSize, 
     getCaption,
     getCoverUrl,
+    getBackgroundUrl,
     getStudioPatternId,
     getStudioPatterns,
     setLogo,
@@ -62,6 +63,7 @@ export default function Studio( props ) {
         await getStudioLayout()
         await getCaption()
         await getCoverUrl()
+        await getBackgroundUrl()
         await setLogo( logo )
       })();
     }
@@ -362,6 +364,11 @@ export default function Studio( props ) {
   return (
     <div className="Studio">
       <div className="wrapper" style={ props.style }>
+        { ( !!state.studio.backgroundUrl ) && (
+          <div className='background-area'>
+            <img src={state.studio.backgroundUrl} alt="background" />
+          </div>
+        ) }
         <canvas ref={ _canvasEl }></canvas>
         { ( IS_VIEWER && !!state.studio.coverUrl ) && (
           <div className='cover-area'>

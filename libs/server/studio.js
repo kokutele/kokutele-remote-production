@@ -49,6 +49,7 @@ class Studio {
     this._width  = props.width 
     this._rtmpUrl = props.rtmpUrl
     this._coverUrl = ''
+    this._backgroundUrl = ''
     this._useMixer = props.useMixer
     this._patternId = layoutPatterns[0].id
 
@@ -94,6 +95,10 @@ class Studio {
     return this._coverUrl
   }
 
+  get backgroundUrl() {
+    return this._backgroundUrl
+  }
+
   start() {
     if( this._mixer ) {
       this._mixer.start()
@@ -134,6 +139,10 @@ class Studio {
 
   setCoverUrl( url ) {
     this._coverUrl = url
+  }
+
+  setBackgroundUrl( url ) {
+    this._backgroundUrl = url
   }
 
   addParticipant( { peerId, mediaId, displayName, audio, video } ) {

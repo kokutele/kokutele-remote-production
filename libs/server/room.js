@@ -847,6 +847,27 @@ class Room extends EventEmitter {
         break
       }
 
+      case 'setBackgroundUrl': {
+        const { backgroundUrl } = request.data
+
+        this._studio.setBackgroundUrl( backgroundUrl )
+        accept()
+
+        for( const peer of this._getJoinedPeers() ) {
+          peer.notify( 'setBackgroundUrl', { backgroundUrl: this._studio.backgroundUrl })
+            .catch( () => {} )
+        }
+
+        break
+      }
+
+      case 'getBackgroundUrl': {
+        logger.info('getBackgroundUrl: %s', this._studio.backgroundUrl )
+        accept({ backgroundUrl: this._studio.backgroundUrl})
+
+        break
+      }
+
       case 'changeDisplayName': {
         if( !peer.data.joined ) {
           throw new Error( 'Peer not yet joined' )

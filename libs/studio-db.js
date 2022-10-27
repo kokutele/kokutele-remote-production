@@ -71,6 +71,11 @@ class StudioDB {
     }
   }
 
+  /////////////////////////////////////////
+  // Covers
+  /////////////////////////////////////////
+
+  // get
   getCoverUrls = async ( roomName ) => {
     const room = await this._db.get('select id from rooms where name = ?;', roomName )
 
@@ -85,6 +90,7 @@ class StudioDB {
     return !!res ? res : []
   }
 
+  // set
   setCoverUrl = async ( { roomName, url } ) => {
     const room = await this._db.get('select id from rooms where name = ?;', roomName )
 
@@ -101,6 +107,7 @@ class StudioDB {
     return !!res ? res : []
   }
 
+  // delete
   deleteCoverUrl = async ( { roomName, id } ) => {
     const room = await this._db.get('select id from rooms where name = ?;', roomName )
 
@@ -117,6 +124,59 @@ class StudioDB {
     return !!res ? res : []
   }
   
+  /////////////////////////////////////////
+  // Backgrounds 
+  /////////////////////////////////////////
+
+  // get
+  getBackgroundUrls = async ( roomName ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  // set
+  setBackgroundUrl = async ( { roomName, url } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('insert into backgrounds ( roomId, url ) values ( ?, ? );', [ room.id, url ] )
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  // delete
+  deleteBackgroundUrl = async ( { roomName, id } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('delete from backgrounds where id = ? and roomId = ?;', [ id, room.id ] )
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+ 
   _migrate = async () => {
     const sqlRooms = [
       "create table if not exists rooms(",
@@ -146,6 +206,17 @@ class StudioDB {
     ].join("")
 
     await this._db.run( sqlCovers )
+
+    const sqlBackgrounds = [
+      "create table if not exists backgrounds(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  url TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlBackgrounds )
+ 
   }
 }
 

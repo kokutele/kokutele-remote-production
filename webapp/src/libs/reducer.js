@@ -19,6 +19,7 @@ export const initialState = {
   videoConsumers: [],
   studio: {
     coverUrl: '',
+    backgroundUrl: '',
     width: 0,
     height: 0,
     layout: [],
@@ -57,6 +58,9 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_COVER_URL': {
       return { ...state, studio: { ...state.studio, coverUrl: action.value } }
+    }
+    case 'SET_BACKGROUND_URL': {
+      return { ...state, studio: { ...state.studio, backgroundUrl: action.value } }
     }
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
@@ -266,6 +270,15 @@ export const useAppContext = () => {
     dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
   }
 
+  const setBackgroundUrl = async url => {
+    await appData.roomClient.setBackgroundUrl( url )
+  }
+
+  const getBackgroundUrl = async () => {
+    const data = await appData.roomClient.getBackgroundUrl()
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  }
+
   const setLogo = str => {
     dispatch({ type: 'SET_LOGO', value: !!str ? str : '' })
   }
@@ -390,6 +403,8 @@ export const useAppContext = () => {
     setLogo,
     getCoverUrl,
     setCoverUrl,
+    getBackgroundUrl,
+    setBackgroundUrl,
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
@@ -435,6 +450,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("setCoverUrl", data => {
     dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
+  })
+
+  client.on("setBackgroundUrl", data => {
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
   })
 
   client.on("peerClosed", peerId => {

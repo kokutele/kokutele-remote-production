@@ -6,6 +6,7 @@ import StudioPatterns from './studio-patterns'
 import LikeButton from './like-button'
 import Deselect from './deselect'
 import Captions from './captions'
+import Backgrounds from './backgrounds'
 import Covers from './covers'
 import CoverIndicator from './cover-indicator'
 import Sources from './sources'
@@ -66,6 +67,7 @@ export default function Room( props ) {
         <Row gutter={16}>
           <Col offset={1} span={2} style={{ textAlign: "left"}}>
             <Space direction='vertical'>
+              <Backgrounds />
               <Captions />
               <Covers />
             </Space>

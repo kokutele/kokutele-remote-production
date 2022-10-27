@@ -297,6 +297,10 @@ export default class RoomClient extends EventEmitter {
             this.emit('setCoverUrl', notification.data )
             break
           }
+          case 'setBackgroundUrl': {
+            this.emit('setBackgroundUrl', notification.data )
+            break
+          }
           case 'downlinkBwe': {
             // logger.debug('"downlinkBwe" event:%o', notification.data)
             break
@@ -620,6 +624,16 @@ export default class RoomClient extends EventEmitter {
 
   async getCoverUrl() {
     return await this._protoo.request( 'getCoverUrl' )
+      .catch( err => { return { coverUrl: '' }})
+  }
+
+  async setBackgroundUrl( url ) {
+    return await this._protoo.request( 'setBackgroundUrl', { backgroundUrl: url } )
+      .catch( err => { throw err })
+  }
+
+  async getBackgroundUrl() {
+    return await this._protoo.request( 'getBackgroundUrl' )
       .catch( err => { return { coverUrl: '' }})
   }
 
