@@ -227,14 +227,15 @@ class Studio {
   _calcLargeAndSmallLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       let width, height
+      const numSub = 6
 
-      if( i > 5 ) {
+      if( i > numSub ) {
         width = 0; height = 0
       } else {
-        height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
+        height = i === 0 ? Math.floor( this._height * ( numSub - 1 ) / numSub ) : Math.floor( this._height * 1 / numSub )
         width  = Math.floor( this._width * height / this._height )
       }
-      const posX = i === 0 ? 0 : Math.floor( this._width * 4 / 5 )
+      const posX = i === 0 ? 0 : Math.floor( this._width * ( numSub - 1 ) / numSub )
       const posY = i === 0 ? Math.floor( ( this._height - height ) / 2 ) : ( i - 1 ) * height
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
