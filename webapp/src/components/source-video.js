@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import { GiCancel } from 'react-icons/gi'
+import { IoMdPlay, IoMdPause, IoMdSkipBackward } from 'react-icons/io'
 import { BsMicMuteFill, BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill } from 'react-icons/bs'
 import Logger from "../libs/logger"
 
@@ -30,7 +31,9 @@ export default function SourceVideo( props ) {
   } = useAppContext()
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
+  const [ _isVideo, setIsVideo ] = useState( false )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
+  const [ _playing, setPlaying ] = useState( false )
 
   const {
     id, displayName, 
@@ -44,6 +47,7 @@ export default function SourceVideo( props ) {
 
   const _wrapperEl = useRef( null )
   const _videoEl = useRef( null )
+  const _srcVideo = useRef( null )
 
   const _myParticipantInfo = useMemo( () => {
     return state.studio.participants.find( item => item.peerId === id && item.mediaId === mediaId )
@@ -84,6 +88,8 @@ export default function SourceVideo( props ) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ audioProducerId, videoProducerId, mediaId, _videoWidth, _videoHeight, state.studio.layout ])
 
+
+
   // when audioConsumerId and videoConsumerId got, we will render video for it.
   //
   // todo - for iOS, need to consider about autoPlay policy.
@@ -122,6 +128,24 @@ export default function SourceVideo( props ) {
 
           logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
 
+          let videoEl
+
+          for( let [ key, val ] of appData.localVideos ) {
+            if( key.localStreamId === localStreamId && key.mediaId === mediaId ) {
+              videoEl = val
+           }
+          }
+          // const videoEl = appData.localVideos.get({localStreamId, mediaId})
+          logger.debug('localVideos:%s %s %o', localStreamId, mediaId, appData.localVideos)
+
+          if( videoEl ) {
+            setIsVideo( true )
+            _srcVideo.current = videoEl
+            setTimeout(() => {
+              videoEl.pause()
+            }, 100)
+          }
+
           await _videoEl.current.play()
           if( localStreamId ) {
             await addParticipant({ peerId: id, mediaId, displayName, audio: defaultMic, video: defaultVideo })
@@ -130,7 +154,7 @@ export default function SourceVideo( props ) {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ audioConsumerId, videoConsumerId, localStreamId ])
+  }, [ audioConsumerId, videoConsumerId, localStreamId, mediaId ])
 
   // draw boder for video which is including in studio layout.
   useEffect( () => {
@@ -214,6 +238,35 @@ export default function SourceVideo( props ) {
               await deleteLocalStream( localStreamId )
             }
           }><GiCancel/></Button></div>
+        )}
+        { _isVideo && (
+        <div className='playback-control'>
+          <Button 
+            type="primary" 
+            shape="circle" 
+            danger 
+            icon={ <IoMdSkipBackward /> }
+            onClick={() => {
+              _srcVideo.current.currentTime = 0
+            }}
+          />
+          <div>&nbsp;&nbsp;&nbsp;</div>
+ 
+          <Button 
+            type="primary" 
+            shape="circle" 
+            danger 
+            icon={ _playing ? <IoMdPause /> : <IoMdPlay /> }
+            onClick={() => {
+              if( _playing ) {
+                _srcVideo.current.pause()
+              } else {
+                _srcVideo.current.play()
+              }
+              setPlaying( !_playing )
+            }}
+          />
+        </div>
         )}
         <div className='mute'>
           <Button
