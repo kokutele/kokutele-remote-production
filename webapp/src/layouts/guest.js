@@ -115,7 +115,7 @@ export default function Guest( props ) {
     }
     _stream.current = stream
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _roomId, _localStreamId ])
+  }, [ _roomId, _localStreamId, _displayName ])
 
   const handleCancelVideoTalk = useCallback( () => {
     if( _status !== 'PRODUCING' ) return
