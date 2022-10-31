@@ -223,7 +223,7 @@ export const useAppContext = () => {
     dispatch({ type: 'DELETE_LOCAL_MEDIA', value: { audioProducerId, videoProducerId }})
   }
 
-  const deleteLocalStream = async streamId => {
+  const deleteLocalStream = async ( streamId ) => {
     logger.debug('deleteLocalStream:%s',streamId )
 
     const localStream = appData.localStreams.get( streamId )
@@ -235,8 +235,11 @@ export const useAppContext = () => {
       appData.localStreams.delete( streamId )
     }
 
+    logger.debug('localVideos:%o', appData.localVideos )
     const localVideo = appData.localVideos.get( streamId )
+
     if( localVideo ) {
+      logger.debug('localVideo:%o', localVideo)
       localVideo.pause()
       localVideo.remove()
       appData.localVideos.delete( streamId )

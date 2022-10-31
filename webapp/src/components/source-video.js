@@ -128,14 +128,7 @@ export default function SourceVideo( props ) {
 
           logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
 
-          let videoEl
-
-          for( let [ key, val ] of appData.localVideos ) {
-            if( key.localStreamId === localStreamId && key.mediaId === mediaId ) {
-              videoEl = val
-           }
-          }
-          // const videoEl = appData.localVideos.get({localStreamId, mediaId})
+          const videoEl = appData.localVideos.get( localStreamId )
           logger.debug('localVideos:%s %s %o', localStreamId, mediaId, appData.localVideos)
 
           if( videoEl ) {
@@ -154,7 +147,7 @@ export default function SourceVideo( props ) {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ audioConsumerId, videoConsumerId, localStreamId, mediaId ])
+  }, [ id, displayName, audioConsumerId, videoConsumerId, localStreamId, mediaId ])
 
   // draw boder for video which is including in studio layout.
   useEffect( () => {
@@ -233,6 +226,7 @@ export default function SourceVideo( props ) {
                   mediaId
                 })
               }
+              if( _isVideo ) setIsVideo( false )
               await deleteParticipantByMediaId({ mediaId })
               await deleteProducer( { audioProducerId, videoProducerId } )
               await deleteLocalStream( localStreamId )
