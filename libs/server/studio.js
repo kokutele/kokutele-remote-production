@@ -339,8 +339,6 @@ class Studio {
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
     }
   }
-
-
 }
 
 module.exports = Studio

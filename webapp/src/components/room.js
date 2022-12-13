@@ -22,20 +22,21 @@ const logger = new Logger('Room')
 const showDebug = process.env.NODE_ENV === 'development'
 
 export default function Room( props ) {
-  const { appData, state, createRoomClient, joinRoom, createProducer, setRoomId, close } = useAppContext()
+  const { appData, state, createRoomClient, joinRoom, createProducer, close } = useAppContext()
   const [ _errMessage, setErrMessage ] = useState('')
   const { displayName, stream, roomId } = props
   
   useEffect( () => {
-    const peerId = createRoomClient({ displayName, roomId })
+    //const peerId = createRoomClient({ displayName, roomId })
+    createRoomClient({ displayName, roomId })
 
-    setRoomId( roomId )
+    // setRoomId( roomId )
 
     logger.debug("client created:%o", appData.roomClient )
 
     joinRoom()
       .then( async () => {
-        await createProducer({ peerId, displayName, stream })
+        await createProducer({ stream })
       } )
       .catch( err => setErrMessage( err.message ))
 
@@ -44,15 +45,6 @@ export default function Room( props ) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])
-
-  // useEffect( () => {
-  //   if( state.status === 'READY' ) {
-  //     fetch( `${apiEndpoint}/guestId/${roomId}` )
-  //       .then( res => res.text() )
-  //       .then( guestId => setGuestId( guestId ))
-  //       .catch( err => setErrMessage( err.message ))
-  //   }
-  // }, [ state.status, roomId ])
 
   return (
     <div className='Room'>
