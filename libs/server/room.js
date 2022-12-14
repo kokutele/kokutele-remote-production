@@ -302,11 +302,31 @@ class Room extends EventEmitter {
   /**
    * set routing
    * 
-   * @param {string} method 
+   * @method Room#do
+   * @param {string} name 
    * @param {function} callback 
    */
-  do( method, callback ) {
-    this._routings.set( method, callback )
+  do( name, callback ) {
+    this._routings.set( name, callback )
+  }
+
+  /**
+   * broadcast message to peers
+   * 
+   * @method Room#broadcast
+   * @param {string} message 
+   * @param {object} data 
+   */
+  broadcast( message, data ) {
+    if( 
+      !!message && typeof message === 'string ' &&
+      !!data && typeof data === 'object'
+    ) {
+      for( const peer of this._getJoinedPeers() ) {
+        peer.notify( message, data )
+          .catch( () => {} )
+      }
+    }
   }
 
   /**

@@ -162,6 +162,12 @@ class Server {
 
       if( result ) {
         res.status( 200 ).send( result )
+
+        const room = this._rooms.get( roomName )
+        if( room ) {
+          const covers = await this._studioDB.getCoverUrls( roomName )
+          room.broadcast( 'updatedCovers', covers )
+        }
       } else {
         res.status( 404 ).send('Not found')
       }
@@ -181,6 +187,12 @@ class Server {
 
       if( result ) {
         res.status( 200 ).send( result )
+
+        const room = this._rooms.get( roomName )
+        if( room ) {
+          const covers = await this._studioDB.getCoverUrls( roomName )
+          room.broadcast( 'updatedCovers', covers )
+        }
       } else {
         res.status( 404 ).send('Not found')
       }
@@ -217,6 +229,12 @@ class Server {
 
       if( result ) {
         res.status( 200 ).send( result )
+
+        const room = this._rooms.get( roomName )
+        if( room ) {
+          const backgrounds = await this._studioDB.getBackgroundUrls( roomName )
+          room.broadcast( 'updatedBackgrounds', backgrounds )
+        }
       } else {
         res.status( 404 ).send('Not found')
       }
@@ -236,9 +254,17 @@ class Server {
 
       if( result ) {
         res.status( 200 ).send( result )
+
+        const room = this._rooms.get( roomName )
+        if( room ) {
+          const backgrounds = await this._studioDB.getBackgroundUrls( roomName )
+          room.broadcast( 'updatedBackgrounds', backgrounds )
+        }
       } else {
         res.status( 404 ).send('Not found')
       }
+
+
     })
 
     ///////////////////////////////////////////////////////////////
