@@ -74,7 +74,7 @@ class Room extends EventEmitter {
 
     this._networkThrottled = false
 
-    this._studio = new Studio( { mediasoupRouter, ...config.studio  })
+    this._studio = new Studio( config.studio )
 
     this._reactionManager = new ReactionManager()
 
@@ -1064,7 +1064,7 @@ class Room extends EventEmitter {
     this.do( 'setCoverUrl', async ( peer, request, accept, reject ) => {
       const { coverUrl } = request.data
 
-      this._studio.setCoverUrl( coverUrl )
+      this._studio.coverUrl = coverUrl
       accept()
 
       for( const peer of this._getJoinedPeers() ) {
@@ -1090,7 +1090,7 @@ class Room extends EventEmitter {
     this.do( 'setBackgroundUrl', async ( peer, request, accept, reject ) => {
       const { backgroundUrl } = request.data
 
-      this._studio.setBackgroundUrl( backgroundUrl )
+      this._studio.backgroundUrl = backgroundUrl
       accept()
 
       for( const peer of this._getJoinedPeers() ) {
