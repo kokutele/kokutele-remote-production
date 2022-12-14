@@ -78,11 +78,6 @@ class Server {
       })
 
       this._mediasoupWorkers.push( worker )
-
-      // setInterval( async () => {
-      //   const usage = await worker.getResourceUsage()
-      //   logger.info( 'mediasoup Worker resource usage[pid: %d] %o', worker.pid, usage )
-      // }, 120_000 )
     }
   }
 
