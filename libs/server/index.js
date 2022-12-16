@@ -165,8 +165,8 @@ class Server {
 
         const room = this._rooms.get( roomName )
         if( room ) {
-          const covers = await this._studioDB.getCoverUrls( roomName )
-          room.broadcast( 'updatedCovers', covers )
+          const coverUrls = await this._studioDB.getCoverUrls( roomName )
+          room.broadcast( 'updatedCoverUrls', coverUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -190,8 +190,8 @@ class Server {
 
         const room = this._rooms.get( roomName )
         if( room ) {
-          const covers = await this._studioDB.getCoverUrls( roomName )
-          room.broadcast( 'updatedCovers', covers )
+          const coverUrls = await this._studioDB.getCoverUrls( roomName )
+          room.broadcast( 'updatedCoverUrls', coverUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -232,8 +232,8 @@ class Server {
 
         const room = this._rooms.get( roomName )
         if( room ) {
-          const backgrounds = await this._studioDB.getBackgroundUrls( roomName )
-          room.broadcast( 'updatedBackgrounds', backgrounds )
+          const backgroundUrls = await this._studioDB.getBackgroundUrls( roomName )
+          room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -257,14 +257,12 @@ class Server {
 
         const room = this._rooms.get( roomName )
         if( room ) {
-          const backgrounds = await this._studioDB.getBackgroundUrls( roomName )
-          room.broadcast( 'updatedBackgrounds', backgrounds )
+          const backgroundUrls = await this._studioDB.getBackgroundUrls( roomName )
+          room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
       }
-
-
     })
 
     ///////////////////////////////////////////////////////////////

@@ -17,6 +17,8 @@ export const initialState = {
   logo: '',
   audioConsumers: [],
   videoConsumers: [],
+  coverUrls: [],
+  backgroundUrls: [],
   studio: {
     coverUrl: '',
     backgroundUrl: '',
@@ -59,8 +61,14 @@ export const reducer = ( state, action ) => {
     case 'SET_COVER_URL': {
       return { ...state, studio: { ...state.studio, coverUrl: action.value } }
     }
+    case 'SET_COVER_URLS': {
+      return { ...state, coverUrls: action.value }
+    }
     case 'SET_BACKGROUND_URL': {
       return { ...state, studio: { ...state.studio, backgroundUrl: action.value } }
+    }
+    case 'SET_BACKGROUND_URLS': {
+      return { ...state, backgroundUrls: action.value }
     }
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
@@ -351,6 +359,16 @@ export const useAppContext = () => {
   }
 
   /**
+   * set cover urls
+   * 
+   * @method setCoverUrls
+   * @param {Array<Object>} urls
+   */
+  const setCoverUrls = urls => {
+    dispatch({ type: 'SET_COVER_URLS', value: urls })
+  }
+
+  /**
    * set background url
    * 
    * @method setBackgroundUrl
@@ -368,6 +386,16 @@ export const useAppContext = () => {
   const getBackgroundUrl = async () => {
     const data = await appData.roomClient.getBackgroundUrl()
     dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  }
+
+  /**
+   * set background urls
+   * 
+   * @method setBackgroundUrls
+   * @param {Array<Object>} urls
+   */
+  const setBackgroundUrls = urls => {
+    dispatch({ type: 'SET_BACKGROUND_URLS', value: urls })
   }
 
   /**
@@ -593,8 +621,10 @@ export const useAppContext = () => {
     setLogo,
     getCoverUrl,
     setCoverUrl,
+    setCoverUrls,
     getBackgroundUrl,
     setBackgroundUrl,
+    setBackgroundUrls,
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
@@ -642,8 +672,16 @@ function _setRoomClientHandler( client, dispatch ) {
     dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
   })
 
+  client.on("setCoverUrls", data => {
+    dispatch({ type: 'SET_COVER_URLS', value: data })
+  })
+
   client.on("setBackgroundUrl", data => {
     dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  })
+
+  client.on("setBackgroundUrls", data => {
+    dispatch({ type: 'SET_BACKGROUND_URLS', value: data })
   })
 
   client.on("peerClosed", peerId => {

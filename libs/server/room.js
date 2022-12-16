@@ -6,6 +6,7 @@ const Studio = require('./studio')
 const ReactionManager = require('./reaction-manager')
 const Logger = require('../logger')
 const config = require('../../config')
+const { type } = require('os')
 
 const logger = new Logger('Room')
 
@@ -318,10 +319,13 @@ class Room extends EventEmitter {
    * @param {object} data 
    */
   broadcast( message, data ) {
+    logger.info('broadcast %s, %o', message, data )
+    logger.info('  typeof data is %s', typeof data )
     if( 
-      !!message && typeof message === 'string ' &&
+      !!message && typeof message === 'string' &&
       !!data && typeof data === 'object'
     ) {
+      logger.info('will broadcast %s, %o', message, data )
       for( const peer of this._getJoinedPeers() ) {
         peer.notify( message, data )
           .catch( () => {} )

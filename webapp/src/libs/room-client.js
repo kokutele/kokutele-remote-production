@@ -409,12 +409,26 @@ export default class RoomClient extends EventEmitter {
             this.emit('setCoverUrl', notification.data )
             break
           }
+          case 'updatedCoverUrls': {
+            /**
+             * @event module:RoomClient#setCoverUrls
+             */
+            this.emit('setCoverUrls', notification.data )
+            break
+          }
           case 'setBackgroundUrl': {
             /**
              * @event module:RoomClient#setBackgroundUrl
              * @type {string}
              */
             this.emit('setBackgroundUrl', notification.data )
+            break
+          }
+          case 'updatedBackgroundUrls': {
+            /**
+             * @event module:RoomClient#setBackgroundUrls
+             */
+            this.emit('setBackgroundUrls', notification.data )
             break
           }
           case 'downlinkBwe': {

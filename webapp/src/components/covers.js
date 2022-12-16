@@ -14,9 +14,8 @@ const { Paragraph } = Typography
 export default function Covers(props) {
   const _formRef = useRef()
   const [ _showDrawer, setShowDrawer ] = useState( false )
-  const [ _urls, setUrls ] = useState( [] )
 
-  const { state, setCoverUrl } = useAppContext()
+  const { state, setCoverUrl, setCoverUrls } = useAppContext()
 
   useEffect(() => {
     if( !state.roomId ) return 
@@ -25,7 +24,7 @@ export default function Covers(props) {
       .then( async res => {
         if( res.ok ) {
           const arr = await res.json()
-          setUrls( arr )
+          setCoverUrls( arr )
         } else {
           throw new Error( res.status )
         }
@@ -42,7 +41,7 @@ export default function Covers(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setUrls( arr )
+        setCoverUrls( arr )
       } else {
         throw new Error( `onFinish: ${res.status}` )
       }
@@ -54,6 +53,13 @@ export default function Covers(props) {
   const deleteUrl = useCallback( id => {
     if( !id ) return 
 
+    const item = state.coverUrls.find( item => item.id === id ) || { url: '' }
+    const isSelected = ( item.url === state.studio.coverUrl )
+
+    if( isSelected ) {
+      setCoverUrl('')
+    }
+
     fetch(`${apiEndpoint}/studio/${state.roomId}/covers`, {
       method: 'delete',
       headers: {'Content-Type': 'application/json'},
@@ -61,12 +67,12 @@ export default function Covers(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setUrls( arr )
+        setCoverUrls( arr )
       } else {
         throw new Error( `deleteUrl: ${res.status}` )
       }
     } )
-  }, [ state.roomId ])
+  }, [ state.roomId, state.coverUrls, state.studio.coverUrl ])
 
   return(
     <div className='Covers'>
@@ -82,10 +88,10 @@ export default function Covers(props) {
                   </div>
                 </div>
               </Col>
-              { _urls.map( ( item, idx ) => (
+              { state.coverUrls.map( ( item, idx ) => (
               <Col span={8} key={idx}>
-                <div className='cover-wrapper' onClick={() => setCoverUrl( item.url ) }>
-                  <div className='cover-body' data-selected={ state.studio.coverUrl === item.url }>
+                <div className='cover-wrapper'>
+                  <div className='cover-body' data-selected={ state.studio.coverUrl === item.url } onClick={() => setCoverUrl( item.url )}>
                     <img src={item.url} alt={`cover-${idx}`} />
                   </div>
                   <div className='delete'>
