@@ -14,9 +14,8 @@ const { Paragraph } = Typography
 export default function Backgrounds(props) {
   const _formRef = useRef()
   const [ _showDrawer, setShowDrawer ] = useState( false )
-  const [ _urls, setUrls ] = useState( [] )
 
-  const { state, setBackgroundUrl } = useAppContext()
+  const { state, setBackgroundUrl, setBackgroundUrls } = useAppContext()
 
   useEffect(() => {
     if( !state.roomId ) return 
@@ -25,7 +24,7 @@ export default function Backgrounds(props) {
       .then( async res => {
         if( res.ok ) {
           const arr = await res.json()
-          setUrls( arr )
+          setBackgroundUrls( arr )
         } else {
           throw new Error( res.status )
         }
@@ -35,6 +34,12 @@ export default function Backgrounds(props) {
   const onFinish = useCallback( obj => {
     if( !obj.backgroundUrl ) return 
 
+    const isExist = !!state.backgroundUrls.find( item => item.url === obj.backgroundUrl )
+    if( isExist ) {
+      _formRef.current.resetFields()
+      return
+    }
+
     fetch(`${apiEndpoint}/studio/${state.roomId}/backgrounds`, {
       method: 'post',
       headers: { 'Content-Type': 'application/json '},
@@ -42,17 +47,24 @@ export default function Backgrounds(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setUrls( arr )
+        setBackgroundUrls( arr )
       } else {
         throw new Error( `onFinish: ${res.status}` )
       }
     })
 
     _formRef.current.resetFields()
-  }, [ state.roomId ])
+  }, [ state.roomId, state.backgroundUrls ])
 
   const deleteUrl = useCallback( id => {
     if( !id ) return 
+
+    const t = state.backgroundUrls.find( item => item.id === id )
+    const isSelected = ( t.url === state.studio.backgroundUrl )
+
+    if( isSelected ) {
+      setBackgroundUrl('')
+    }
 
     fetch(`${apiEndpoint}/studio/${state.roomId}/backgrounds`, {
       method: 'delete',
@@ -61,12 +73,12 @@ export default function Backgrounds(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setUrls( arr )
+        setBackgroundUrls( arr )
       } else {
         throw new Error( `deleteUrl: ${res.status}` )
       }
     } )
-  }, [ state.roomId ])
+  }, [ state.roomId, state.backgroundUrls, state.studio.backgroundUrl ])
 
   return(
     <div className='Backgrounds'>
@@ -82,10 +94,10 @@ export default function Backgrounds(props) {
                   </div>
                 </div>
               </Col>
-              { _urls.map( ( item, idx ) => (
+              { state.backgroundUrls.map( ( item, idx ) => (
               <Col span={8} key={idx}>
-                <div className='background-wrapper' onClick={() => setBackgroundUrl( item.url ) }>
-                  <div className='background-body' data-selected={ state.studio.backgroundUrl === item.url }>
+                <div className='background-wrapper'>
+                  <div className='background-body' onClick={() => setBackgroundUrl( item.url )} data-selected={ state.studio.backgroundUrl === item.url }>
                     <img src={item.url} alt={`cover-${idx}`} />
                   </div>
                   <div className='delete'>

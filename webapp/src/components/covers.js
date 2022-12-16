@@ -34,6 +34,12 @@ export default function Covers(props) {
   const onFinish = useCallback( obj => {
     if( !obj.coverUrl ) return 
 
+    const isExist = !!state.coverUrls.find( item => item.url === obj.coverUrl )
+    if( isExist ) {
+      _formRef.current.resetFields()
+      return
+    }
+
     fetch(`${apiEndpoint}/studio/${state.roomId}/covers`, {
       method: 'post',
       headers: { 'Content-Type': 'application/json '},
@@ -48,7 +54,7 @@ export default function Covers(props) {
     })
 
     _formRef.current.resetFields()
-  }, [ state.roomId ])
+  }, [ state.roomId, state.coverUrls ])
 
   const deleteUrl = useCallback( id => {
     if( !id ) return 
