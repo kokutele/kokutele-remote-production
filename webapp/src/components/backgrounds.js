@@ -16,6 +16,8 @@ export default function Backgrounds(props) {
   const [ _showDrawer, setShowDrawer ] = useState( false )
 
   const { state, setBackgroundUrl, setBackgroundUrls } = useAppContext()
+  const _setBackgroundUrl = useRef( setBackgroundUrl )
+  const _setBackgroundUrls = useRef( setBackgroundUrls )
 
   useEffect(() => {
     if( !state.roomId ) return 
@@ -24,7 +26,7 @@ export default function Backgrounds(props) {
       .then( async res => {
         if( res.ok ) {
           const arr = await res.json()
-          setBackgroundUrls( arr )
+          _setBackgroundUrls.current( arr )
         } else {
           throw new Error( res.status )
         }
@@ -47,7 +49,7 @@ export default function Backgrounds(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setBackgroundUrls( arr )
+        _setBackgroundUrls.current( arr )
       } else {
         throw new Error( `onFinish: ${res.status}` )
       }
@@ -63,7 +65,7 @@ export default function Backgrounds(props) {
     const isSelected = ( t.url === state.studio.backgroundUrl )
 
     if( isSelected ) {
-      setBackgroundUrl('')
+      _setBackgroundUrl.current('')
     }
 
     fetch(`${apiEndpoint}/studio/${state.roomId}/backgrounds`, {
@@ -73,7 +75,7 @@ export default function Backgrounds(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setBackgroundUrls( arr )
+        _setBackgroundUrls.current( arr )
       } else {
         throw new Error( `deleteUrl: ${res.status}` )
       }

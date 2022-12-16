@@ -16,6 +16,8 @@ export default function Covers(props) {
   const [ _showDrawer, setShowDrawer ] = useState( false )
 
   const { state, setCoverUrl, setCoverUrls } = useAppContext()
+  const _setCoverUrl = useRef( setCoverUrl )
+  const _setCoverUrls = useRef( setCoverUrls )
 
   useEffect(() => {
     if( !state.roomId ) return 
@@ -24,7 +26,7 @@ export default function Covers(props) {
       .then( async res => {
         if( res.ok ) {
           const arr = await res.json()
-          setCoverUrls( arr )
+          _setCoverUrls.current( arr )
         } else {
           throw new Error( res.status )
         }
@@ -47,7 +49,7 @@ export default function Covers(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setCoverUrls( arr )
+        _setCoverUrls.current( arr )
       } else {
         throw new Error( `onFinish: ${res.status}` )
       }
@@ -63,7 +65,7 @@ export default function Covers(props) {
     const isSelected = ( item.url === state.studio.coverUrl )
 
     if( isSelected ) {
-      setCoverUrl('')
+      _setCoverUrl.current('')
     }
 
     fetch(`${apiEndpoint}/studio/${state.roomId}/covers`, {
@@ -73,7 +75,7 @@ export default function Covers(props) {
     }).then( async res => {
       if( res.ok ) {
         const arr = await res.json()
-        setCoverUrls( arr )
+        _setCoverUrls.current( arr )
       } else {
         throw new Error( `deleteUrl: ${res.status}` )
       }
