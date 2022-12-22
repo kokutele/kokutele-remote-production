@@ -5,7 +5,6 @@ const protoo = require('protoo-server')
 const mediasoup = require('mediasoup')
 const { AwaitQueue } = require('awaitqueue')
 const Room = require('./room')
-const StudioDB = require('../studio-db')
 const ApiServer = require('./api-server') 
 const exporter = require('../observer/exporter')
 const Logger = require('../logger')
@@ -25,22 +24,18 @@ class Server {
   _protooWebSocketServer = null
   _mediasoupWorkers = []
   _nextMediasoupWorkerIdx = 0
-  _studioDB = new StudioDB()
 
   static create() {
     return new this()
   }
 
   start = async () => {
-    await this._studioDB.start()
-
     await exporter({ port: 4000 })
 
     await this._runMediasourpWorkers()
 
     this._apiServer = new ApiServer({
       rooms: this._rooms,
-      studioDB: this._studioDB,
       useTls
     })
 

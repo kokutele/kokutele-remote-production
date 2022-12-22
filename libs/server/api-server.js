@@ -5,6 +5,7 @@ const path = require('path')
 const Hashids = require( 'hashids')
 const express = require('express')
 const cors = require('cors')
+const StudioDB = require('../studio-db')
 const Logger = require('../logger')
 
 const config = require('../../config')
@@ -24,7 +25,7 @@ class ApiServer {
   /**
    * @type {StudioDB}
    */
-  _studioDB = null
+  _studioDB = new StudioDB()
 
   /**
    * @type {Express}
@@ -51,7 +52,6 @@ class ApiServer {
    */
   constructor( props ) {
     this._rooms = props.rooms
-    this._studioDB = props.studioDB
     this._useTls = props.useTls
   }
 
@@ -62,6 +62,7 @@ class ApiServer {
    * @returns {http.Server} 
    */
   async start() {
+    await this._studioDB.start()
     this._createExpressApp()
     await this._runApiServer()
   }
