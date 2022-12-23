@@ -1119,7 +1119,7 @@ export default class RoomClient extends EventEmitter {
               dtlsParameters
             })
             .then( obj => {
-              logger.debug('sendTransport - connectted:%o', obj)
+              logger.debug('sendTransport - connected:%o', obj)
               callback( obj )
             })
             .catch( errback )

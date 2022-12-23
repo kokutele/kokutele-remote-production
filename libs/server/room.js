@@ -535,6 +535,8 @@ class Room extends EventEmitter {
 
       transport.on('dtlsstatechange', dtlsState => {
         if( dtlsState === 'failed' || dtlsState === 'closed' ) {
+          // peer.close() <- this will close protoo connection. I expect
+          // this will fire reconnection procedure of protoo.
           logger.warn( 'WebRtcTransport "dtlsstatechange event [dtlsState:%s]', dtlsState )
         }
       })
@@ -929,10 +931,10 @@ class Room extends EventEmitter {
       this._studio.calcLayout()
       accept()
 
-      for( const peer of this._getJoinedPeers() ) {
-        peer.notify( 'studioLayoutUpdated', this._studio.layout )
+      for( const _peer of this._getJoinedPeers() ) {
+        _peer.notify( 'studioLayoutUpdated', this._studio.layout )
           .catch( () => {} )
-        peer.notify( 'studioPatternIdUpdated', { patternId: this._studio.patternId } )
+        _peer.notify( 'studioPatternIdUpdated', { patternId: this._studio.patternId } )
           .catch( () => {} )
       }
     })

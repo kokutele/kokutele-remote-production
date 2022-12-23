@@ -94,11 +94,15 @@ class ApiServer {
       next()
     })
 
-    // generate random name for create room
+    /////////////////////////////////////////////////
+    // APIs for generating room, authentification
+    /////////////////////////////////////////////////
+
+    // generate random name for create roomId
     this._expressApp.get('/api/studio', ( req, res ) => {
-      const name = hashids.encode(Date.now())
-      logger.info('name:%s', name)
-      res.json({ name })
+      const roomId = hashids.encode(Date.now())
+      logger.info('generated roomId:%s', roomId)
+      res.json({ roomId })
     })
 
     this._expressApp.get('/api/studio/:roomId', async ( req, res ) => {
@@ -121,6 +125,17 @@ class ApiServer {
         res.status(200).send('ok')
       } else {
         res.status(403).send('forbidden')
+      }
+    })
+
+    this._expressApp.put('/api/studio/:roomId', async ( req, res ) => {
+      try {
+        const { passcode } = req.body
+        await this._studioDB.setPasscode({ roomName: req.roomId, passcode })
+
+        res.status(201).send('accepted')
+      } catch( err ) {
+        res.status( err.status || 500 ).send( err.message )
       }
     })
 
@@ -156,10 +171,9 @@ class ApiServer {
       if( result ) {
         res.status( 200 ).send( result )
 
-        const room = this._rooms.get( roomName )
-        if( room ) {
+        if( req.room ) {
           const coverUrls = await this._studioDB.getCoverUrls( roomName )
-          room.broadcast( 'updatedCoverUrls', coverUrls )
+          req.room.broadcast( 'updatedCoverUrls', coverUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -181,10 +195,9 @@ class ApiServer {
       if( result ) {
         res.status( 200 ).send( result )
 
-        const room = this._rooms.get( roomName )
-        if( room ) {
+        if( req.room ) {
           const coverUrls = await this._studioDB.getCoverUrls( roomName )
-          room.broadcast( 'updatedCoverUrls', coverUrls )
+          req.room.broadcast( 'updatedCoverUrls', coverUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -223,10 +236,9 @@ class ApiServer {
       if( result ) {
         res.status( 200 ).send( result )
 
-        const room = this._rooms.get( roomName )
-        if( room ) {
+        if( req.room ) {
           const backgroundUrls = await this._studioDB.getBackgroundUrls( roomName )
-          room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
+          req.room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -248,10 +260,9 @@ class ApiServer {
       if( result ) {
         res.status( 200 ).send( result )
 
-        const room = this._rooms.get( roomName )
-        if( room ) {
+        if( req.room ) {
           const backgroundUrls = await this._studioDB.getBackgroundUrls( roomName )
-          room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
+          req.room.broadcast( 'updatedBackgroundUrls', backgroundUrls )
         }
       } else {
         res.status( 404 ).send('Not found')
@@ -259,19 +270,8 @@ class ApiServer {
     })
 
     ///////////////////////////////////////////////////////////////
-    // APIs for studio
+    // APIs for reaction
     ///////////////////////////////////////////////////////////////
-    this._expressApp.put('/api/studio/:roomId', async ( req, res ) => {
-      try {
-        const { passcode } = req.body
-        await this._studioDB.setPasscode({ roomName: req.roomId, passcode })
-
-        res.status(201).send('accepted')
-      } catch( err ) {
-        res.status( err.status || 500 ).send( err.message )
-      }
-    })
-
     this._expressApp.post('/api/reaction/:roomId', ( req, res ) => {
       req.room.addReaction(0)
       res.status(201).send('accepted')
@@ -283,7 +283,9 @@ class ApiServer {
     })
 
 
-
+    ///////////////////////////////////////////////////////////////
+    // APIs for ids, capabilities
+    ///////////////////////////////////////////////////////////////
     this._expressApp.get('/api/guestId/:roomId', ( req, res ) => {
       const guestId = getGuestId( req.roomId )
       res.status(200).send( guestId )
@@ -307,7 +309,9 @@ class ApiServer {
       }
     })
 
-
+    ///////////////////////////////////////////////////////////////
+    // Error handling for APIs
+    ///////////////////////////////////////////////////////////////
     this._expressApp.use( ( error, req, res, next ) => {
       if( error ) {
         logger.warn('Express app %s', String( error ))
