@@ -269,6 +269,73 @@ class ApiServer {
       }
     })
 
+    /////////////////////////////////////////////////
+    // APIs for Captions ( no update)
+    /////////////////////////////////////////////////
+
+    // getter - GET /api/studio/:roomId/captions
+    this._expressApp.get('/api/studio/:roomId/captions', async ( req, res ) => {
+      const roomName = req.params.roomId
+
+      const result = await this._studioDB.getCaptions( roomName )
+
+      if( result ) {
+        res.status( 200 ).send( result )
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+    // setter - POST /api/studio/:roomId/captions
+    this._expressApp.post('/api/studio/:roomId/captions', async ( req, res ) => {
+      const roomName = req.params.roomId
+      const { caption } = req.body
+      logger.info('POST captions - %s, %s', roomName, caption)
+
+      if( !roomName || !caption ) {
+        res.status( 400 ).send('Both roomName and caption MUST be specified.')
+      }
+
+      const result = await this._studioDB.addCaption({ roomName, caption })
+
+      if( result ) {
+        res.status( 200 ).send( result )
+
+        if( req.room ) {
+          const captions = await this._studioDB.getCaptions( roomName )
+          req.room.broadcast( 'updatedCaptions', captions )
+        }
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+    // delete - DELETE /api/studio/:roomId/captions
+    this._expressApp.delete('/api/studio/:roomId/captions', async ( req, res ) => {
+      const roomName = req.params.roomId
+      const { id } = req.body
+      logger.info('DELETE captions - %s, %s', roomName, id)
+
+      if( !roomName || !id ) {
+        res.status( 400 ).send('Both roomName and url MUST be specified.')
+      }
+
+      const result = await this._studioDB.deleteCaption({ roomName, id })
+
+      if( result ) {
+        res.status( 200 ).send( result )
+
+        if( req.room ) {
+          const captions = await this._studioDB.getCaptions( roomName )
+          req.room.broadcast( 'updatedCaptions', captions )
+        }
+      } else {
+        res.status( 404 ).send('Not found')
+      }
+    })
+
+
+
     ///////////////////////////////////////////////////////////////
     // APIs for reaction
     ///////////////////////////////////////////////////////////////

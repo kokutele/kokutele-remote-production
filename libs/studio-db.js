@@ -215,8 +215,8 @@ class StudioDB {
    * 
    * @method StudioDB#setBackgroundUrl
    * @param {object} props 
-   * @param {string} roomName 
-   * @param {string} url 
+   * @param {string} props.roomName 
+   * @param {string} props.url 
    * @returns {Array<Object>} - Array<{ id:Number, url:String}>
    */
   setBackgroundUrl = async ( { roomName, url } ) => {
@@ -240,8 +240,8 @@ class StudioDB {
    * 
    * @method StudioDB#deleteBackgroundUrl
    * @param {object} props 
-   * @param {string} roomName 
-   * @param {number} id 
+   * @param {string} props.roomName 
+   * @param {number} props.id 
    * @returns {Array<Object>} - Array<{ id:Number, url:String}>
    */
   deleteBackgroundUrl = async ( { roomName, id } ) => {
@@ -259,6 +259,85 @@ class StudioDB {
 
     return !!res ? res : []
   }
+
+  /////////////////////////////////////////
+  // Captions 
+  /////////////////////////////////////////
+
+  /**
+   * get captions 
+   * 
+   * @method StudioDB#getCaptions
+   * @param {string} roomName 
+   * @returns {Array<Object>} - Array<{id:Number, caption:String}>
+   */
+  getCaptions = async ( roomName ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.all('select id, caption from captions where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * add caption
+   * 
+   * @method StudioDB#addCaption
+   * @param {object} props 
+   * @param {string} props.roomName 
+   * @param {string} props.caption 
+   * @returns {Array<Object>} - Array<{ id:Number, caption:String}>
+   */
+  addCaption = async ( { roomName, caption } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('insert into captions ( roomId, caption ) values ( ?, ? );', [ room.id, caption ] )
+
+    const res = await this._db.all('select id, caption from captions where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * delete caption
+   * 
+   * @method StudioDB#deleteCaption
+   * @param {object} props 
+   * @param {string} props.roomName 
+   * @param {number} props.id 
+   * @returns {Array<Object>} - Array<{ id:Number, caption:String}>
+   */
+  deleteCaption = async ( { roomName, id } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('delete from captions where id = ? and roomId = ?;', [ id, room.id ] )
+
+    const res = await this._db.all('select id, caption from captions where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+ 
+  /////////////////////////////////////////
+  // private methods
+  /////////////////////////////////////////
  
   _migrate = async () => {
     const sqlRooms = [
@@ -299,7 +378,16 @@ class StudioDB {
     ].join("")
 
     await this._db.run( sqlBackgrounds )
- 
+
+    const sqlCaptions = [
+      "create table if not exists captions(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  caption TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlCaptions )
   }
 }
 
