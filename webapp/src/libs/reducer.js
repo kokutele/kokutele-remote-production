@@ -17,6 +17,7 @@ export const initialState = {
   logo: '',
   audioConsumers: [],
   videoConsumers: [],
+  captions: [],
   coverUrls: [],
   backgroundUrls: [],
   studio: {
@@ -57,6 +58,9 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_LOGO': {
       return { ...state, logo: action.value }
+    }
+    case 'SET_CAPTIONS': {
+      return { ...state, captions: action.value }
     }
     case 'SET_COVER_URL': {
       return { ...state, studio: { ...state.studio, coverUrl: action.value } }
@@ -339,6 +343,16 @@ export const useAppContext = () => {
   }
 
   /**
+   * set captions
+   * 
+   * @param {Array<Object>} captions - e.g. [{id, caption}, ...]
+   * 
+   */
+  const setCaptions = captions => {
+    dispatch({ type: 'SET_CAPTIONS', value: captions })
+  }
+
+  /**
    * set cover url
    * 
    * @method setCoverUrl
@@ -618,6 +632,7 @@ export const useAppContext = () => {
     deleteParticipantByMediaId,
     getCaption,
     setCaption,
+    setCaptions,
     setLogo,
     getCoverUrl,
     setCoverUrl,
@@ -666,6 +681,10 @@ function _setRoomClientHandler( client, dispatch ) {
 
   client.on("setCaption", data => {
     dispatch({ type: 'SET_CAPTION', value: data.caption })
+  })
+
+  client.on("setCaptions", data => {
+    dispatch({ type: 'SET_CAPTIONS', value: data })
   })
 
   client.on("setCoverUrl", data => {

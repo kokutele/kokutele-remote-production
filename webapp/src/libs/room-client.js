@@ -401,6 +401,14 @@ export default class RoomClient extends EventEmitter {
             this.emit('setCaption', notification.data )
             break
           }
+          case 'updatedCaptions': {
+            /**
+             * @event module:RoomClient#setCaptions
+             * @type {string}
+             */
+            this.emit('setCaptions', notification.data )
+            break
+          }
           case 'setCoverUrl': {
             /**
              * @event module:RoomClient#setCoverUrl

@@ -295,6 +295,9 @@ class StudioDB {
    * @returns {Array<Object>} - Array<{ id:Number, caption:String}>
    */
   addCaption = async ( { roomName, caption } ) => {
+    if( !roomName || !caption ) {
+      throw new Error('Neither roomName or caption is set')
+    }
     const room = await this._db.get('select id from rooms where name = ?;', roomName )
 
     if( !room ) {
