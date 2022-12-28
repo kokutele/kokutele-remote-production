@@ -2,7 +2,15 @@ const debug = require('debug');
 
 const APP_NAME = 'kokutele-remote-production';
 
+/**
+ * @class
+ */
 class Logger {
+	/**
+	 * 
+	 * @constructor
+	 * @param {string} prefix 
+	 */
 	constructor(prefix) {
 		if (prefix) {
 			this._debug = debug(`${APP_NAME}:${prefix}`);
@@ -25,21 +33,41 @@ class Logger {
 		/* eslint-enable no-console */
 	}
 
+	/**
+	 * debug
+	 * 
+	 * @type {function}
+	 */
 	get debug()
 	{
 		return this._debug;
 	}
 
+	/**
+	 * info
+	 * 
+	 * @type {function}
+	 */
 	get info()
 	{
 		return this._info;
 	}
 
+	/**
+	 * warn
+	 * 
+	 * @type {function}
+	 */
 	get warn()
 	{
 		return this._warn;
 	}
 
+	/**
+	 * error
+	 * 
+	 * @type {function}
+	 */
 	get error()
 	{
 		return this._error;

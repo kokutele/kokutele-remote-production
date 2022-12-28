@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Alert, Col, Collapse, Divider, Row } from 'antd'
+import { Alert, Col, Collapse, Divider, Row, Space } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
 import LikeButton from './like-button'
+import Deselect from './deselect'
 import Captions from './captions'
+import Backgrounds from './backgrounds'
+import Covers from './covers'
+import CoverIndicator from './cover-indicator'
 import Sources from './sources'
 
 import { useAppContext } from '../libs/reducer'
@@ -23,13 +27,16 @@ export default function Room( props ) {
   const { displayName, stream, roomId } = props
   
   useEffect( () => {
-    const peerId = createRoomClient({ displayName, roomId })
+    //const peerId = createRoomClient({ displayName, roomId })
+    createRoomClient({ displayName, roomId })
+
+    // setRoomId( roomId )
 
     logger.debug("client created:%o", appData.roomClient )
 
     joinRoom()
       .then( async () => {
-        await createProducer({ peerId, displayName, stream })
+        await createProducer({ stream })
       } )
       .catch( err => setErrMessage( err.message ))
 
@@ -39,15 +46,6 @@ export default function Room( props ) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ displayName, roomId ])
 
-  // useEffect( () => {
-  //   if( state.status === 'READY' ) {
-  //     fetch( `${apiEndpoint}/guestId/${roomId}` )
-  //       .then( res => res.text() )
-  //       .then( guestId => setGuestId( guestId ))
-  //       .catch( err => setErrMessage( err.message ))
-  //   }
-  // }, [ state.status, roomId ])
-
   return (
     <div className='Room'>
       { _errMessage !== '' && (
@@ -56,16 +54,24 @@ export default function Room( props ) {
       <div className='studio-container'>
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
+      <CoverIndicator />
       <div className='container' style={{ textAlign: "center" }}>
         <Row gutter={16}>
           <Col offset={1} span={2} style={{ textAlign: "left"}}>
-            <Captions />
+            <Space direction='vertical'>
+              <Backgrounds />
+              <Captions />
+              <Covers />
+            </Space>
           </Col>
           <Col offset={0} span={18} style={{ textAlign: "center" }}>
             <StudioPatterns />
           </Col>
           <Col offset={1} span={2} style={{ textAlign: "center"}}>
-            <LikeButton roomId={roomId} />
+            <Space direction='vertical'>
+              <LikeButton roomId={roomId} />
+              <Deselect />
+            </Space>
           </Col>
         </Row>
       </div>

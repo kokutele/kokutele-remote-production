@@ -59,6 +59,14 @@
   right: 0;
 }
 
+.SourceVideo .videoWrapper .playback-control {
+  user-select: none;
+  display: flex;
+  flex-direction: row; 
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 .SourceVideo .videoWrapper .mute {
   user-select: none;
   color: #fff;
@@ -68,5 +76,17 @@
   font-size: 1.5em;
   bottom: 0;
   right: 3px;
+  z-index: 1000;
+}
+
+.SourceVideo .videoWrapper .video-mute {
+  user-select: none;
+  color: #fff;
+  padding: 0px 0px;
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.5em;
+  bottom: 0;
+  right: 23px;
   z-index: 1000;
 }

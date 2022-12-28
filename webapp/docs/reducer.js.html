@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: reducer.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: reducer.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { useContext } from 'react';
+import RoomClient from './room-client';
+import { AppContext } from '../App'
+import { useSimulcast } from '../config'
+import Logger from './logger';
+
+const logger = new Logger("reducer")
+
+export const initialState = {
+  status: 'IDLE',
+  roomId: '',
+  peerId: '',
+  displayName: '',
+  localMedias: [], // Array&lt;{ id, displayName, audioProducerId, videoProducerId, localStreamId }>
+  peers: [],
+  caption: '',
+  logo: '',
+  audioConsumers: [],
+  videoConsumers: [],
+  studio: {
+    coverUrl: '',
+    backgroundUrl: '',
+    width: 0,
+    height: 0,
+    layout: [],
+    patterns: [],
+    patternId: 0, 
+    participants: [],
+    reactions: { sum: 0, lastUpdated: Date.now() }
+  }
+}
+
+export const reducer = ( state, action ) => {
+  switch( action.type ) {
+    case 'INIT': {
+      return initialState
+    }
+    case 'SET_STATUS': {
+      return { ...state, status: action.value }
+    }
+    case 'SET_ROOM_ID': {
+      return { ...state, roomId: action.value }
+    }
+    case 'SET_PEER_ID': {
+      return { ...state, peerId: action.value }
+    }
+    case 'SET_DISPLAY_NAME': {
+      return { ...state, displayName: action.value }
+    }
+    case 'SET_PEERS': {
+      return { ...state, peers: action.value }
+    }
+    case 'SET_CAPTION': {
+      return { ...state, caption: action.value }
+    }
+    case 'SET_LOGO': {
+      return { ...state, logo: action.value }
+    }
+    case 'SET_COVER_URL': {
+      return { ...state, studio: { ...state.studio, coverUrl: action.value } }
+    }
+    case 'SET_BACKGROUND_URL': {
+      return { ...state, studio: { ...state.studio, backgroundUrl: action.value } }
+    }
+    case 'ADD_PEER': {
+      return { ...state, peers: [...state.peers, action.value ]}
+    }
+    case 'DELETE_PEER': {
+      return { 
+        ...state, 
+        peers: state.peers.filter( peer => peer.id !== action.value )
+      }
+    }
+    case 'ADD_LOCAL_MEDIA': {
+      return { ...state, localMedias: [ ...state.localMedias, action.value ] }
+    }
+    case 'DELETE_LOCAL_MEDIA': {
+      return { ...state, localMedias: state.localMedias.filter( item => ( 
+        item.audioProducerId !== action.value.audioProducerId || item.videoProducerId !== action.value.videoProducerId
+      ))}
+    }
+    case 'ADD_AUDIO_CONSUMER': {
+      const { consumerId, producerId, peerId, mediaId } = action.value
+      return { ...state, audioConsumers: [ ...state.audioConsumers, { consumerId, producerId, peerId, mediaId }]}
+    }
+    case 'ADD_VIDEO_CONSUMER': {
+      const { consumerId, producerId, peerId, mediaId } = action.value
+      return { ...state, videoConsumers: [ ...state.videoConsumers, { consumerId, producerId, peerId, mediaId }]}
+    }
+    case 'DELETE_AUDIO_CONSUMER': {
+      const consumerId = action.value
+      return { ...state, audioConsumers: state.audioConsumers.filter( item => item.consumerId !== consumerId ) }
+    }
+    case 'DELETE_VIDEO_CONSUMER': {
+      const consumerId = action.value
+      return { ...state, videoConsumers: state.videoConsumers.filter( item => item.consumerId !== consumerId ) }
+    }
+    case 'SET_STUDIO_PATTERNS': {
+      const patterns = action.value
+      return { ...state, studio: { ...state.studio, patterns }}
+    }
+    case 'SET_STUDIO_PATTERN_ID': {
+      const patternId = action.value
+      return { ...state, studio: { ...state.studio, patternId }}
+    }
+    case 'SET_STUDIO_PARTICIPANTS': {
+      const participants = action.value
+      return { ...state, studio: { ...state.studio, participants }}
+    }
+    case 'SET_STUDIO_SIZE': {
+      const { width, height } = action.value
+      const studio = { ...state.studio, width, height }
+      return { ...state, studio }
+    }
+    case 'SET_STUDIO_LAYOUT': {
+      const studio = { ...state.studio, layout: action.value }
+      return { ...state, studio }
+    }
+    case 'REACTIONS_UPDATED': {
+      const reactions = { ...action.value, lastUpdated: Date.now() }
+      const studio = { ...state.studio, reactions }
+      return { ...state, studio }
+    }
+    default: {
+      return state
+    }
+  }
+}
+
+/**
+ * 
+ * @module useAppContext
+ */
+export const useAppContext = () => {
+  const { appData, dispatch, state } = useContext( AppContext )
+
+  /**
+   * create room client. client instance will be stored in appData.roomClient
+   * 
+   * @method createRoomClient
+   * @publics
+   * @param {object} props 
+   * @param {string} props.displayName - display name of user
+   * @param {string} props.roomId - id of room
+   */
+  const createRoomClient = ( { displayName, roomId } ) => {
+    const client = RoomClient.create( { displayName, roomId, useSimulcast })
+
+    logger.debug( '"createRoomClient":%o', client )
+
+    dispatch({ type: 'SET_ROOM_ID', value: roomId })
+    dispatch({ type: 'SET_PEER_ID', value: client.peerId })
+    dispatch({ type: 'SET_DISPLAY_NAME', value: displayName })
+    dispatch({ type: 'SET_STATUS', value: 'INITIALIZING'})
+
+    _setRoomClientHandler( client, dispatch )
+
+    appData.roomClient = client
+  }
+
+  /**
+   * join room
+   * 
+   * @method joinRoom
+   */
+  const joinRoom = async () => {
+    await appData.roomClient.join()
+      .catch( err => { throw err })
+
+    logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
+  }
+
+  /**
+   * set status as `READY`
+   * 
+   * @method setStatusReady
+   */
+  const setStatusReady = () => {
+    dispatch({ type: 'SET_STATUS', value: 'READY' })
+  }
+
+  /**
+   * close connection with room
+   * all local streams and local video elements will be destroyed.
+   * then, status will be set as `INIT`
+   * 
+   * @method close
+   * 
+   */
+  const close = async () => {
+    appData.roomClient.close()
+    appData.roomClient = null
+
+    for( const stream of appData.localStreams.values() ) {
+      const tracks = stream.getTracks()
+      for( const track of tracks ) {
+        track.stop()
+      }
+    }
+    appData.localStreams.clear()
+
+    for( const elem of appData.localVideos.values() ) {
+      elem.pause()
+      elem.remove()
+    }
+    appData.localVideos.clear()
+
+    dispatch({ type: 'INIT' })
+  }
+
+  /**
+   * create producer
+   * 
+   * @method createProducer
+   * @param {object} props 
+   * @param {MediaStream} props.stream
+   * @param {boolean} props.isCapture - when stream is capture stream, this param will be `true`
+   * @returns {object} - { localStreamId, mediaId }
+   */
+  const createProducer = async ({ stream, isCapture }) => {
+    const { 
+      audioProducerId, 
+      videoProducerId,
+      mediaId
+    } = await appData.roomClient.createProducer( stream, !!isCapture )
+      .catch( err => { throw err } )
+
+    logger.debug( 'createProducer - audioProducerId:%s, videoProducerId: %s', audioProducerId, videoProducerId )
+
+    const localStreamId = `localvideo-${Date.now()}`
+    appData.localStreams.set( localStreamId, stream )
+    logger.debug( 'localStreams added:%o', appData.localStreams )
+    logger.debug( 'state:%o', state )
+
+    dispatch({ 
+      type: 'ADD_LOCAL_MEDIA', 
+      value: {
+        id: appData.roomClient.peerId,
+        displayName: appData.roomClient.displayName,
+        audioProducerId,
+        videoProducerId,
+        mediaId,
+        localStreamId
+      }
+    })
+
+    dispatch({ type: 'SET_STATUS', value: 'READY'})
+
+    return { localStreamId, mediaId }
+  }
+
+  /**
+   * replace stream
+   * 
+   * @method replaceStream
+   * @param {MediaStream} stream 
+   */
+  const replaceStream = async stream => {
+    await appData.roomClient.replaceStream( stream )
+  }
+
+  /**
+   * delete producer
+   * 
+   * @method deleteProducer
+   * @param {object} props 
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   */
+  const  deleteProducer = async ( { audioProducerId, videoProducerId } ) => {
+    logger.debug('deleteProducer:%s, %s', audioProducerId, videoProducerId )
+    appData.roomClient.closeProducer( audioProducerId )
+    appData.roomClient.closeProducer( videoProducerId )
+    dispatch({ type: 'DELETE_LOCAL_MEDIA', value: { audioProducerId, videoProducerId }})
+  }
+
+  /**
+   * delete local stream
+   * 
+   * @method deleteLocalStream
+   * @param {string} streamId 
+   */
+  const deleteLocalStream = async ( streamId ) => {
+    logger.debug('deleteLocalStream:%s',streamId )
+
+    const localStream = appData.localStreams.get( streamId )
+    if( localStream ) {
+      const tracks = localStream.getTracks()
+      for( const track of tracks ) {
+        track.stop()
+      }
+      appData.localStreams.delete( streamId )
+    }
+    logger.debug('localVideos:%o', appData.localVideos )
+
+    // remove video element for this local video
+    const localVideo = appData.localVideos.get( streamId )
+
+    if( localVideo ) {
+      logger.debug('localVideo:%o', localVideo)
+      localVideo.pause()
+      localVideo.remove()
+      appData.localVideos.delete( streamId )
+    }
+
+    logger.debug('appData:%o', appData )
+  }
+
+  /**
+   * set caption
+   * 
+   * @method setCaption
+   * @param {string} str 
+   */
+  const setCaption = str => {
+    const caption = !!str ? str : ''
+    dispatch({ type: 'SET_CAPTION', value: caption })
+
+    appData.roomClient.setCaption( caption )
+  }
+
+  /**
+   * get caption
+   * 
+   * @method getCaption
+   */
+  const getCaption = async () => {
+    const data = await appData.roomClient.getCaption()
+      .catch( err => { return { caption: '' } })
+    dispatch({ type: 'SET_CAPTION', value: data.caption })
+  }
+
+  /**
+   * set cover url
+   * 
+   * @method setCoverUrl
+   * @param {string} url 
+   */
+  const setCoverUrl = async url => {
+    await appData.roomClient.setCoverUrl( url )
+  }
+
+  /**
+   * get cover url
+   * 
+   * @method getCoverUrl
+   */
+  const getCoverUrl = async () => {
+    const data = await appData.roomClient.getCoverUrl()
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
+  }
+
+  /**
+   * set background url
+   * 
+   * @method setBackgroundUrl
+   * @param {string} url 
+   */
+  const setBackgroundUrl = async url => {
+    await appData.roomClient.setBackgroundUrl( url )
+  }
+
+  /**
+   * get background url
+   * 
+   * @method getBackgroundUrl
+   */
+  const getBackgroundUrl = async () => {
+    const data = await appData.roomClient.getBackgroundUrl()
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  }
+
+  /**
+   * set logo string
+   * 
+   * @method setLogo
+   * @param {string} str 
+   */
+  const setLogo = str => {
+    dispatch({ type: 'SET_LOGO', value: !!str ? str : '' })
+  }
+
+  /**
+   * get studio size.
+   * here, size means { width, height }
+   * 
+   * @method getStudioSize
+   */
+  const getStudioSize = async () => {
+    try {
+      const size = await appData.roomClient.getStudioSize()
+      logger.debug('"getStudioSize()":%o', size )
+      dispatch({ type: 'SET_STUDIO_SIZE', value: size })
+    } catch(err) {
+      logger.error( 'getStudioSize():%o', err )
+    }
+  }
+
+  /**
+   * get studio patterns
+   * `studio patterns` is Array&lt;{id:Number, label:String, type:String}>
+   * 
+   * @method getStudioPatterns
+   */
+  const getStudioPatterns = async () => {
+    try {
+      const studioPatterns = await appData.roomClient.getStudioPatterns()
+      dispatch({ type: 'SET_STUDIO_PATTERNS', value: studioPatterns })
+    } catch(err) {
+      logger.error( 'getStudioPatterns():%o', err )
+    }
+  }
+
+  /**
+   * get current studio pattern id
+   * 
+   * @method getStuidoPatternId
+   */
+  const getStudioPatternId = async () => {
+    try {
+      const { patternId } = await appData.roomClient.getStudioPatternId()
+      logger.debug( 'getStudioPatternId:%d', patternId )
+      dispatch({ type: 'SET_STUDIO_PATTERN_ID', value: patternId })
+    } catch(err) {
+      logger.error( 'getStudioPatternId():%o', err )
+    }
+  }
+
+  /**
+   * set current studio pattern id
+   * 
+   * @method setStudioPatternId
+   * @param {string} patternId 
+   */
+  const setStudioPatternId = async patternId => {
+    try {
+      await appData.roomClient.setStudioPatternId( { patternId } )
+    } catch(err) {
+      logger.error( 'setStudioPatternId():%o', err )
+    }
+  }
+
+  /**
+   * get current studio layout (Array&lt;{id:Number, label:String, type:String }>)
+   * 
+   * @method getStudioLayout
+   */
+  const getStudioLayout = async () => {
+    try {
+      const layout = await appData.roomClient.getStudioLayout()
+      logger.debug('"getStudioLayout()":%o', layout )
+      dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
+    } catch( err ) {
+      logger.error( 'getStudioLayout():%o', err )
+    }
+  }
+
+  /**
+   * add media into studio layout 
+   * 
+   * @method addStudioLayout
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * @param {number} props.videoWidth
+   * @param {number} props.videoHeight
+   * @param {string} props.mediaId
+   */
+  const addStudioLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight, mediaId }) => {
+    await appData.roomClient.addStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight })
+  }
+
+  /**
+   * delete media from studio layout
+   * 
+   * @method deleteStudioLayout
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * @param {string} props.mediaId
+   */
+  const deleteStudioLayout = async ({ peerId, audioProducerId, videoProducerId, mediaId }) => {
+    await appData.roomClient.deleteStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId })
+  }
+
+  /**
+   * move to main media in studio layout
+   * 
+   * @method toMainInStudioLayout
+   * @param {number} layoutIdx 
+   */
+  const toMainInStudioLayout = async layoutIdx => {
+    await appData.roomClient.toMainInStudioLayout( layoutIdx )
+  }
+
+  /**
+   * get studio participants. Array&lt;{ peerId:String, displayName:String, mediaId:String, video:Boolean, audio:Boolean }>
+   * 
+   * @method getStuioParticipants
+   */
+  const getStudioParticipants = async () => {
+    try {
+      const participants = await appData.roomClient.getStudioParticipants()
+      dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
+    } catch( err ) {
+      logger.error( 'getStudioParticipants():%o', err )
+    }
+  }
+
+  /**
+   * add participant
+   * 
+   * @method addParticipant
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.mediaId
+   * @param {string} props.dispalyName
+   * @param {boolean} props.audio
+   * @param {boolean} props.video
+   */
+  const addParticipant = async ({ peerId, mediaId, displayName, audio, video }) => {
+    try {
+      await appData.roomClient.addParticipant({ peerId, mediaId, displayName, audio, video })
+    } catch( err ) {
+      logger.error( 'addParticipant():%o', err )
+    }
+  }
+
+  /**
+   * update participant audio ( true or false )
+   * 
+   * @method updateParticipantAudio
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @param {boolean} props.audio
+   */
+  const updateParticipantAudio = async ({ mediaId, audio }) => {
+    try {
+      await appData.roomClient.updateParticipantAudio({ mediaId, audio })
+    } catch( err ) {
+      logger.error( 'updateParticipantAudio():%o', err )
+    }
+  }
+
+  /**
+   * update participant video ( true or false )
+   * 
+   * @method updateParticipantVideo
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @param {boolean} props.video
+   */
+  const updateParticipantVideo = async ({ mediaId, video }) => {
+    try {
+      await appData.roomClient.updateParticipantVideo({ mediaId, video })
+    } catch( err ) {
+      logger.error( 'updateParticipantVideo():%o', err )
+    }
+  }
+
+  /**
+   * delete participant by mediaId
+   * 
+   * @method deleteParticipantByMediaId
+   * @param {string} mediaId 
+   */
+  const deleteParticipantByMediaId = async ({ mediaId }) => {
+    try {
+      await appData.roomClient.deleteParticipantByMediaId({ mediaId })
+    } catch( err ) {
+      logger.error( 'deleteParticipantByMediaId():%o', err )
+    }
+  }
+
+  return {
+    appData,
+    getStudioPatterns,
+    getStudioPatternId,
+    setStudioPatternId,
+    getStudioSize,
+    getStudioLayout,
+    addStudioLayout,
+    deleteStudioLayout,
+    getStudioParticipants,
+    addParticipant,
+    updateParticipantAudio,
+    updateParticipantVideo,
+    deleteParticipantByMediaId,
+    getCaption,
+    setCaption,
+    setLogo,
+    getCoverUrl,
+    setCoverUrl,
+    getBackgroundUrl,
+    setBackgroundUrl,
+    toMainInStudioLayout,
+    createRoomClient,
+    createProducer,
+    replaceStream,
+    deleteProducer,
+    deleteLocalStream,
+    joinRoom,
+    setStatusReady,
+    close,
+    state,
+    dispatch
+  }
+}
+
+function _setRoomClientHandler( client, dispatch ) {
+  client.on("joined", peers => {
+    dispatch({ type: 'SET_PEERS', value: peers } )
+  })
+
+  client.on("newPeer", peer => {
+    dispatch({ type: 'ADD_PEER', value: peer })
+  })
+
+  client.on("studioPatternIdUpdated", ({ patternId }) => {
+    dispatch({ type: 'SET_STUDIO_PATTERN_ID', value: patternId })
+  } )
+
+  client.on("studioLayoutUpdated", layout => {
+    dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
+  })
+
+  client.on("studioParticipantsUpdated", participants => {
+    dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
+  })
+
+  client.on("reactionsUpdated", data => {
+    dispatch({ type: 'REACTIONS_UPDATED', value: data })
+  })
+
+  client.on("setCaption", data => {
+    dispatch({ type: 'SET_CAPTION', value: data.caption })
+  })
+
+  client.on("setCoverUrl", data => {
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
+  })
+
+  client.on("setBackgroundUrl", data => {
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  })
+
+  client.on("peerClosed", peerId => {
+    dispatch({ type: 'DELETE_PEER', value: peerId })
+    logger.debug('"peerClosed" emitted:%s', peerId)
+
+    Array.from(client.consumers.values())
+      .filter( c => c.appData.peerId === peerId )
+      .forEach( consumer => {
+        switch( consumer.kind ) {
+          case 'audio': {
+            dispatch( { type: 'DELETE_AUDIO_CONSUMER', value: consumer.id } )
+            break
+          }
+          case 'video': {
+            dispatch( { type: 'DELETE_VIDEO_CONSUMER', value: consumer.id } )
+            break
+          }
+          default: {
+            logger.warn( '"peerClosed" event - unknown kind:%s', consumer.kind )
+          }
+        }
+      })
+  })
+
+  client.on("newConsumer", consumer => {
+    logger.debug( 'newConsumer:%o', consumer )
+    const { mediaId } = consumer.appData
+    logger.debug( "mediaId:%o", consumer.appData.mediaId )
+    switch( consumer.kind ) {
+      case 'audio': {
+        dispatch({ type: 'ADD_AUDIO_CONSUMER', value: { consumerId: consumer.id, peerId: consumer.peerId, producerId: consumer.producerId, mediaId } })
+        break
+      }
+      case 'video': {
+        dispatch({ type: 'ADD_VIDEO_CONSUMER', value: { consumerId: consumer.id, peerId: consumer.peerId, producerId: consumer.producerId, mediaId } })
+        break
+      }
+      default: {
+        logger.warn( 
+          '_setRoomClientHandler() - "newConsumer" includes unknown kind:%s', 
+          consumer.kind 
+        )
+      }
+    }
+  })
+
+  client.on("leaveConsumer", consumer => {
+    logger.debug( '"leaveConsumer" emitted:%o', consumer )
+    switch( consumer.kind ) {
+      case 'audio': {
+        dispatch({ type: 'DELETE_AUDIO_CONSUMER', value: consumer.id })
+        break
+      }
+      case 'video': {
+        dispatch({ type: 'DELETE_VIDEO_CONSUMER', value: consumer.id })
+        break
+      }
+      default: {
+        logger.warn( 
+          '_setRoomClientHandler() = "leaveConsumer" includes unknown kind:%s', 
+          consumer.kind 
+        )
+      }
+    }
+  })
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-RoomClient.html">RoomClient</a></li><li><a href="module-useAppContext.html">useAppContext</a></li></ul><h3>Classes</h3><ul><li><a href="module-RoomClient.html">RoomClient</a></li></ul><h3>Events</h3><ul><li><a href="module-RoomClient.html#event:activeSpeaker">activeSpeaker</a></li><li><a href="module-RoomClient.html#event:consumerLayersChanged">consumerLayersChanged</a></li><li><a href="module-RoomClient.html#event:consumerPaused">consumerPaused</a></li><li><a href="module-RoomClient.html#event:consumerResumed">consumerResumed</a></li><li><a href="module-RoomClient.html#event:consumerScore">consumerScore</a></li><li><a href="module-RoomClient.html#event:dataConsumerClosed">dataConsumerClosed</a></li><li><a href="module-RoomClient.html#event:downlinkBwe">downlinkBwe</a></li><li><a href="module-RoomClient.html#event:joined">joined</a></li><li><a href="module-RoomClient.html#event:leaveConsumer">leaveConsumer</a></li><li><a href="module-RoomClient.html#event:newConsumer">newConsumer</a></li><li><a href="module-RoomClient.html#event:newPeer">newPeer</a></li><li><a href="module-RoomClient.html#event:peerClosed">peerClosed</a></li><li><a href="module-RoomClient.html#event:peerDisplayNameChanged">peerDisplayNameChanged</a></li><li><a href="module-RoomClient.html#event:produceScore">produceScore</a></li><li><a href="module-RoomClient.html#event:reactionsUpdated">reactionsUpdated</a></li><li><a href="module-RoomClient.html#event:setBackgroundUrl">setBackgroundUrl</a></li><li><a href="module-RoomClient.html#event:setCaption">setCaption</a></li><li><a href="module-RoomClient.html#event:setCoverUrl">setCoverUrl</a></li><li><a href="module-RoomClient.html#event:studioLayoutUpdated">studioLayoutUpdated</a></li><li><a href="module-RoomClient.html#event:studioParticipantsUpdated">studioParticipantsUpdated</a></li><li><a href="module-RoomClient.html#event:studioPatternIdUpdated">studioPatternIdUpdated</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Dec 13 2022 20:18:34 GMT+0900 (日本標準時)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

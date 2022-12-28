@@ -28,11 +28,16 @@ const icons = [
   clapImage,
 ]
 
+const IS_VIEWER = window.location.pathname.includes('/viewer/')
+
 export default function Studio( props ) {
   const { 
     getStudioLayout, 
+    getStudioParticipants,
     getStudioSize, 
     getCaption,
+    getCoverUrl,
+    getBackgroundUrl,
     getStudioPatternId,
     getStudioPatterns,
     setLogo,
@@ -52,10 +57,13 @@ export default function Studio( props ) {
       ( async () => {
         _ctx.current = _canvasEl.current.getContext('2d')
         await getStudioPatterns()
+        await getStudioParticipants()
         await getStudioPatternId()
         await getStudioSize()
         await getStudioLayout()
         await getCaption()
+        await getCoverUrl()
+        await getBackgroundUrl()
         await setLogo( logo )
       })();
     }
@@ -71,10 +79,11 @@ export default function Studio( props ) {
     mutext.runExclusive( async () => {
       // delete video elements which is not included in layout object.
       for( const videoProducerId of _videoEls.current.keys() ) {
-        if( !state.studio.layout
-          //.filter( item => ( item.width !== 0 && item.height !== 0 ))
-          .find( item => item.videoProducerId === videoProducerId ) 
-        ) {
+        const consumer = Array.from( appData.roomClient.consumers.values() )
+          .find( consumer => consumer.producerId === videoProducerId )
+        const included = state.studio.layout.find( item => item.videoProducerId === videoProducerId )
+
+        if( !included ) {
           const videoElem = _videoEls.current.get( videoProducerId )
 
           if( videoElem ) {
@@ -83,7 +92,6 @@ export default function Studio( props ) {
           }
           _videoEls.current.delete(videoProducerId)
 
-          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === videoProducerId )
           if( consumer ) {
             await appData.roomClient.setPreferredLayers( consumer.id, 0 )
               .catch( err => console.warn( 'setPreferredLayers:%o', err ))
@@ -95,11 +103,23 @@ export default function Studio( props ) {
       const layout = state.studio.layout
         .filter( item => ( item.width !== 0 && item.height !== 0 ))
 
-      for( const item of layout ) {
-        if( !_videoEls.current.has( item.videoProducerId ) ) {
-          const localMedia = state.localMedias.find( media => media.videoProducerId === item.videoProducerId )
-          const consumer = Array.from( appData.roomClient.consumers.values() ).find( consumer => consumer.producerId === item.videoProducerId )
+      for( let idx = 0; idx < layout.length; idx++ ) {
+        const item = layout[idx]
+        const localMedia = state.localMedias
+          .find( media => media.videoProducerId === item.videoProducerId )
+        const consumer = Array.from( appData.roomClient.consumers.values() )
+          .find( consumer => consumer.producerId === item.videoProducerId )
 
+        // only main video will be got as high quality
+        if( consumer && ( ( state.studio.patternId === 1 && layout.length <= 4 ) || idx === 0 ) ) {
+          await appData.roomClient.setPreferredLayers(consumer.id, 1)
+            .catch(err => console.warn('setPreferredLayers:%o', err))
+        } else if ( consumer && idx > 0 ) {
+          await appData.roomClient.setPreferredLayers(consumer.id, 0)
+            .catch(err => console.warn('setPreferredLayers:%o', err))
+        }
+
+        if( !_videoEls.current.has( item.videoProducerId ) ) {
           let stream
           if( localMedia ) {
             stream = appData.localStreams.get( localMedia.localStreamId )
@@ -110,9 +130,6 @@ export default function Studio( props ) {
                 logger.debug('consumer:%o', consumer)
                 await appData.roomClient.resumeConsumer(consumer.id)
               }
-
-              await appData.roomClient.setPreferredLayers(consumer.id, 1)
-                .catch(err => console.warn('setPreferredLayers:%o', err))
 
               const track = consumer.track
               stream = new MediaStream( [ track ] )
@@ -188,17 +205,10 @@ export default function Studio( props ) {
             await appData.roomClient.pauseConsumer( item.consumerId )
           }
         }
-
-        // for( const item of state.audioConsumers ) {
-        //   if( !_audioEls.current.has( item.producerId ) ) {
-        //     logger.debug('pause audio consumer:%s', item.consumerId )
-        //      await appData.roomClient.pauseConsumer( item.consumerId )
-        //   }
-        // }
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ playAudio, state.studio.layout, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
+  }, [ playAudio, state.studio.layout, state.studio.patternId, state.localMedias, state.audioConsumers, state.videoConsumers, state.peers, viewer ])
 
   useEffect(() => {
     if( state.status !== 'READY' ) return 
@@ -321,10 +331,17 @@ export default function Studio( props ) {
 
       // draw logo
       if( state.logo !== '' ) {
-        _ctx.current.font = "bold 48px 'Dosis', sans-serif";
         const { width }= _ctx.current.measureText( state.logo )
-        _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
-        _ctx.current.fillText( state.logo, _canvasEl.current.width - width - 10, 58  )
+        if( false ) {  // top-right
+          _ctx.current.font = "bold 48px 'Dosis', sans-serif";
+          _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
+          _ctx.current.fillText( state.logo, _canvasEl.current.width - width - 10, 58  )
+        }
+        if( true ) {  // top-left
+          _ctx.current.font = "bold 48px 'Dosis', sans-serif";
+          _ctx.current.fillStyle = 'rgba( 189, 54, 52, 0.5 )'
+          _ctx.current.fillText( state.logo, 29, 58  )
+        }
       }
 
       reqId = requestAnimationFrame( render )
@@ -347,7 +364,17 @@ export default function Studio( props ) {
   return (
     <div className="Studio">
       <div className="wrapper" style={ props.style }>
+        { ( !!state.studio.backgroundUrl ) && (
+          <div className='background-area'>
+            <img src={state.studio.backgroundUrl} alt="background" />
+          </div>
+        ) }
         <canvas ref={ _canvasEl }></canvas>
+        { ( IS_VIEWER && !!state.studio.coverUrl ) && (
+          <div className='cover-area'>
+            <img src={state.studio.coverUrl} alt="cover" />
+          </div>
+        ) }
         { !hideAlert && state.studio.layout.length === 0 && (
           <div className='alert'>
             <Alert 

@@ -25,8 +25,15 @@ const SCREEN_SHARING_SIMULCAST_ENCODINGS = [
   { dtx: true, maxBitrate: 6_000_000 }
 ]
 
+
+/**
+ * 
+ * @module RoomClient
+ * @extends EventEmitter
+ */
 export default class RoomClient extends EventEmitter {
   /**
+   * 
    * 
    * @param {Object} props
    * @param {String} props.displayName
@@ -41,6 +48,15 @@ export default class RoomClient extends EventEmitter {
     return new RoomClient( { peerId, roomId, displayName, useSimulcast: _useSimulcast })
   }
 
+  /**
+   * 
+   * @constructor
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.roomId
+   * @param {string} props.displayName
+   * @param {boolean} props.useSimulcast
+   */
   constructor( props ) {
     super()
 
@@ -62,22 +78,59 @@ export default class RoomClient extends EventEmitter {
     logger.debug( "protooUrl:%s", this._protooUrl )
   }
 
+  /**
+   * peer id
+   * 
+   * @type {string}
+   */
   get peerId() {
     return this._peerId
   }
 
+  /**
+   * display name
+   * 
+   * @type {string}
+   */
+  get displayName() {
+    return this._displayName
+  }
+
+  /**
+   * consumers
+   * 
+   * @type {object}
+   */
   get consumers() {
     return this._consumers
   }
 
+  /**
+   * audio producer
+   * 
+   * @type {object}
+   */
   get audioProducer() {
     return this._audioProducer
   }
 
+  /**
+   * video producer
+   * 
+   * @type {object}
+   */
   get videoProducer() {
     return this._videoProducer
   }
 
+  /**
+   * join
+   * 
+   * @fires module:RoomClient#newConsumer
+   * @fires module:RoomClient#leaveConsumer
+   * 
+   * @returns {Promise<NULL>}
+   */
   join() {
     let promiseReturned = false
 
@@ -162,6 +215,14 @@ export default class RoomClient extends EventEmitter {
                 .catch( err => console.warn( 'setPreferredLayers:%o', err ))
 
 
+              /**
+               * leave consumer
+               * 
+               * @event module:RoomClient#leaveConsumer
+               * @type {object}
+               * @property {string} id - id of consumer
+               * @property {string} kind - `video` or `audio`
+               */
               consumer.on('transportclose', () => {
                 this._consumers.delete( consumer.id )
                 this.emit( "leaveConsumer", {
@@ -254,42 +315,137 @@ export default class RoomClient extends EventEmitter {
       this._protoo.on('notification', notification => {
         switch( notification.method ) {
           case 'producerScore': {
+            /**
+             * @event module:RoomClient#produceScore
+             * @type {object}
+             * @property {string} producerId
+             * @property {number} score
+             * 
+             */
             const { producerId, score } = notification.data
             this.emit('producerScore', { producerId, score })
             break
           }
           case 'newPeer': {
+            /**
+             * @event module:RoomClient#newPeer
+             * @type {object}
+             * 
+             */
             const peer = notification.data
             this.emit('newPeer', peer )
             break
           }
           case 'peerClosed': {
+            /**
+             * @event module:RoomClient#peerClosed
+             * @type {string}
+             */
             const { peerId } = notification.data
             this.emit('peerClosed', peerId )
             break
           }
           case 'peerDisplayNameChanged': {
+            /**
+             * @event module:RoomClient#peerDisplayNameChanged
+             * @type {object}
+             * @property {string} peerId
+             * @property {string} dispalyName
+             * @property {string} oldDisplayName
+             * 
+             */
             const { peerId, displayName, oldDisplayName } = notification.data
             this.emit('peerDisplayNameChanged', { peerId, displayName, oldDisplayName })
             break
           }
           case 'studioLayoutUpdated': {
+            /**
+             * @event module:RoomClient#studioLayoutUpdated
+             * @type {object}
+             * 
+             */
             this.emit('studioLayoutUpdated', notification.data )
             break
           }
           case 'studioPatternIdUpdated': {
+            /**
+             * @event module:RoomClient#studioPatternIdUpdated
+             * @type {string}
+             * 
+             */
             this.emit('studioPatternIdUpdated', notification.data )
             break
           }
+          case 'studioParticipantsUpdated': {
+            /**
+             * @event module:RoomClient#studioParticipantsUpdated
+             * @type {object}
+             * 
+             */
+            this.emit('studioParticipantsUpdated', notification.data )
+            break
+          }
           case 'reactionsUpdated': {
+            /**
+             * @event module:RoomClient#reactionsUpdated
+             * @type {object}
+             */
             this.emit('reactionsUpdated', notification.data )
             break
           }
           case 'setCaption': {
+            /**
+             * @event module:RoomClient#setCaption
+             * @type {string}
+             */
             this.emit('setCaption', notification.data )
             break
           }
+          case 'updatedCaptions': {
+            /**
+             * @event module:RoomClient#setCaptions
+             * @type {string}
+             */
+            this.emit('setCaptions', notification.data )
+            break
+          }
+          case 'setCoverUrl': {
+            /**
+             * @event module:RoomClient#setCoverUrl
+             * @type {string}
+             */
+            this.emit('setCoverUrl', notification.data )
+            break
+          }
+          case 'updatedCoverUrls': {
+            /**
+             * @event module:RoomClient#setCoverUrls
+             */
+            this.emit('setCoverUrls', notification.data )
+            break
+          }
+          case 'setBackgroundUrl': {
+            /**
+             * @event module:RoomClient#setBackgroundUrl
+             * @type {string}
+             */
+            this.emit('setBackgroundUrl', notification.data )
+            break
+          }
+          case 'updatedBackgroundUrls': {
+            /**
+             * @event module:RoomClient#setBackgroundUrls
+             */
+            this.emit('setBackgroundUrls', notification.data )
+            break
+          }
           case 'downlinkBwe': {
+            /**
+             * @event module:RoomClient#downlinkBwe
+             * @type {object}
+             * 
+             */
+            this.emit('downlinkBwe', notification.data )
             // logger.debug('"downlinkBwe" event:%o', notification.data)
             break
           }
@@ -302,6 +458,10 @@ export default class RoomClient extends EventEmitter {
             consumer.close()
             this._consumers.delete( consumerId )
 
+            /**
+             * @event module:RoomClient#leaveConsumer
+             * @type {object}
+             */
             this.emit('leaveConsumer', consumer )
 
             break
@@ -314,6 +474,10 @@ export default class RoomClient extends EventEmitter {
 
             consumer.pause()
 
+            /**
+             * @event module:RoomClient#consumerPaused
+             * @type {string}
+             */
             this.emit('consumerPaused', consumerId )
 
             break
@@ -326,6 +490,10 @@ export default class RoomClient extends EventEmitter {
 
             consumer.resume()
 
+            /**
+             * @event module:RoomClient#consumerResumed
+             * @type {string}
+             */
             this.emit('consumerResumed', consumerId )
 
             break
@@ -336,6 +504,13 @@ export default class RoomClient extends EventEmitter {
 
             if( !consumer ) break
 
+            /**
+             * @event module:RoomClient#consumerLayersChanged
+             * @type {object}
+             * @property {string} consumerId
+             * @property {number} spatialLayer
+             * @property {number} temporalLayer
+             */
             this.emit( 'consumerLayersChanged', { consumerId, spatialLayer, temporalLayer })
 
             break
@@ -346,6 +521,12 @@ export default class RoomClient extends EventEmitter {
 
             if( !consumer ) break
 
+            /**
+             * @event module:RoomClient#consumerScore
+             * @type {object}
+             * @property {string} consumerId
+             * @property {number} score
+             */
             this.emit( 'consumerScore', { consumerId, score })
 
             break
@@ -361,12 +542,23 @@ export default class RoomClient extends EventEmitter {
 
             const  { peerId } = dataConsumer.appData
 
+            /**
+             * @event module:RoomClient#dataConsumerClosed
+             * @type {object}
+             * @property {string} dataConsumerId
+             * @property {string} peerId
+             * 
+             */
             this.emit( 'dataConsumerClosed', { dataConsumerId, peerId } )
             break
           }
           case 'activeSpeaker': {
             const { peerId } = notification.data
 
+            /**
+             * @event module:RoomClient#activeSpeaker
+             * @type {string}
+             */
             this.emit( 'activeSpeaker', peerId )
 
             break
@@ -502,6 +694,7 @@ export default class RoomClient extends EventEmitter {
   }
 
   /**
+   * replace stream
    * 
    * @param {MediaStream} stream  
    */
@@ -520,6 +713,11 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  /**
+   * close producer
+   * 
+   * @param {string} producerId 
+   */
   async closeProducer( producerId ) {
     const producer = this._producers.get( producerId )
 
@@ -534,6 +732,12 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  /**
+   * get preferred layers of the consumer
+   * 
+   * @param {string} consumerId 
+   * @returns {object} - preferred layers data
+   */
   async getPreferredLayers( consumerId ) {
     const consumer = this._consumers.get( consumerId )
 
@@ -546,6 +750,12 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  /**
+   * get current layers of the consumer
+   * 
+   * @param {string} consumerId 
+   * @returns {object} - current layers data
+   */
   async getCurrentLayers( consumerId ) {
     const consumer = this._consumers.get( consumerId )
 
@@ -558,6 +768,12 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
+  /**
+   * set preferred layers of the consumer
+   * 
+   * @param {string} consumerId 
+   * @param {number} spatialLayer 
+   */
   async setPreferredLayers( consumerId, spatialLayer ) {
     const consumer = this._consumers.get( consumerId )
 
@@ -569,70 +785,250 @@ export default class RoomClient extends EventEmitter {
     }
   }
 
-
+  /**
+   * get studio patterns
+   * 
+   * @returns {object} - studio patterns data
+   */
   async getStudioPatterns() {
     return await this._protoo.request( 'getStudioPatterns' )
       .catch( err => { throw err })
   }
 
+  /**
+   * get studio pattern id
+   * 
+   * @returns {string} - studio pattern id
+   */
   async getStudioPatternId() {
     return await this._protoo.request( 'getStudioPatternId' )
       .catch( err => { throw err })
   }
 
+  /**
+   * set studio pattern id
+   * 
+   * @param {object} props 
+   * @param {number} props.patternId
+   * @returns {object} - @@@
+   */
   async setStudioPatternId({ patternId }) {
     return await this._protoo.request( 'setStudioPatternId', { patternId } )
       .catch( err => { throw err })
   }
 
+  /**
+   * get studio size
+   * 
+   * @returns {object} - { width, height }
+   */
   async getStudioSize() {
     return await this._protoo.request( 'getStudioSize' )
       .catch( err => { throw err })
   }
 
+  /**
+   * get studio layout
+   * 
+   * @returns {object} - current studio layout data
+   */
   async getStudioLayout() {
     return await this._protoo.request( 'getStudioLayout' )
       .catch( err => { throw err })
   }
 
+  /**
+   * set caption data
+   * 
+   * @param {string} caption 
+   * @returns {object} - @@@
+   */
   async setCaption( caption ) {
     return await this._protoo.request( 'setCaption', { caption })
       .catch( err => { throw err })
   }
 
+  /**
+   * get caption data
+   * 
+   * @returns {object} - { caption:String }
+   */
   async getCaption() {
-    const res = await this._protoo.request( 'getCaption' )
+    return await this._protoo.request( 'getCaption' )
       .catch( err => { return { caption: '' } })
-    return res
   }
 
+  /**
+   * set cover url
+   * 
+   * @param {string} url 
+   * @returns {object} - @@@
+   */
+  async setCoverUrl( url ) {
+    return await this._protoo.request( 'setCoverUrl', { coverUrl: url } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * get cover url
+   * 
+   * @returns {object} - { coverUrl:String }
+   */
+  async getCoverUrl() {
+    return await this._protoo.request( 'getCoverUrl' )
+      .catch( err => { return { coverUrl: '' }})
+  }
+
+  /**
+   * set background url
+   * 
+   * @param {string} url 
+   * @returns {object} - @@@
+   */
+  async setBackgroundUrl( url ) {
+    return await this._protoo.request( 'setBackgroundUrl', { backgroundUrl: url } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * get background url
+   * 
+   * @returns {object} - { coverUrl:String}
+   */
+  async getBackgroundUrl() {
+    return await this._protoo.request( 'getBackgroundUrl' )
+      .catch( err => { return { coverUrl: '' }})
+  }
+
+  /**
+   * add media to studio layout
+   * 
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.mediaId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * @param {number} props.videoWidth
+   * @param {number} props.videoHeight
+   */
   async addStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } ) {
     await this._protoo.request( 'addStudioLayout', { peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight } )
       .catch( err => { throw err })
   }
 
+  /**
+   * delete media from studio layout
+   * 
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.mediaId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * 
+   */
   async deleteStudioLayout( { peerId, mediaId, audioProducerId, videoProducerId } ) {
     await this._protoo.request( 'deleteStudioLayout', { peerId, mediaId, audioProducerId, videoProducerId } )
       .catch( err => { throw err })
   }
 
+  /**
+   * get studio participants
+   * 
+   * @returns {object} - participants data
+   */
+  async getStudioParticipants() {
+    return this._protoo.request( 'getStudioParticipants' )
+      .catch( err => { throw err })
+  }
+  
+  /**
+   * add participants
+   * 
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @param {string} props.peerId
+   * @param {string} props.displayName
+   * @param {boolean} props.audio
+   * @param {boolean} props.video
+   * @returns {object} - @@@
+   */
+  async addParticipant( { mediaId, peerId, displayName, audio, video }) {
+    return this._protoo.request( 'addParticipant', { mediaId, peerId, displayName, audio, video } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * update participant audio status
+   * 
+   * @param {object} props 
+   * @param {string} props.mediaId 
+   * @param {boolean} props.audio 
+   * @returns {object} - @@@
+   */
+  async updateParticipantAudio( { mediaId, audio }) {
+    return this._protoo.request( 'updateParticipantAudio', { mediaId, audio } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * update participant video status
+   * 
+   * @param {object} props 
+   * @param {string} props.mediaId 
+   * @param {boolean} props.video 
+   * @returns {object} - @@@
+   */
+  async updateParticipantVideo( { mediaId, video }) {
+    return this._protoo.request( 'updateParticipantVideo', { mediaId, video } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * delete participant by mediaId
+   *  
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @returns {object} - @@@
+   */
+  async deleteParticipantByMediaId( { mediaId } ) {
+    return this._protoo.request( 'deleteParticipantByMediaId', { mediaId } )
+      .catch( err => { throw err })
+  }
+
+  /**
+   * set the media at main in studio layout
+   * 
+   * @param {number} layoutIdx 
+   */
   async toMainInStudioLayout( layoutIdx ) {
     await this._protoo.request( 'toMainInStudioLayout', { layoutIdx } )
       .catch( err => { throw err })
   }
 
+  /**
+   * pause the consumer 
+   * 
+   * @param {string} consumerId 
+   */
   async pauseConsumer( consumerId ) {
     await this._protoo.request( 'pauseConsumer', { consumerId })
       .catch( err => { throw err })
   }
 
+  /**
+   * resume the consumer 
+   * 
+   * @param {string} consumerId 
+   */
   async resumeConsumer( consumerId ) {
     await this._protoo.request( 'resumeConsumer', { consumerId })
       .catch( err => { throw err })
   }
 
 
-
+  /**
+   * close
+   */
   close() {
     this._protoo.close()
     this._closed = true
@@ -731,7 +1127,7 @@ export default class RoomClient extends EventEmitter {
               dtlsParameters
             })
             .then( obj => {
-              logger.debug('sendTransport - connectted:%o', obj)
+              logger.debug('sendTransport - connected:%o', obj)
               callback( obj )
             })
             .catch( errback )
@@ -816,6 +1212,10 @@ export default class RoomClient extends EventEmitter {
           sctpCapabilities: this._mediasoupDevice.sctpCapabilities
         })
 
+        /**
+         * @event module:RoomClient#joined
+         * @type {object}
+         */
         this.emit( 'joined', peers )
       }
       logger.debug("joined.")
@@ -825,3 +1225,19 @@ export default class RoomClient extends EventEmitter {
     }
   }
 }
+
+
+/**
+ * 
+ * @event module:RoomClient#newConsumer
+ * @type {object}
+ * @property {string} peerId - peer id
+ * @property {string} producerId - producer id
+ * @property {string} id - id of this consumer
+ * @property {string} kind - kind ( `video` or `audio` )
+ * @property {string} type - @@@
+ * @property {boolesn} producerPaused - true if producer is paused
+ * @property {object} appData - arbitrary app data
+ * 
+ */
+

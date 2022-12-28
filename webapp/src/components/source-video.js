@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from 'antd'
 import { useAppContext } from '../libs/reducer'
 import { GiCancel } from 'react-icons/gi'
-import { BsMicMuteFill, BsMicFill } from 'react-icons/bs'
+import { IoMdPlay, IoMdPause, IoMdSkipBackward } from 'react-icons/io'
+import { BsMicMuteFill, BsMicFill, BsCameraVideoFill, BsCameraVideoOffFill } from 'react-icons/bs'
 import Logger from "../libs/logger"
 
+import { defaultMic, defaultVideo } from '../config'
+
 import './source-video.css'
+
 
 const logger = new Logger('source-video')
 
@@ -19,14 +23,22 @@ const videoFrameColors = [
 ]
 
 export default function SourceVideo( props ) {
-  const { state, appData, addStudioLayout, deleteStudioLayout, toMainInStudioLayout, deleteProducer, deleteLocalStream } = useAppContext()
+  const { 
+    state, appData, 
+    addStudioLayout, deleteStudioLayout, toMainInStudioLayout, 
+    addParticipant, updateParticipantAudio, updateParticipantVideo, deleteParticipantByMediaId,
+    deleteProducer, deleteLocalStream 
+  } = useAppContext()
   const [ _videoWidth , setVideoWidth  ] = useState( 0 )
   const [ _videoHeight, setVideoHeight ] = useState( 0 )
+  const [ _isVideo, setIsVideo ] = useState( false )
   const [ _layoutIdx, setLayoutIdx ] = useState( -1 )
-  const [ _muted, setMuted ] = useState( false )
+  const [ _playing, setPlaying ] = useState( false )
 
   const {
-    id, displayName, audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, localStreamId, mediaId, idx 
+    id, displayName, 
+    audioConsumerId, audioProducerId, videoConsumerId, videoProducerId, 
+    localStreamId, mediaId, idx 
   } = props
 
   const {
@@ -35,6 +47,12 @@ export default function SourceVideo( props ) {
 
   const _wrapperEl = useRef( null )
   const _videoEl = useRef( null )
+  const _srcVideo = useRef( null )
+
+  const _myParticipantInfo = useMemo( () => {
+    return state.studio.participants.find( item => item.peerId === id && item.mediaId === mediaId )
+     || { peerId: id, mediaId, displayName, audio: defaultMic, video: defaultVideo }
+  }, [ state.studio.participants, id, mediaId, displayName ])
 
   // when video is clicked, toggle adding or deleting from studio layout.
   const handleClick = useCallback( () => {
@@ -69,6 +87,8 @@ export default function SourceVideo( props ) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ audioProducerId, videoProducerId, mediaId, _videoWidth, _videoHeight, state.studio.layout ])
+
+
 
   // when audioConsumerId and videoConsumerId got, we will render video for it.
   //
@@ -108,12 +128,26 @@ export default function SourceVideo( props ) {
 
           logger.debug('videoWidth: %d, videoHeight: %d', videoWidth, videoHeight )
 
+          const videoEl = appData.localVideos.get( localStreamId )
+          logger.debug('localVideos:%s %s %o', localStreamId, mediaId, appData.localVideos)
+
+          if( videoEl ) {
+            setIsVideo( true )
+            _srcVideo.current = videoEl
+            setTimeout(() => {
+              videoEl.pause()
+            }, 100)
+          }
+
           await _videoEl.current.play()
+          if( localStreamId ) {
+            await addParticipant({ peerId: id, mediaId, displayName, audio: defaultMic, video: defaultVideo })
+          }
         }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ audioConsumerId, videoConsumerId, localStreamId ])
+  }, [ id, displayName, audioConsumerId, videoConsumerId, localStreamId, mediaId ])
 
   // draw boder for video which is including in studio layout.
   useEffect( () => {
@@ -143,11 +177,25 @@ export default function SourceVideo( props ) {
       const audioTrack = localStreams.get( localStreamId ) && localStreams.get( localStreamId ).getAudioTracks()[0]
 
       if( audioTrack ) {
-        audioTrack.enabled = !_muted
+        audioTrack.enabled = _myParticipantInfo.audio
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ state.status, _muted, state.localMedias, localStreamId ])
+  }, [ state.status, _myParticipantInfo.audio, state.localMedias, localStreamId ])
+
+  // mute or unmute video
+  useEffect( () => {
+    if( state.status !== 'READY' ) return
+
+    if( localStreamId ) {
+      const videoTrack = localStreams.get( localStreamId ) && localStreams.get( localStreamId ).getVideoTracks()[0]
+
+      if( videoTrack ) {
+        videoTrack.enabled = _myParticipantInfo.video
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ state.status, _myParticipantInfo.video, state.localMedias, localStreamId ])
 
   return (
     <div className="SourceVideo">
@@ -178,24 +226,64 @@ export default function SourceVideo( props ) {
                   mediaId
                 })
               }
+              if( _isVideo ) setIsVideo( false )
+              await deleteParticipantByMediaId({ mediaId })
               await deleteProducer( { audioProducerId, videoProducerId } )
               await deleteLocalStream( localStreamId )
             }
           }><GiCancel/></Button></div>
         )}
-        { localStreamId && (
-          <div className='mute'>
-            <Button
-              type='link'
-              shape='circle'
-              icon={_muted ? <BsMicMuteFill /> : <BsMicFill />}
-              style={{ color: '#fff', fontSize: '1em' }}
-              onClick={() => {
-                setMuted( !_muted )
-              }}
-            />
-          </div>
+        { _isVideo && (
+        <div className='playback-control'>
+          <Button 
+            type="primary" 
+            shape="circle" 
+            danger 
+            icon={ <IoMdSkipBackward /> }
+            onClick={() => {
+              _srcVideo.current.currentTime = 0
+            }}
+          />
+          <div>&nbsp;&nbsp;&nbsp;</div>
+ 
+          <Button 
+            type="primary" 
+            shape="circle" 
+            danger 
+            icon={ _playing ? <IoMdPause /> : <IoMdPlay /> }
+            onClick={() => {
+              if( _playing ) {
+                _srcVideo.current.pause()
+              } else {
+                _srcVideo.current.play()
+              }
+              setPlaying( !_playing )
+            }}
+          />
+        </div>
         )}
+        <div className='mute'>
+          <Button
+            type='link'
+            shape='circle'
+            icon={!_myParticipantInfo.audio ? <BsMicMuteFill /> : <BsMicFill />}
+            style={{ color: '#fff', fontSize: '1em' }}
+            onClick={() => {
+              updateParticipantAudio({ mediaId, audio: !_myParticipantInfo.audio })
+            }}
+          />
+        </div>
+        <div className='video-mute'>
+          <Button
+            type='link'
+            shape='circle'
+            icon={!_myParticipantInfo.video ? <BsCameraVideoOffFill /> : <BsCameraVideoFill />}
+            style={{ color: '#fff', fontSize: '1em' }}
+            onClick={() => {
+              updateParticipantVideo({ mediaId, video: !_myParticipantInfo.video })
+            }}
+          />
+        </div>
         <div className="meta">
           {displayName}
         </div>

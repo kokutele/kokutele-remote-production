@@ -1,0 +1,31 @@
+.background-wrapper {
+  aspect-ratio: calc( 16 / 9 );
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.background-body {
+  align-items: center;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.background-body[data-selected=true] {
+  border: 2px solid #00f;
+}
+
+.background-wrapper img {
+  width: 100%;
+}
+
+.background-wrapper .delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+}

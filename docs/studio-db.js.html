@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: studio-db.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: studio-db.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const { start } = require('@sitespeed.io/throttle')
+const path = require('path')
+const DB = require('sqlite-async')
+const { md5 } = require('./util')
+const Logger = require('./logger')
+
+const logger = new Logger('studio-db')
+
+const DB_DIR = process.env.NODE_ENV === 'development' ? path.join( __dirname, '..' ) : '/var/lib/kokutele-studio'
+logger.info( "DB_DIR:%s", DB_DIR )
+
+/**
+ * @class
+ */
+class StudioDB {
+  _dbfile = `${DB_DIR}/studio.db`
+  _db = null
+
+  /**
+   * start
+   * 
+   * @method StudioDB#start
+   */
+  start = async () => {
+    this._db = await DB.open( this._dbfile )
+    await this._migrate()
+  }
+
+  /**
+   * find of set roomName
+   * 
+   * @method StudioDB#findOrSetRoomName
+   * @param {string} roomName 
+   * @returns {string} roomId
+   */
+  findOrSetRoomName = async roomName => {
+    let roomId
+
+    const room = await this._db.get('select id from rooms where name = ?;', [ roomName ] )
+
+    if( room ) {
+      roomId = room.id
+    } else {
+      const res = await this._db.run('insert into rooms ( name ) values ( ? );', [ roomName ])
+      roomId = res.lastID
+    } 
+    logger.info("findOrSetRoomName - roomName:%s, roomId:%d", roomName, roomId )
+
+    return roomId
+  }
+
+  /**
+   * returns passcode is exist or not
+   * 
+   * @method StudioDB#isPasscodeExist
+   * @param {string} roomId 
+   * @returns {boolean}
+   */
+  isPasscodeExist = async roomId => {
+    const passcode = await this._db.get('select id from passcodes where roomId = ?;', roomId )
+    logger.info("isPasscodeExist - passcode:%o", passcode )
+
+    return !!passcode
+  }
+
+  /**
+   * challenge passcode
+   * 
+   * @method StudioDB#challengePasscode
+   * @param {object} props 
+   * @param {string} props.roomName
+   * @param {string} props.passcode
+   * @returns {object}
+   */
+  challengePasscode = async ( { roomName, passcode } ) => {
+    const _passcode = md5( passcode )
+
+    const res = await this._db.get(
+      'select t1.id from rooms as t0, passcodes as t1 where t0.name = ? and t0.id = t1.roomId and t1.passcode = ?;', 
+      [ roomName, _passcode ]
+    )
+
+    return res
+  }
+
+  /**
+   * set passcode 
+   * 
+   * @method StudioDB#setPasscode
+   * @param {object} props 
+   * @param {string} props.roomName
+   * @param {string} props.passcode
+   */
+  setPasscode = async ( { roomName, passcode } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.get('select id from passcodes where roomId = ? ;', room.id )
+    const _passcode = md5( passcode )
+
+    if( res ) {
+      await this._db.run('update passcodes set passcode = ? where roomId = ?;', [ _passcode, room.id ])
+    } else {
+      await this._db.run('insert into passcodes ( roomId, passcode ) values ( ?, ? );', [ room.id, _passcode ] )
+    }
+  }
+
+  /////////////////////////////////////////
+  // Covers
+  /////////////////////////////////////////
+
+  /**
+   * get cover urls 
+   * 
+   * @method StudioDB#getCoverUrls
+   * @param {string} roomName 
+   * @returns {Array&lt;Object>} - Array&lt;{id:String, url:String}>
+   */
+  getCoverUrls = async ( roomName ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * set cover url
+   * 
+   * @method StudioDB#setCoverUrl
+   * @param {object} props 
+   * @param {string} props.roomName
+   * @param {string} props.url
+   * @returns {Array&lt;Object>} - Array&lt;{id:String, url:String}>
+   */
+  setCoverUrl = async ( { roomName, url } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('insert into covers ( roomId, url ) values ( ?, ? );', [ room.id, url ] )
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * delete cover url
+   * 
+   * @method StudioDB#deleteCoverUrl
+   * @param {object} props 
+   * @param {string} props.roomName 
+   * @param {number} props.id 
+   * @returns {Array&lt;Object>} - Arrray&lt;{id:Number, url:String}>
+   */
+  deleteCoverUrl = async ( { roomName, id } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('delete from covers where id = ? and roomId = ?;', [ id, room.id ] )
+
+    const res = await this._db.all('select id, url from covers where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+  
+  /////////////////////////////////////////
+  // Backgrounds 
+  /////////////////////////////////////////
+
+  /**
+   * get background urls 
+   * 
+   * @method StudioDB#getBackgroundUrls
+   * @param {string} roomName 
+   * @returns {Array&lt;Object>} - Array&lt;{id:Number, url:String}>
+   */
+  getBackgroundUrls = async ( roomName ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * set background url 
+   * 
+   * @method StudioDB#setBackgroundUrl
+   * @param {object} props 
+   * @param {string} roomName 
+   * @param {string} url 
+   * @returns {Array&lt;Object>} - Array&lt;{ id:Number, url:String}>
+   */
+  setBackgroundUrl = async ( { roomName, url } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('insert into backgrounds ( roomId, url ) values ( ?, ? );', [ room.id, url ] )
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+
+  /**
+   * delete background url 
+   * 
+   * @method StudioDB#deleteBackgroundUrl
+   * @param {object} props 
+   * @param {string} roomName 
+   * @param {number} id 
+   * @returns {Array&lt;Object>} - Array&lt;{ id:Number, url:String}>
+   */
+  deleteBackgroundUrl = async ( { roomName, id } ) => {
+    const room = await this._db.get('select id from rooms where name = ?;', roomName )
+
+    if( !room ) {
+      const err = new Error(`no roomName:${roomName} found.`)
+      err.status = 404
+      throw err
+    }
+
+    await this._db.run('delete from backgrounds where id = ? and roomId = ?;', [ id, room.id ] )
+
+    const res = await this._db.all('select id, url from backgrounds where roomId = ?;', room.id )
+
+    return !!res ? res : []
+  }
+ 
+  _migrate = async () => {
+    const sqlRooms = [
+      "create table if not exists rooms(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  name TEXT NOT NULL UNIQUE",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlRooms )
+
+    const sqlPasscodes = [
+      "create table if not exists passcodes(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  passcode TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlPasscodes )
+    
+    const sqlCovers = [
+      "create table if not exists covers(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  url TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlCovers )
+
+    const sqlBackgrounds = [
+      "create table if not exists backgrounds(",
+      "  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,",
+      "  roomId INTEGER NOT NULL,",
+      "  url TEXT NOT NULL",
+      ");"
+    ].join("")
+
+    await this._db.run( sqlBackgrounds )
+ 
+  }
+}
+
+module.exports = StudioDB</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-util.html">util</a></li></ul><h3>Classes</h3><ul><li><a href="Logger.html">Logger</a></li><li><a href="ReactionManager.html">ReactionManager</a></li><li><a href="Room.html">Room</a></li><li><a href="StudioDB.html">StudioDB</a></li></ul><h3>Events</h3><ul><li><a href="Room.html#event:close">close</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed Dec 14 2022 17:42:39 GMT+0900 (日本標準時)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -13,7 +13,7 @@ export default function Entrance( props ) {
   useEffect(() => {
     fetch( `${apiEndpoint}/studio` )
       .then( res => res.json() )
-      .then( ({ name }) =>  setUrl(`${window.location.pathname}/${name}`) )
+      .then( ({ roomId }) =>  setUrl(`${window.location.pathname}/${roomId}`) )
       .catch( err => { throw err })
   }, [])
 

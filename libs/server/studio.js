@@ -1,7 +1,6 @@
 const  Logger = require('../logger')
 const config = require('../../config')
 
-const MediaMixer = {} // for future use, maybe.  `= require('../../mixer')`
 const logger = new Logger('studio')
 
 const layoutPatterns = [
@@ -42,36 +41,72 @@ const layoutPatterns = [
   },
 ]
 
+/**
+ * @class
+ */
 class Studio {
+  /**
+   * 
+   * @constructor
+   * @param {object} props 
+   * @param {number} props.width
+   * @param {number} props.height
+   */
   constructor( props ) {
-    this._mediasoupRouter = props.mediasoupRouter
     this._height = props.height
     this._width  = props.width 
-    this._rtmpUrl = props.rtmpUrl
-    this._useMixer = props.useMixer
+    this._coverUrl = ''
+    this._backgroundUrl = ''
     this._patternId = layoutPatterns[0].id
 
-    this._mixer = this._useMixer ? new MediaMixer( this._width, this._height, this._rtmpUrl ) : null
-    logger.info('mixer instanceated. width:%d, height:%d, rtmpUrl: %s', this._width, this._height, this._rtmpUrl )
-
-    this._plainTransports = new Map()
-    this._consumers = new Map()
-
     this._layout = []
+    this._participants = []
   }
 
+  /**
+   * canvas height
+   * 
+   * @type {number}
+   * 
+   */
   get height() {
     return this._height
   }
 
+  /**
+   * canvas width
+   * 
+   * @type {number}
+   * 
+   */
   get width() {
     return this._width
   }
 
+  /**
+   * current layout
+   * 
+   * @type {object}
+   */
   get layout() {
     return this._layout
   }
 
+  /**
+   * participants
+   * 
+   * @type {Array<Object>}
+   */
+  get participants() {
+    return this._participants
+  }
+
+  /**
+   * current patternId
+   * 
+   * @type {number}
+   * 
+   */
   get patternId() {
     return this._patternId
   }
@@ -80,24 +115,72 @@ class Studio {
     this._patternId = id
   }
 
+  /**
+   * patterns
+   * 
+   * @type {Array<Object>}
+   */
   get patterns() {
     return layoutPatterns
   }
 
-  start() {
-    if( this._mixer ) {
-      this._mixer.start()
-      // for debugging purpose.
-      const name = this._mixer.addTestVideoSrc( 18, 1, 1, 320, 240, 3 )
-      const name2 = this._mixer.addTestVideoSrc( 0, 320, 240, 320, 240, 3 )
-    }
+  /**
+   * current cover image url
+   * 
+   * @type {string}
+   */
+  get coverUrl() {
+    return this._coverUrl
   }
 
+  set coverUrl( url ) {
+    this._coverUrl = url
+  }
+
+  /**
+   * current background image url
+   * 
+   * @type {string}
+   * 
+   */
+  get backgroundUrl() {
+    return this._backgroundUrl
+  }
+
+  set backgroundUrl( url ) {
+    return this._backgroundUrl = url
+  }
+
+  /**
+   * start. here, nothing done
+   * 
+   * @method Studio#start
+   * 
+   */
+  start() {
+    // nothing
+  }
+
+  /**
+   * add media to layout
+   * 
+   * @method Studio#addMedia
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {number} props.videoHeight
+   * @param {number} props.videoWidth
+   * @param {string} props.mediaId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * 
+   */
   async addMedia({ peerId, videoHeight, videoWidth, mediaId, audioProducerId, videoProducerId }) {
+    // check if media is already exist
     let isExist = !!this._layout.find( item => (
       item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId && item.mediaId === mediaId
     ))
         
+    // if media is not exist in current layout, add it.
     if( !isExist ) {
       this._layout = [ ...this._layout, { peerId, audioProducerId, videoProducerId, videoWidth, videoHeight, mediaId }]
 
@@ -105,27 +188,130 @@ class Studio {
     }
   }
 
+  /**
+   * delete media from layout
+   * 
+   * @method Studio#deleteMedia
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.mediaId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * 
+   */
   deleteMedia({ peerId, mediaId, audioProducerId, videoProducerId }) {
+    // delete media from current layout
     this._layout = this._layout.filter( item => ( 
       !( item.peerId === peerId && item.audioProducerId === audioProducerId && item.videoProducerId === videoProducerId && item.mediaId === mediaId )
     ))
     this._calcLayout()
   }
 
+  /**
+   * move the media indicated by layoutIdx to main media
+   * 
+   * @method Studio#toMain
+   * @param {number} layoutIdx 
+   * 
+   */
   toMain( layoutIdx ) {
     this._layout = [ this._layout[layoutIdx], ...this._layout.filter( ( item, idx ) => idx !== layoutIdx ) ]
     this._calcLayout()
   }
 
+  /**
+   * delete the peer indicated by peerId from current layout
+   * 
+   * @method Studio#deletePeer
+   * @param {string} peerId 
+   * 
+   */
   deletePeer( peerId ) {
     this._layout = this._layout.filter( item => item.peerId !== peerId )
     this._calcLayout()
   }
 
+  /**
+   * add participant to this studio.
+   * 
+   * @method Studio#addParticipant
+   * @param {object} props 
+   * @param {string} props.peerId 
+   * @param {string} props.mediaId
+   * @param {string} props.displayName
+   * @param {boolean} props.audio
+   * @param {boolean} props.video
+   * 
+   */
+  addParticipant( { peerId, mediaId, displayName, audio, video } ) {
+    this._participants = [ ...this._participants, { peerId, mediaId, displayName, audio, video }]
+  }
+
+  /**
+   * update audio status of the participant indicated by mediaId
+   * 
+   * @method Studio#updateParticipantAudio
+   * @param {string} mediaId
+   * @param {boolean} audio
+   * 
+   */
+  updateParticipantAudio( mediaId, audio )  {
+    this._participants = this._participants.map( item => (
+      item.mediaId === mediaId ? { ...item, audio } : item
+    ))
+  }
+
+  /**
+   * update video status of the participant indicated by mediaId
+   * 
+   * @method Studio#updateParticipantVideo
+   * @param {string} mediaId
+   * @param {boolean} video
+   * 
+   */
+  updateParticipantVideo( mediaId, video )  {
+    this._participants = this._participants.map( item => (
+      item.mediaId === mediaId ? { ...item, video } : item
+    ))
+  }
+
+  /**
+   * delete participants indicated by peerId
+   * 
+   * @method Studio#deleteParticipantsByPeerId
+   * @param {string} peerId 
+   */
+  deleteParticipantsByPeerId( peerId ) {
+    this._participants = this._participants.filter( item => item.peerId !== peerId )
+  }
+
+  /**
+   * delete the participant indicated by mediaId
+   * 
+   * @method Studio#deleteParticipantByMediaId
+   * @param {string} mediaId 
+   */
+  deleteParticipantByMediaId( mediaId ) {
+    this._participants = this._participants.filter( item => item.mediaId !== mediaId )
+  }
+
+  /**
+   * calcurate layout position of each media
+   * 
+   * @method Studio#calcLayout
+   * 
+   */
   calcLayout() {
     this._calcLayout()
   }
 
+  /**
+   * select each layout calcuration method depending on patternId
+   * 
+   * @private
+   * @method Studio#_calcLayout
+   * @returns {Null}
+   */
   _calcLayout() {
     // todo - test code
     if( this._layout.length === 0 ) return 
@@ -149,6 +335,13 @@ class Studio {
     logger.info( '"_calcLayout()" - layout:%o', this._layout )
   }
 
+  /**
+   * calcurate main only layout
+   * 
+   * @private
+   * @method Studio#_calcMainOnlyLayout
+   * 
+   */
   _calcMainOnlyLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       const height = i === 0 ? this._height : 0
@@ -160,6 +353,13 @@ class Studio {
     }
   }
 
+  /**
+   * calcurate tile layout
+   * 
+   * @private
+   * @method Studio#_calcTileLayout
+   * 
+   */
   _calcTileLayout() {
     const numCol = Math.ceil( Math.sqrt( this._layout.length ) ) 
     const numRow = ( this._layout.length > ( numCol * ( numCol - 1 ) ) ) ? numCol : numCol - 1
@@ -186,23 +386,38 @@ class Studio {
     }
   }
 
+  /**
+   * calcurate large and small layout
+   * 
+   * @private
+   * @method Studio#_calcLargeAndSmallLayout
+   * 
+   */
   _calcLargeAndSmallLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       let width, height
+      const numSub = 6
 
-      if( i > 5 ) {
+      if( i > numSub ) {
         width = 0; height = 0
       } else {
-        height = i === 0 ? Math.floor( this._height * 4 / 5 ) : Math.floor( this._height * 1 / 5 )
+        height = i === 0 ? Math.floor( this._height * ( numSub - 1 ) / numSub ) : Math.floor( this._height * 1 / numSub )
         width  = Math.floor( this._width * height / this._height )
       }
-      const posX = i === 0 ? 0 : Math.floor( this._width * 4 / 5 )
+      const posX = i === 0 ? 0 : Math.floor( this._width * ( numSub - 1 ) / numSub )
       const posY = i === 0 ? Math.floor( ( this._height - height ) / 2 ) : ( i - 1 ) * height
 
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
     }
   }
 
+  /**
+   * calcurate PinP layout
+   * 
+   * @private
+   * @method Studio#_calcPinPLayout
+   * 
+   */
   _calcPinPLayout() {
     for( let i = 0; i < this._layout.length; i++ ) {
       let width, height
@@ -221,6 +436,13 @@ class Studio {
     }
   }
 
+  /**
+   * calcurate vertical main layout
+   * 
+   * @private
+   * @method Studio#_calcVerticalMain
+   * 
+   */
   _calcVerticalMain() {
     for( let i = 0; i < this._layout.length; i++ ) {
       const height = i === 0 ? this._height : 0
@@ -232,6 +454,13 @@ class Studio {
     }
   }
 
+  /**
+   * calcurate vertical tile layout
+   * 
+   * @private
+   * @method Studio#_calcVerticalTile
+   * 
+   */
   _calcVerticalTile() {
     const numCol = Math.ceil( Math.sqrt( this._layout.length ) ) 
     const numRow = ( this._layout.length > ( numCol * ( numCol - 1 ) ) ) ? numCol : numCol - 1
@@ -257,14 +486,19 @@ class Studio {
     }
   }
 
+  /**
+   * calcurate vertical pinp layout
+   * 
+   * @private
+   * @method Studio#_calcVerticalPinP
+   * 
+   */
   _calcVerticalPinP() {
     for( let i = 0; i < this._layout.length; i++ ) {
       let width, height
       if( i > 5 ) {
         width = 0; height = 0;
       } else {
-        //height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
-        //width  = Math.floor( this._width * height / this._height )
         height = i === 0 ? this._height : Math.floor( this._height * 1 / 5 * 0.9 )
         width  = Math.floor( height * this._height / this._width )
       }
@@ -291,8 +525,6 @@ class Studio {
       this._layout[i] = { ...this._layout[i], posX, posY, width, height }
     }
   }
-
-
 }
 
 module.exports = Studio

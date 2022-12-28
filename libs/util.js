@@ -4,6 +4,16 @@ const Logger = require('./logger')
 
 const logger = new Logger('util')
 
+/**
+ * @module util
+ */
+
+/**
+ * get guest id from roomId
+ * 
+ * @param {string} roomId 
+ * @returns {string}
+ */
 const getGuestId = roomId => {
   const { secretPhrase } = api
   const key = crypto.scryptSync( secretPhrase, 'salt', 32 )
@@ -15,6 +25,12 @@ const getGuestId = roomId => {
   return Buffer.concat([ iv, encData, cipher.final() ]).toString('hex')
 }
 
+/**
+ * get room id from guestId
+ * 
+ * @param {string} guestId 
+ * @returns {string}
+ */
 const getRoomId = guestId => {
   const { secretPhrase } = api
   const key = crypto.scryptSync( secretPhrase, 'salt', 32 )
@@ -32,6 +48,12 @@ const getRoomId = guestId => {
   return roomId
 }
 
+/**
+ * get md5 digest
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
 const md5 = str => {
   const _md5 = crypto.createHash('md5')
   return _md5.update(str, 'binary').digest('hex')

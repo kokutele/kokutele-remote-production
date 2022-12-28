@@ -1,13 +1,14 @@
 import { useContext } from 'react';
 import RoomClient from './room-client';
 import { AppContext } from '../App'
+import { useSimulcast } from '../config'
 import Logger from './logger';
 
 const logger = new Logger("reducer")
-const USE_SIMULCAST = false
 
 export const initialState = {
   status: 'IDLE',
+  roomId: '',
   peerId: '',
   displayName: '',
   localMedias: [], // Array<{ id, displayName, audioProducerId, videoProducerId, localStreamId }>
@@ -16,12 +17,18 @@ export const initialState = {
   logo: '',
   audioConsumers: [],
   videoConsumers: [],
+  captions: [],
+  coverUrls: [],
+  backgroundUrls: [],
   studio: {
+    coverUrl: '',
+    backgroundUrl: '',
     width: 0,
     height: 0,
     layout: [],
     patterns: [],
     patternId: 0, 
+    participants: [],
     reactions: { sum: 0, lastUpdated: Date.now() }
   }
 }
@@ -34,7 +41,10 @@ export const reducer = ( state, action ) => {
     case 'SET_STATUS': {
       return { ...state, status: action.value }
     }
-    case 'SET_PEERID': {
+    case 'SET_ROOM_ID': {
+      return { ...state, roomId: action.value }
+    }
+    case 'SET_PEER_ID': {
       return { ...state, peerId: action.value }
     }
     case 'SET_DISPLAY_NAME': {
@@ -48,6 +58,21 @@ export const reducer = ( state, action ) => {
     }
     case 'SET_LOGO': {
       return { ...state, logo: action.value }
+    }
+    case 'SET_CAPTIONS': {
+      return { ...state, captions: action.value }
+    }
+    case 'SET_COVER_URL': {
+      return { ...state, studio: { ...state.studio, coverUrl: action.value } }
+    }
+    case 'SET_COVER_URLS': {
+      return { ...state, coverUrls: action.value }
+    }
+    case 'SET_BACKGROUND_URL': {
+      return { ...state, studio: { ...state.studio, backgroundUrl: action.value } }
+    }
+    case 'SET_BACKGROUND_URLS': {
+      return { ...state, backgroundUrls: action.value }
     }
     case 'ADD_PEER': {
       return { ...state, peers: [...state.peers, action.value ]}
@@ -90,6 +115,10 @@ export const reducer = ( state, action ) => {
       const patternId = action.value
       return { ...state, studio: { ...state.studio, patternId }}
     }
+    case 'SET_STUDIO_PARTICIPANTS': {
+      const participants = action.value
+      return { ...state, studio: { ...state.studio, participants }}
+    }
     case 'SET_STUDIO_SIZE': {
       const { width, height } = action.value
       const studio = { ...state.studio, width, height }
@@ -110,27 +139,42 @@ export const reducer = ( state, action ) => {
   }
 }
 
+/**
+ * 
+ * @module useAppContext
+ */
 export const useAppContext = () => {
   const { appData, dispatch, state } = useContext( AppContext )
 
+  /**
+   * create room client. client instance will be stored in appData.roomClient
+   * 
+   * @method createRoomClient
+   * @publics
+   * @param {object} props 
+   * @param {string} props.displayName - display name of user
+   * @param {string} props.roomId - id of room
+   */
   const createRoomClient = ( { displayName, roomId } ) => {
-    const useSimulcast = USE_SIMULCAST
     const client = RoomClient.create( { displayName, roomId, useSimulcast })
 
     logger.debug( '"createRoomClient":%o', client )
 
-    dispatch({ type: 'SET_ROOMID', value: roomId })
-    dispatch({ type: 'SET_PEERID', value: client.peerId })
+    dispatch({ type: 'SET_ROOM_ID', value: roomId })
+    dispatch({ type: 'SET_PEER_ID', value: client.peerId })
     dispatch({ type: 'SET_DISPLAY_NAME', value: displayName })
     dispatch({ type: 'SET_STATUS', value: 'INITIALIZING'})
 
     _setRoomClientHandler( client, dispatch )
 
     appData.roomClient = client
-
-    return client.peerId
   }
 
+  /**
+   * join room
+   * 
+   * @method joinRoom
+   */
   const joinRoom = async () => {
     await appData.roomClient.join()
       .catch( err => { throw err })
@@ -138,12 +182,23 @@ export const useAppContext = () => {
     logger.debug( 'joinRoom - roomClient:%o', appData.roomClient )
   }
 
-  // for StudioViewer
+  /**
+   * set status as `READY`
+   * 
+   * @method setStatusReady
+   */
   const setStatusReady = () => {
     dispatch({ type: 'SET_STATUS', value: 'READY' })
-
   }
 
+  /**
+   * close connection with room
+   * all local streams and local video elements will be destroyed.
+   * then, status will be set as `INIT`
+   * 
+   * @method close
+   * 
+   */
   const close = async () => {
     appData.roomClient.close()
     appData.roomClient = null
@@ -165,7 +220,16 @@ export const useAppContext = () => {
     dispatch({ type: 'INIT' })
   }
 
-  const createProducer = async ({ peerId, displayName, stream, isCapture }) => {
+  /**
+   * create producer
+   * 
+   * @method createProducer
+   * @param {object} props 
+   * @param {MediaStream} props.stream
+   * @param {boolean} props.isCapture - when stream is capture stream, this param will be `true`
+   * @returns {object} - { localStreamId, mediaId }
+   */
+  const createProducer = async ({ stream, isCapture }) => {
     const { 
       audioProducerId, 
       videoProducerId,
@@ -179,11 +243,12 @@ export const useAppContext = () => {
     appData.localStreams.set( localStreamId, stream )
     logger.debug( 'localStreams added:%o', appData.localStreams )
     logger.debug( 'state:%o', state )
+
     dispatch({ 
       type: 'ADD_LOCAL_MEDIA', 
       value: {
-        id: peerId,
-        displayName,
+        id: appData.roomClient.peerId,
+        displayName: appData.roomClient.displayName,
         audioProducerId,
         videoProducerId,
         mediaId,
@@ -193,13 +258,27 @@ export const useAppContext = () => {
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
 
-    return localStreamId
+    return { localStreamId, mediaId }
   }
 
+  /**
+   * replace stream
+   * 
+   * @method replaceStream
+   * @param {MediaStream} stream 
+   */
   const replaceStream = async stream => {
     await appData.roomClient.replaceStream( stream )
   }
 
+  /**
+   * delete producer
+   * 
+   * @method deleteProducer
+   * @param {object} props 
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   */
   const  deleteProducer = async ( { audioProducerId, videoProducerId } ) => {
     logger.debug('deleteProducer:%s, %s', audioProducerId, videoProducerId )
     appData.roomClient.closeProducer( audioProducerId )
@@ -207,7 +286,13 @@ export const useAppContext = () => {
     dispatch({ type: 'DELETE_LOCAL_MEDIA', value: { audioProducerId, videoProducerId }})
   }
 
-  const deleteLocalStream = async streamId => {
+  /**
+   * delete local stream
+   * 
+   * @method deleteLocalStream
+   * @param {string} streamId 
+   */
+  const deleteLocalStream = async ( streamId ) => {
     logger.debug('deleteLocalStream:%s',streamId )
 
     const localStream = appData.localStreams.get( streamId )
@@ -218,9 +303,13 @@ export const useAppContext = () => {
       }
       appData.localStreams.delete( streamId )
     }
+    logger.debug('localVideos:%o', appData.localVideos )
 
+    // remove video element for this local video
     const localVideo = appData.localVideos.get( streamId )
+
     if( localVideo ) {
+      logger.debug('localVideo:%o', localVideo)
       localVideo.pause()
       localVideo.remove()
       appData.localVideos.delete( streamId )
@@ -229,22 +318,116 @@ export const useAppContext = () => {
     logger.debug('appData:%o', appData )
   }
 
+  /**
+   * set caption
+   * 
+   * @method setCaption
+   * @param {string} str 
+   */
   const setCaption = str => {
     const caption = !!str ? str : ''
     dispatch({ type: 'SET_CAPTION', value: caption })
+
     appData.roomClient.setCaption( caption )
   }
 
+  /**
+   * get caption
+   * 
+   * @method getCaption
+   */
   const getCaption = async () => {
     const data = await appData.roomClient.getCaption()
       .catch( err => { return { caption: '' } })
     dispatch({ type: 'SET_CAPTION', value: data.caption })
   }
 
+  /**
+   * set captions
+   * 
+   * @param {Array<Object>} captions - e.g. [{id, caption}, ...]
+   * 
+   */
+  const setCaptions = captions => {
+    dispatch({ type: 'SET_CAPTIONS', value: captions })
+  }
+
+  /**
+   * set cover url
+   * 
+   * @method setCoverUrl
+   * @param {string} url 
+   */
+  const setCoverUrl = async url => {
+    await appData.roomClient.setCoverUrl( url )
+  }
+
+  /**
+   * get cover url
+   * 
+   * @method getCoverUrl
+   */
+  const getCoverUrl = async () => {
+    const data = await appData.roomClient.getCoverUrl()
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
+  }
+
+  /**
+   * set cover urls
+   * 
+   * @method setCoverUrls
+   * @param {Array<Object>} urls
+   */
+  const setCoverUrls = urls => {
+    dispatch({ type: 'SET_COVER_URLS', value: urls })
+  }
+
+  /**
+   * set background url
+   * 
+   * @method setBackgroundUrl
+   * @param {string} url 
+   */
+  const setBackgroundUrl = async url => {
+    await appData.roomClient.setBackgroundUrl( url )
+  }
+
+  /**
+   * get background url
+   * 
+   * @method getBackgroundUrl
+   */
+  const getBackgroundUrl = async () => {
+    const data = await appData.roomClient.getBackgroundUrl()
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  }
+
+  /**
+   * set background urls
+   * 
+   * @method setBackgroundUrls
+   * @param {Array<Object>} urls
+   */
+  const setBackgroundUrls = urls => {
+    dispatch({ type: 'SET_BACKGROUND_URLS', value: urls })
+  }
+
+  /**
+   * set logo string
+   * 
+   * @method setLogo
+   * @param {string} str 
+   */
   const setLogo = str => {
     dispatch({ type: 'SET_LOGO', value: !!str ? str : '' })
   }
 
+  /**
+   * get studio size.
+   * here, size means { width, height }
+   * 
+   * @method getStudioSize
+   */
   const getStudioSize = async () => {
     try {
       const size = await appData.roomClient.getStudioSize()
@@ -255,6 +438,12 @@ export const useAppContext = () => {
     }
   }
 
+  /**
+   * get studio patterns
+   * `studio patterns` is Array<{id:Number, label:String, type:String}>
+   * 
+   * @method getStudioPatterns
+   */
   const getStudioPatterns = async () => {
     try {
       const studioPatterns = await appData.roomClient.getStudioPatterns()
@@ -264,6 +453,11 @@ export const useAppContext = () => {
     }
   }
 
+  /**
+   * get current studio pattern id
+   * 
+   * @method getStuidoPatternId
+   */
   const getStudioPatternId = async () => {
     try {
       const { patternId } = await appData.roomClient.getStudioPatternId()
@@ -274,6 +468,12 @@ export const useAppContext = () => {
     }
   }
 
+  /**
+   * set current studio pattern id
+   * 
+   * @method setStudioPatternId
+   * @param {string} patternId 
+   */
   const setStudioPatternId = async patternId => {
     try {
       await appData.roomClient.setStudioPatternId( { patternId } )
@@ -282,6 +482,11 @@ export const useAppContext = () => {
     }
   }
 
+  /**
+   * get current studio layout (Array<{id:Number, label:String, type:String }>)
+   * 
+   * @method getStudioLayout
+   */
   const getStudioLayout = async () => {
     try {
       const layout = await appData.roomClient.getStudioLayout()
@@ -292,16 +497,123 @@ export const useAppContext = () => {
     }
   }
 
+  /**
+   * add media into studio layout 
+   * 
+   * @method addStudioLayout
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * @param {number} props.videoWidth
+   * @param {number} props.videoHeight
+   * @param {string} props.mediaId
+   */
   const addStudioLayout = async ({ peerId, audioProducerId, videoProducerId, videoWidth, videoHeight, mediaId }) => {
     await appData.roomClient.addStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId, videoWidth, videoHeight })
   }
 
+  /**
+   * delete media from studio layout
+   * 
+   * @method deleteStudioLayout
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.audioProducerId
+   * @param {string} props.videoProducerId
+   * @param {string} props.mediaId
+   */
   const deleteStudioLayout = async ({ peerId, audioProducerId, videoProducerId, mediaId }) => {
     await appData.roomClient.deleteStudioLayout({ peerId, mediaId, audioProducerId, videoProducerId })
   }
 
+  /**
+   * move to main media in studio layout
+   * 
+   * @method toMainInStudioLayout
+   * @param {number} layoutIdx 
+   */
   const toMainInStudioLayout = async layoutIdx => {
     await appData.roomClient.toMainInStudioLayout( layoutIdx )
+  }
+
+  /**
+   * get studio participants. Array<{ peerId:String, displayName:String, mediaId:String, video:Boolean, audio:Boolean }>
+   * 
+   * @method getStuioParticipants
+   */
+  const getStudioParticipants = async () => {
+    try {
+      const participants = await appData.roomClient.getStudioParticipants()
+      dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
+    } catch( err ) {
+      logger.error( 'getStudioParticipants():%o', err )
+    }
+  }
+
+  /**
+   * add participant
+   * 
+   * @method addParticipant
+   * @param {object} props 
+   * @param {string} props.peerId
+   * @param {string} props.mediaId
+   * @param {string} props.dispalyName
+   * @param {boolean} props.audio
+   * @param {boolean} props.video
+   */
+  const addParticipant = async ({ peerId, mediaId, displayName, audio, video }) => {
+    try {
+      await appData.roomClient.addParticipant({ peerId, mediaId, displayName, audio, video })
+    } catch( err ) {
+      logger.error( 'addParticipant():%o', err )
+    }
+  }
+
+  /**
+   * update participant audio ( true or false )
+   * 
+   * @method updateParticipantAudio
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @param {boolean} props.audio
+   */
+  const updateParticipantAudio = async ({ mediaId, audio }) => {
+    try {
+      await appData.roomClient.updateParticipantAudio({ mediaId, audio })
+    } catch( err ) {
+      logger.error( 'updateParticipantAudio():%o', err )
+    }
+  }
+
+  /**
+   * update participant video ( true or false )
+   * 
+   * @method updateParticipantVideo
+   * @param {object} props 
+   * @param {string} props.mediaId
+   * @param {boolean} props.video
+   */
+  const updateParticipantVideo = async ({ mediaId, video }) => {
+    try {
+      await appData.roomClient.updateParticipantVideo({ mediaId, video })
+    } catch( err ) {
+      logger.error( 'updateParticipantVideo():%o', err )
+    }
+  }
+
+  /**
+   * delete participant by mediaId
+   * 
+   * @method deleteParticipantByMediaId
+   * @param {string} mediaId 
+   */
+  const deleteParticipantByMediaId = async ({ mediaId }) => {
+    try {
+      await appData.roomClient.deleteParticipantByMediaId({ mediaId })
+    } catch( err ) {
+      logger.error( 'deleteParticipantByMediaId():%o', err )
+    }
   }
 
   return {
@@ -313,9 +625,21 @@ export const useAppContext = () => {
     getStudioLayout,
     addStudioLayout,
     deleteStudioLayout,
+    getStudioParticipants,
+    addParticipant,
+    updateParticipantAudio,
+    updateParticipantVideo,
+    deleteParticipantByMediaId,
     getCaption,
     setCaption,
+    setCaptions,
     setLogo,
+    getCoverUrl,
+    setCoverUrl,
+    setCoverUrls,
+    getBackgroundUrl,
+    setBackgroundUrl,
+    setBackgroundUrls,
     toMainInStudioLayout,
     createRoomClient,
     createProducer,
@@ -347,12 +671,36 @@ function _setRoomClientHandler( client, dispatch ) {
     dispatch({ type: 'SET_STUDIO_LAYOUT', value: layout })
   })
 
+  client.on("studioParticipantsUpdated", participants => {
+    dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
+  })
+
   client.on("reactionsUpdated", data => {
     dispatch({ type: 'REACTIONS_UPDATED', value: data })
   })
 
   client.on("setCaption", data => {
     dispatch({ type: 'SET_CAPTION', value: data.caption })
+  })
+
+  client.on("setCaptions", data => {
+    dispatch({ type: 'SET_CAPTIONS', value: data })
+  })
+
+  client.on("setCoverUrl", data => {
+    dispatch({ type: 'SET_COVER_URL', value: data.coverUrl })
+  })
+
+  client.on("setCoverUrls", data => {
+    dispatch({ type: 'SET_COVER_URLS', value: data })
+  })
+
+  client.on("setBackgroundUrl", data => {
+    dispatch({ type: 'SET_BACKGROUND_URL', value: data.backgroundUrl })
+  })
+
+  client.on("setBackgroundUrls", data => {
+    dispatch({ type: 'SET_BACKGROUND_URLS', value: data })
   })
 
   client.on("peerClosed", peerId => {
