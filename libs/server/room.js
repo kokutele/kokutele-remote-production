@@ -1035,6 +1035,8 @@ class Room extends EventEmitter {
 
       accept()
 
+      logger.info( 'studio participants:%o', this._studio.participants )
+
       for( const peer of this._getJoinedPeers() ) {
         peer.notify( 'studioParticipantsUpdated', this._studio.participants )
           .catch( () => {} )

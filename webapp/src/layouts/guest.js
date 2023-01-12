@@ -109,7 +109,7 @@ export default function Guest( props ) {
           setLocalStreamId( localStreamId )
           setMediaId( mediaId )
           setStatus('PRODUCING')
-          addParticipant({ peerId, mediaId, displayName:_displayName, audio: defaultMic, video: defaultVideo })
+          addParticipant({ peerId: appData.roomClient.peerId , mediaId, displayName:_displayName, audio: defaultMic, video: defaultVideo })
         } )
         .catch( err => alert( err.message ))
     }

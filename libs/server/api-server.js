@@ -8,6 +8,7 @@ const cors = require('cors')
 const StudioDB = require('../studio-db')
 const Logger = require('../logger')
 
+const { getGuestId, getRoomId } = require('../util')
 const config = require('../../config')
 
 const hashids = new Hashids()

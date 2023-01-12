@@ -168,6 +168,8 @@ export const useAppContext = () => {
     _setRoomClientHandler( client, dispatch )
 
     appData.roomClient = client
+
+    return client.peerId
   }
 
   /**
@@ -672,6 +674,7 @@ function _setRoomClientHandler( client, dispatch ) {
   })
 
   client.on("studioParticipantsUpdated", participants => {
+    logger.debug('studioParticipantsUpdated:%o', participants )
     dispatch({ type: 'SET_STUDIO_PARTICIPANTS', value: participants })
   })
 
