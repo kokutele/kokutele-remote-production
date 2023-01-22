@@ -84,7 +84,7 @@ export default function Backgrounds(props) {
 
   return(
     <div className='Backgrounds'>
-      <Button onClick={() => setShowDrawer( true )} type='default' icon={<BsCardImage />}>&nbsp;Backgrounds</Button>
+      <Button onClick={() => setShowDrawer( true )} type='primary' icon={<BsCardImage />}>&nbsp;Backgrounds</Button>
       <Drawer title="backgrounds" placement='left' onClose={() => setShowDrawer( false )} visible={ _showDrawer } >
         <Paragraph>
           <Card title="Select background image">

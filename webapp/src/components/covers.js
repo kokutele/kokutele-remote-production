@@ -84,7 +84,7 @@ export default function Covers(props) {
 
   return(
     <div className='Covers'>
-      <Button onClick={() => setShowDrawer( true )} type='default' icon={<BsCardImage />}>&nbsp;Covers</Button>
+      <Button onClick={() => setShowDrawer( true )} type='primary' icon={<BsCardImage />}>&nbsp;Covers</Button>
       <Drawer title="covers" placement='left' onClose={() => setShowDrawer( false )} visible={ _showDrawer } >
         <Paragraph>
           <Card title="Select cover image">

@@ -42,7 +42,7 @@ export default function Captions(props) {
 
   return(
     <div className='Captions'>
-      <Button onClick={() => setShowDrawer( true )} type='default' icon={<CgTranscript />}>&nbsp;Captions</Button>
+      <Button onClick={() => setShowDrawer( true )} type='primary' icon={<CgTranscript />}>&nbsp;Captions</Button>
       <Drawer title="captions" placement='left' onClose={() => setShowDrawer( false )} visible={ _showDrawer } >
         <Paragraph>
           <Card title="Select caption">

@@ -16,3 +16,15 @@
 .App .debug pre {
   font-family: system-ui;
 }
+
+.Room .buttons {
+  position: absolute;
+  left: 0;
+  top: 400px;
+}
+
+.Room .deselect {
+  position: absolute;
+  right: 0;
+  bottom: 30%;
+}

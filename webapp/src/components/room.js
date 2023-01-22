@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Col, Collapse, Divider, Row, Space } from 'antd'
+import { Alert, Col, Collapse, Row, Space } from 'antd'
 
 import Studio from './studio'
 import StudioPatterns from './studio-patterns'
@@ -55,27 +55,32 @@ export default function Room( props ) {
         <Studio style={{ maxHeight: "70vh"}} />
       </div>
       <CoverIndicator />
+      <div className='buttons'>
+        <Space direction='vertical'>
+          <Backgrounds />
+          <Captions />
+          <Covers />
+        </Space>
+      </div>
       <div className='container' style={{ textAlign: "center" }}>
         <Row gutter={16}>
+          {/*
           <Col offset={1} span={2} style={{ textAlign: "left"}}>
-            <Space direction='vertical'>
-              <Backgrounds />
-              <Captions />
-              <Covers />
-            </Space>
           </Col>
-          <Col offset={0} span={18} style={{ textAlign: "center" }}>
+          */}
+          <Col offset={3} span={18} style={{ textAlign: "center" }}>
             <StudioPatterns />
           </Col>
           <Col offset={1} span={2} style={{ textAlign: "center"}}>
             <Space direction='vertical'>
               <LikeButton roomId={roomId} />
-              <Deselect />
             </Space>
           </Col>
         </Row>
       </div>
-      <Divider />
+      <div className='deselect'>
+        <Deselect />
+      </div>
       <div className='container'>
         <Sources roomId={roomId} />
       </div>
