@@ -110,7 +110,12 @@ export default function MediaSelector(props) {
                 <>
                   Virtual studio: check webcam<br/>
                   <div style={{ textAlign: "right" }}>
-                  use cam&nbsp;<Switch checked={_useMedia} onChange={setUseMedia} />
+                  use cam&nbsp;<Switch checked={_useMedia} onChange={ checked => {
+                    if( !_stream.current ) {
+                      setIsReady(!checked)
+                    }
+                    setUseMedia(checked)
+                  }} />
                   </div>
                 </>
               )}>
@@ -151,7 +156,7 @@ export default function MediaSelector(props) {
                       Are you ready?
                     </Col>
                     <Col span={12} style={{ textAlign: "left" }}>
-                      <Button type="primary" onClick={ handleClick } disabled={ !_isReady || !!_errMessage }>Yes, I'm ready</Button>
+                      <Button type="primary" onClick={ handleClick } disabled={ !_isReady }>Yes, I'm ready</Button>
                     </Col>
                   </Row>
                 </div>
