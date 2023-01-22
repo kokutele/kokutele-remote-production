@@ -37,7 +37,7 @@ export default function Room( props ) {
     joinRoom()
       .then( async () => {
         await createProducer({ stream })
-      } )
+      })
       .catch( err => setErrMessage( err.message ))
 
     return async function cleanup() {

@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Card, Col, Input, Row, Select } from 'antd'
+import { Alert, Button, Card, Col, Input, Row, Select, Switch } from 'antd'
 // import AudioStreamMeter from 'audio-stream-meter'
 import pokemon from 'pokemon'
 
 
-import Logger from '../libs/logger'
-
 import './media-selector.css'
 
 const { Option } = Select
-const logger = new Logger('media-selector')
 
 export default function MediaSelector(props) {
   const { setStream } = props
 
+  const [ _isReady, setIsReady ] = useState( false )
+  const [ _useMedia, setUseMedia ] = useState( true )
   const [ _videoDevices, setVideoDevices ] = useState( [] )
   const [ _audioDevices, setAudioDevices ] = useState( [] )
   const [ _errMessage, setErrMessage ] = useState( '' )
@@ -32,6 +31,7 @@ export default function MediaSelector(props) {
         _videoEl.current.onloadedmetadata = async () => {
           try {
             await _videoEl.current.play()
+            setIsReady( true )
 
             const list = await navigator.mediaDevices.enumerateDevices()
 
@@ -52,10 +52,20 @@ export default function MediaSelector(props) {
   }, [])
 
   const handleClick = useCallback( () => {
-    logger.debug('handleClick - displayName:%s', _displayName )
-    setStream( _stream.current, _displayName, true )
+    if( _useMedia ) {
+      setStream( _stream.current, _displayName, true )
+    } else {
+      if( _stream.current && _stream.current instanceof MediaStream ) {
+        const tracks = _stream.current.getTracks()
+        for( let t of tracks ) {
+          t.stop()
+        }
+        _stream.current = null
+      }
+      setStream( null, _displayName, true )
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ _displayName ])
+  }, [ _displayName, _useMedia ])
 
   const handleVideoChange = useCallback( async deviceId => {
     try {
@@ -96,43 +106,52 @@ export default function MediaSelector(props) {
         <div className="wrapper" style={{marginTop: "10vh"}}>
           <Row>
             <Col offset={3} span={18}>
-              <Card title="Virtual studio: check webcam">
-                { _errMessage !== '' && (
-                  <Alert type="error" message={_errMessage} showIcon />
-                )}
-                <Row gutter={16}>
-                  <Col span={14}>
-                    <div className='video-wrapper'>
-                      <video ref={ _videoEl } muted playsInline />
-                    </div>
-                  </Col>
-                  <Col span={10}>
-                    video:<br/>
-                    <Select defaultValue="default" style={{ width: "100%"}} onChange={ handleVideoChange }>
-                      { _videoDevices.map( ( item , idx ) => (
-                        <Option key={idx} value={item.deviceId}>{item.label}</Option>
-                      ))}
-                    </Select><br/>
-                    audio:<br/>
-                    <Select defaultValue="default" style={{ width: "100%"}} onChange={ handleAudioChange }>
-                      { _audioDevices.map( ( item, idx ) => (
-                        <Option key={idx} value={item.deviceId}>{item.label}</Option>
-                      ))}
-                    </Select><br/>
-                    {/*
-                    <Progress percent={ _volume } showInfo={false} strokeColor={ _volume < 80 ? 'green' : 'red' } />
-                    */}
-                    displayName:<br/>
-                    <Input value={ _displayName } onChange={ e => setDisplayName( e.target.value ) } />
-                  </Col>
-                </Row>
+              <Card title={(
+                <>
+                  Virtual studio: check webcam<br/>
+                  <div style={{ textAlign: "right" }}>
+                  use cam&nbsp;<Switch checked={_useMedia} onChange={setUseMedia} />
+                  </div>
+                </>
+              )}>
+                  { ( _useMedia && _errMessage !== '' ) && (
+                    <Alert type="error" message={_errMessage} showIcon />
+                  )}
+                  <Row gutter={16}>
+                    <Col span={14}>
+                      <div style={{ visibility: _useMedia ? 'visible': 'hidden' }}>
+                        <div className='video-wrapper'>
+                          <video ref={ _videoEl } muted playsInline />
+                        </div>
+                      </div>
+                    </Col>
+                    <Col span={10}>
+                      video:<br/>
+                      <Select disabled={!_useMedia} defaultValue="default" style={{ width: "100%"}} onChange={ handleVideoChange }>
+                        { _videoDevices.map( ( item , idx ) => (
+                          <Option key={idx} value={item.deviceId}>{item.label}</Option>
+                        ))}
+                      </Select><br/>
+                      audio:<br/>
+                      <Select disabled={!_useMedia} defaultValue="default" style={{ width: "100%"}} onChange={ handleAudioChange }>
+                        { _audioDevices.map( ( item, idx ) => (
+                          <Option key={idx} value={item.deviceId}>{item.label}</Option>
+                        ))}
+                      </Select><br/>
+                      {/*
+                      <Progress percent={ _volume } showInfo={false} strokeColor={ _volume < 80 ? 'green' : 'red' } />
+                      */}
+                      displayName:<br/>
+                      <Input disabled={!_useMedia} value={ _displayName } onChange={ e => setDisplayName( e.target.value ) } />
+                    </Col>
+                  </Row>
                 <div style={{ marginTop: "11.5px", textAlign: "center" }}>
                   <Row gutter={16}>
                     <Col span={12} style={{ textAlign: "right" }}>
                       Are you ready?
                     </Col>
                     <Col span={12} style={{ textAlign: "left" }}>
-                      <Button type="primary" onClick={ handleClick } disabled={ !!_errMessage }>Yes, I'm ready</Button>
+                      <Button type="primary" onClick={ handleClick } disabled={ !_isReady || !!_errMessage }>Yes, I'm ready</Button>
                     </Col>
                   </Row>
                 </div>

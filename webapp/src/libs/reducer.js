@@ -232,35 +232,43 @@ export const useAppContext = () => {
    * @returns {object} - { localStreamId, mediaId }
    */
   const createProducer = async ({ stream, isCapture }) => {
-    const { 
-      audioProducerId, 
-      videoProducerId,
-      mediaId
-    } = await appData.roomClient.createProducer( stream, !!isCapture )
-      .catch( err => { throw err } )
+    let _localStreamId, _mediaId
 
-    logger.debug( 'createProducer - audioProducerId:%s, videoProducerId: %s', audioProducerId, videoProducerId )
-
-    const localStreamId = `localvideo-${Date.now()}`
-    appData.localStreams.set( localStreamId, stream )
-    logger.debug( 'localStreams added:%o', appData.localStreams )
-    logger.debug( 'state:%o', state )
-
-    dispatch({ 
-      type: 'ADD_LOCAL_MEDIA', 
-      value: {
-        id: appData.roomClient.peerId,
-        displayName: appData.roomClient.displayName,
-        audioProducerId,
+    if( stream && stream instanceof MediaStream ) {
+      const { 
+        audioProducerId, 
         videoProducerId,
-        mediaId,
-        localStreamId
-      }
-    })
+        mediaId
+      } = await appData.roomClient.createProducer( stream, !!isCapture )
+        .catch( err => { throw err } )
+
+      _mediaId = mediaId
+
+      logger.debug( 'createProducer - audioProducerId:%s, videoProducerId: %s', audioProducerId, videoProducerId )
+
+      const localStreamId = `localvideo-${Date.now()}`
+      appData.localStreams.set( localStreamId, stream )
+      logger.debug( 'localStreams added:%o', appData.localStreams )
+
+      _localStreamId = localStreamId
+
+
+      dispatch({ 
+        type: 'ADD_LOCAL_MEDIA', 
+        value: {
+          id: appData.roomClient.peerId,
+          displayName: appData.roomClient.displayName,
+          audioProducerId,
+          videoProducerId,
+          mediaId,
+          localStreamId
+        }
+      })
+    }
 
     dispatch({ type: 'SET_STATUS', value: 'READY'})
 
-    return { localStreamId, mediaId }
+    return { localStreamId: _localStreamId, mediaId: _mediaId }
   }
 
   /**
