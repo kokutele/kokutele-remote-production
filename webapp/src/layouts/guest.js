@@ -13,7 +13,7 @@ import { MdCancel }       from 'react-icons/md'
 //import { MdVolumeUp, MdVolumeOff } from 'react-icons/md'
 import { BsMicFill, BsMicMuteFill, BsCameraVideoFill, BsCameraVideoOffFill } from 'react-icons/bs'
 
-import { defaultMic, defaultVideo } from "../config";
+import { defaultMic, defaultVideo, disableMirrorInGuestPage } from "../config";
 
 import Logger from "../libs/logger";
 
@@ -193,7 +193,7 @@ export default function Guest( props ) {
   return (
     <div className="Guest" style={{position: 'absolute', left: 0, top: 0, width: '100vw', height: '100vh', background: "#000"}}>
       <div className="wrapper">
-        <div className="video-view">
+        <div className={ disableMirrorInGuestPage ? "video-view-no-mirror" : "video-view"}>
           <video ref={_videoEl} playsInline />
         </div>
         <div className="controller">
